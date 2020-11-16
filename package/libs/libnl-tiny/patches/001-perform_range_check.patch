@@ -1,0 +1,26 @@
+From 35fad8c05f5edb75bbf54c06bd0d76671e7d4ca2
+From: Naresh Kumar Mehta <naresh@codeaurora.org>
+Date:   Tue May 30 21:50:52 2017 +0530
+Subject: libnl - Perform range check on len in nlmsg_reserve
+
+This change is required only for libnl-tiny, not for libnl
+as this is already taken care in the 3.4 version
+
+Signed-off-by: Naresh Kumar Mehta <naresh@codeaurora.org>
+Signed-off-by: Sandhya KS <sandhyks@codeaurora.org>
+
+
+Index: libnl-tiny-0.1/msg.c
+===================================================================
+--- libnl-tiny-0.1.orig/msg.c
++++ libnl-tiny-0.1/msg.c
+@@ -407,6 +407,9 @@ void *nlmsg_reserve(struct nl_msg *n, si
+ 	size_t nlmsg_len = n->nm_nlh->nlmsg_len;
+ 	size_t tlen;
+ 
++	if (len > n->nm_size)
++		return NULL;
++
+ 	tlen = pad ? ((len + (pad - 1)) & ~(pad - 1)) : len;
+ 
+ 	if ((tlen + nlmsg_len) > n->nm_size)
