@@ -1,0 +1,4 @@
+MAKE_OPTS:= \
+	$(KERNEL_MAKE_FLAGS) \
+	M="$(PKG_BUILD_DIR)"
+
