@@ -89,10 +89,11 @@ WIFI_PKGS_MINENT:=kmod-qca-wifi-custc-profile \
 
 WIFI_PKGS_256MB:=kmod-qca-wifi-lowmem-profile \
 	qca-hostap qca-hostapd-cli qca-wpa-supplicant \
-	qca-wpa-cli qca-wpc sigma-dut \
-	qcmbr-10.4 qca-wrapd qca-wapid qca-acfg whc-mesh whc-ui \
-	qca-iface-mgr-10.4 qca-icm qca-cfg80211 athdiag qca-cnss-daemon \
-	athtestcmd-lith qca-cfg80211tool
+	qca-wpa-cli qca-cfg80211tool qca-wifi-scripts
+#	qca-wpc sigma-dut \
+#	qca-wrapd qca-wapid qca-acfg whc-mesh whc-ui \
+#	qca-iface-mgr-10.4 qca-icm qca-cfg80211 athdiag qca-cnss-daemon \
+#	athtestcmd-lith
 
 WIFI_PKGS_16M:=kmod-qca-wifi-flash_16mb-profile \
 	qca-hostap qca-hostapd-cli qca-wpa-supplicant \
@@ -102,11 +103,11 @@ WIFI_FW_PKGS:=qca-wifi-hk-fw-hw1-10.4-asic
 
 OPENWRT_STANDARD:= luci openssl-util
 
-OPENWRT_256MB:=luci pm-utils wififw_mount_script qca-thermald-10.4 qca-wlanfw-upgrade file \
-	kmod-ata-core kmod-ata-ahci kmod-ata-ahci-platform \
-	kmod-usb2 kmod-usb3 kmod-usb-dwc3-qcom \
-	kmod-usb-phy-qcom-dwc3 kmod-usb-dwc3-of-simple \
-	kmod-usb-phy-ipq807x kmod-usb-f-qdss
+OPENWRT_256MB:=luci pm-utils wififw_mount_script qca-thermald-10.4 qca-wlanfw-upgrade -file \
+	-kmod-ata-core -kmod-ata-ahci -kmod-ata-ahci-platform \
+	-kmod-usb2 -kmod-usb3 -kmod-usb-dwc3-qcom \
+	-kmod-usb-phy-qcom-dwc3 -kmod-usb-dwc3-of-simple \
+	-kmod-usb-phy-ipq807x -kmod-usb-f-qdss
 
 STORAGE:=kmod-scsi-core kmod-usb-storage kmod-usb-uas kmod-nls-cp437 kmod-nls-iso8859-1 \
 	kmod-fs-msdos kmod-fs-vfat kmod-fs-ntfs ntfs-3g e2fsprogs losetup
@@ -128,7 +129,7 @@ NETWORKING:=mcproxy -dnsmasq dnsmasq-dhcpv6 bridge ip-full trace-cmd mwan3 \
 	kmod-nf-nathelper-extra kmod-nf-nathelper \
 	kmod-ipt-nathelper-rtsp
 
-NETWORKING_256MB:=dnsmasq dnsmasq-dhcpv6 bridge ip-full trace-cmd \
+NETWORKING_256MB:=-dnsmasq dnsmasq-dhcpv6 bridge ip-full trace-cmd \
 	rp-pppoe-relay iptables-mod-extra iputils-tracepath iputils-tracepath6 \
 	kmod-nf-nathelper-extra kmod-ipt-nathelper-rtsp \
 	luci-app-upnp luci-app-ddns luci-proto-ipv6 \
@@ -317,12 +318,12 @@ define Profile/QSDK_256
 	NAME:=Qualcomm Technologies, Inc SDK 256MB Profile
 	PACKAGES:=$(OPENWRT_256MB) $(NSS_COMMON) $(NSS_STANDARD) $(SWITCH_SSDK_PKGS) \
 		$(WIFI_PKGS_256MB) qca-wifi-hk-fw-hw1-10.4-asic $(CD_ROUTER_256MB) $(NETWORKING_256MB) \
-		iperf rng-tools $(QCA_RFS) $(IGMPSNOOPING_RSTP) $(CHAR_DIAG) \
+		iperf rng-tools $(QCA_RFS) $(CHAR_DIAG) \
 		$(QCA_ECM_STANDARD) $(NSS_MACSEC) \
-		$(NSS_CLIENTS_256MB) $(HYFI) $(QCA_EZMESH) $(FAILSAFE) -lacpd \
-		$(CNSS_DIAG) $(FTM) $(QMSCT_CLIENT) qca-wifi-cyp-fw-hw1-11.0-asic \
-		$(QRTR) $(MHI_QRTR) kmod-macvlan
+		$(NSS_CLIENTS_256MB) $(FAILSAFE) -lacpd \
+		$(CNSS_DIAG) $(FTM) $(QMSCT_CLIENT)
 endef
+#	$(HYFI) $(QCA_EZMESH) $(QRTR) $(MHI_QRTR) kmod-macvlan $(IGMPSNOOPING_RSTP)
 
 define Profile/QSDK_256/Description
 	QSDK Premium package set configuration.
