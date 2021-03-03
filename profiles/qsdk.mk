@@ -244,8 +244,8 @@ define Profile/QSDK_Open
 endef
 
 #	$(SHORTCUT_FE) $(HW_CRYPTO) $(QCA_RFS) $(IPSEC) $(QOS) kmod-qca-nss-macsec \
-#	$(MAP_PKGS) $(QCA_ECM_PREMIUM) $(NSS_COMMON) $(NSS_STANDARD) $(AQ_PHY) \
-#	$(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD) $(CD_ROUTER) $(IGMPSNOOPING_RSTP) -rstp
+#	$(MAP_PKGS) $(AQ_PHY) \
+#	$(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD) $(IGMPSNOOPING_RSTP) -rstp
 
 define Profile/QSDK_Open/Description
 	QSDK Open package set configuration.
@@ -256,21 +256,26 @@ $(eval $(call Profile,QSDK_Open))
 
 define Profile/QSDK_QBuilder
 	NAME:=Qualcomm Technologies, Inc SDK QBuilder Profile
-	PACKAGES:=luci openssl-util kmod-qca-nss-dp kmod-qca-nss-drv kmod-qca-nss-gmac qca-nss-fw2-retail \
-		qca-nss-fw-hk-retail qca-nss-fw-cp-retail kmod-qca-ssdk-nohnat qca-ssdk-shell swconfig \
+	PACKAGES:=luci openssl-util kmod-qca-nss-dp kmod-qca-nss-drv -kmod-qca-nss-gmac \
+		-qca-nss-fw2-retail qca-nss-fw-hk-retail qca-nss-fw-cp-retail qca-nss-fw-mp-retail \
+		kmod-qca-ssdk-nohnat qca-ssdk-shell swconfig \
 		kmod-scsi-core kmod-usb-storage kmod-usb-uas kmod-nls-cp437 kmod-nls-iso8859-1 kmod-fs-msdos \
-		kmod-fs-vfat kmod-fs-ntfs ntfs-3g e2fsprogs kmod-shortcut-fe kmod-shortcut-fe-cm kmod-shortcut-fe-drv \
-		rstp qca-mcs-apps kmod-qca-wifi-unified-profile qca-hostap qca-hostapd-cli qca-wpa-supplicant qca-wpa-cli \
-		qca-spectral qca-wpc sigma-dut qcmbr-10.4 qca-wrapd qca-wapid qca-acfg whc-mesh whc-ui qca-lowi qca-iface-mgr-10.4 \
-		qca-icm qca-cfg80211 athdiag qca-cnss-daemon athtestcmd-lith qca-wifi-fw-hw2-10.4-asic qca-wifi-fw-hw4-10.4-asic \
-		qca-wifi-fw-hw3-10.4-asic qca-wifi-fw-hw6-10.4-asic qca-wifi-fw-hw5-10.4-asic qca-wifi-fw-hw11-10.4-asic \
-		qca-wifi-hk-fw-hw1-10.4-asic qca-wifi-cyp-fw-hw1-11.0-asic kmod-aq_phy kmod-qca_85xx_sw aq-fw-download mcproxy \
-		-dnsmasq dnsmasq-dhcpv6 bridge ip-full trace-cmd rp-pppoe-relay iptables-mod-extra iputils-tracepath iputils-tracepath6 \
-		kmod-nf-nathelper-extra kmod-ipt-nathelper-rtsp luci-app-upnp luci-app-ddns luci-proto-ipv6 luci-app-multiwan tc kmod-sched \
-		kmod-sched-core kmod-sched-connmark kmod-ifb iptables iptables-mod-filter iptables-mod-ipopt iptables-mod-conntrack-extra \
-		qca-nss-fw-eip-hk qca-nss-fw-eip-cp file luci-app-samba rng-tools profilerd ethtool i2c-tools tcpdump pm-utils \
-		wififw_mount_script qca-thermald-10.4 qca-qmi-framework qca-time-services qca-wlanfw-upgrade dashboard qca-wifi-fw-hw5-10.4-asic \
-		iperf sysstat nlcfg kmod-bootconfig qca-cfg80211tool
+		kmod-fs-vfat kmod-fs-ntfs ntfs-3g e2fsprogs losetup \
+		kmod-shortcut-fe kmod-shortcut-fe-cm kmod-shortcut-fe-drv \
+		rstp qca-mcs-apps qca-hostap qca-hostapd-cli qca-wpa-supplicant qca-wpa-cli \
+		qca-spectral qca-wpc sigma-dut qcmbr-10.4 qca-wrapd qca-wapid qca-acfg whc-mesh whc-ui \
+		qca-lowi qca-iface-mgr-10.4 qca-icm qca-cfg80211 athdiag qca-cnss-daemon athtestcmd-lith \
+		qca-wifi-hk-fw-hw1-10.4-asic kmod-aq_phy kmod-qca_85xx_sw aq-fw-download mcproxy mwan3 \
+		-dnsmasq dnsmasq-dhcpv6 bridge ip-full trace-cmd rp-pppoe-relay iptables-mod-extra \
+		iputils-tracepath iputils-tracepath6 \
+		kmod-nf-nathelper-extra kmod-nf-nathelper kmod-ipt-nathelper-rtsp luci-app-upnp \
+		luci-app-ddns luci-proto-ipv6 luci-app-multiwan tc kmod-sched \
+		kmod-sched-core kmod-sched-connmark kmod-ifb iptables kmod-pptp \
+		iptables-mod-filter iptables-mod-ipopt iptables-mod-conntrack-extra \
+		qca-nss-fw-eip-hk qca-nss-fw-eip-cp kmod-qca-ovsmgr \
+		file luci-app-samba rng-tools profilerd ethtool i2c-tools tcpdump \
+		pm-utils wififw_mount_script qca-thermald-10.4 qca-qmi-framework qca-time-services \
+		qca-wlanfw-upgrade dashboard iperf sysstat nlcfg kmod-bootconfig qca-cfg80211tool
 endef
 
 define Profile/QSDK_QBuilder/Description
