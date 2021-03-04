@@ -22,6 +22,20 @@ touch /etc/config/skb_recycler
 . /lib/functions/uci-defaults.sh
 . /lib/functions.sh
 
+ucidef_set_skb_recycler() {
+
+	uci batch <<EOF
+add skb_recycler skb
+EOF
+}
+
+ucidef_set_skb() {
+
+	uci batch <<EOF
+set skb_recycler.@skb[-1].'${1}'='$2'
+EOF
+}
+
 ucidef_set_skb_recycler
 
 board=$(board_name)
