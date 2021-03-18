@@ -140,13 +140,13 @@ NETWORKING_8MB:=dnsmasq -dnsmasq-dhcpv6 kmod-nf-nathelper-extra kmod-ipt-nathelp
 NETWORKING_16MB:=-dnsmasq dnsmasq-dhcpv6 kmod-nf-nathelper-extra kmod-ipt-nathelper-rtsp ip \
 	rp-pppoe-relay
 
-CD_ROUTER:=kmod-ipt-ipopt kmod-bonding kmod-nat-sctp lacpd \
+CD_ROUTER:=kmod-ipt-ipopt kmod-bonding kmod-ipt-sctp lacpd \
 	arptables ds-lite 6rd ddns-scripts xl2tpd \
 	quagga quagga-ripd quagga-zebra quagga-watchquagga quagga-vtysh \
 	kmod-ipv6 ip6tables iptables-mod-ipsec iptables-mod-filter \
 	isc-dhcp-relay-ipv6 rp-pppoe-server ppp-mod-pptp iptables-mod-physdev
 
-CD_ROUTER_256MB:=kmod-ipt-ipopt kmod-nat-sctp lacpd \
+CD_ROUTER_256MB:=kmod-ipt-ipopt kmod-ipt-sctp lacpd \
 	arptables ddns-scripts \
 	quagga quagga-ripd quagga-zebra quagga-watchquagga quagga-vtysh \
 	kmod-ipv6 ip6tables iptables-mod-filter \
