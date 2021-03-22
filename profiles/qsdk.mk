@@ -315,13 +315,14 @@ $(eval $(call Profile,QSDK_MinEnt))
 define Profile/QSDK_256
 	NAME:=Qualcomm Technologies, Inc SDK 256MB Profile
 	PACKAGES:=$(OPENWRT_256MB) $(NSS_COMMON) $(NSS_STANDARD) $(SWITCH_SSDK_PKGS) \
-		$(WIFI_PKGS_256MB) qca-wifi-hk-fw-hw1-10.4-asic $(CD_ROUTER_256MB) $(NETWORKING_256MB) \
-		iperf rng-tools $(QCA_RFS) $(CHAR_DIAG) \
-		$(QCA_ECM_STANDARD) $(NSS_MACSEC) \
-		$(NSS_CLIENTS_256MB) $(FAILSAFE) -lacpd \
-		$(CNSS_DIAG) $(FTM) $(QMSCT_CLIENT)
+		$(WIFI_PKGS_256MB) qca-wifi-hk-fw-hw1-10.4-asic $(CD_ROUTER_256MB) \
+		$(NETWORKING_256MB) iperf rng-tools $(QCA_RFS) $(CHAR_DIAG) \
+		$(QCA_ECM_STANDARD) $(NSS_MACSEC) $(NSS_CLIENTS_256MB) $(FAILSAFE) \
+		-lacpd $(CNSS_DIAG) $(FTM) $(QMSCT_CLIENT) $(QCA_EZMESH) kmod-macvlan \
+		$(IGMPSNOOPING_RSTP)
 endef
-#	$(HYFI) $(QCA_EZMESH) $(MHI_QRTR) kmod-macvlan $(IGMPSNOOPING_RSTP)
+
+#       $(MHI_QRTR) $(HYFI)
 
 define Profile/QSDK_256/Description
 	QSDK Premium package set configuration.
@@ -339,10 +340,10 @@ define Profile/QSDK_512
 		$(NSS_MACSEC) $(TEST_TOOLS) $(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD) $(COREBSP_UTILS) \
 		$(MAP_PKGS) $(AQ_PHY) $(FAILSAFE) -lacpd $(USB_DIAG) \
 		$(NSS_EIP197_FW) $(CNSS_DIAG) $(FTM) $(QMSCT_CLIENT) $(KPI) $(NSS_USERSPACE) \
-		$(NSS_RMNET)
+		$(NSS_RMNET) $(HYFI) $(QCA_EZMESH) kmod-macvlan
 endef
 
-#       $(HYFI) $(QCA_EZMESH) $(MHI_QRTR) kmod-macvlan
+#       $(MHI_QRTR)
 
 define Profile/QSDK_512/Description
 	QSDK Premium package set configuration.
