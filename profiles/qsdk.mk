@@ -214,7 +214,7 @@ define Profile/QSDK_Premium
 	NAME:=Qualcomm Technologies, Inc SDK Premium Profile
 	PACKAGES:=$(OPENWRT_STANDARD) $(STORAGE) \
 		$(VIDEO) $(TEST_TOOLS) $(COREBSP_UTILS) \
-		$(AQ_PHY) $(FAILSAFE) -lacpd $(USB_DIAG) $(SWITCH_SSDK_PKGS) \
+		$(AQ_PHY) $(FAILSAFE) -lacpd $(USB_DIAG) $(SWITCH_SSDK_PKGS) $(CNSS_DIAG) \
 		$(FTM) $(QMSCT_CLIENT) $(KPI) $(NSS_COMMON) \
 		$(NSS_STANDARD) $(UTILS) $(NETWORKING) $(CD_ROUTER) $(NSS_CLIENTS_STANDARD) \
 		$(QCA_ECM_PREMIUM) $(NSS_CRYPTO) $(NSS_EIP197_FW) $(IGMPSNOOPING_RSTP) \
@@ -223,7 +223,7 @@ define Profile/QSDK_Premium
 		$(QCA_MAD) $(EMESH_SP) $(QCA_EZMESH) kmod-macvlan
 endef
 
-#		$(CNSS_DIAG) kmod-art2 $(QCA_RFS)
+#		kmod-art2 $(QCA_RFS)
 
 define Profile/QSDK_Premium/Description
 	QSDK Premium package set configuration.
