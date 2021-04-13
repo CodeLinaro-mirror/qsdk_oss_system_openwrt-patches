@@ -97,7 +97,7 @@ WIFI_PKGS_256MB:=kmod-qca-wifi-lowmem-profile \
 
 WIFI_PKGS_16M:=kmod-qca-wifi-flash_16mb-profile \
 	qca-hostap qca-hostapd-cli qca-wpa-supplicant \
-	qca-wpa-cli qca-cfg80211 qca-cfg80211tool
+	qca-wpa-cli qca-cfg80211 qca-cfg80211tool qca-wifi-scripts
 
 WIFI_FW_PKGS:=qca-wifi-hk-fw-hw1-10.4-asic
 
