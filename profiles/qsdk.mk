@@ -204,8 +204,6 @@ QMI_SAMPLE_APP:=kmod-qmi_sample_client
 
 MHI_QRTR:=kmod-mhi-qrtr-mproc
 
-QRTR:=qca-qrtr
-
 EMESH_SP:=kmod-emesh-sp
 
 EXTRA_NETWORKING:= $(CD_ROUTER) $(NSS_EIP197_FW) -rdk-v-wifi-ath10k
@@ -287,7 +285,7 @@ define Profile/QSDK_Enterprise
 		$(IGMPSNOOPING_RSTP) $(NETWORKING) $(QOS) $(UTILS) $(TEST_TOOLS) $(COREBSP_UTILS) \
 		$(QCA_ECM_ENTERPRISE) $(NSS_CLIENTS_ENTERPRISE) $(NSS_MACSEC) $(NSS_CRYPTO) \
 		$(IPSEC) $(NSS_EIP197_FW) $(CD_ROUTER) $(AQ_PHY) $(CNSS_DIAG) $(FTM) $(QMSCT_CLIENT) -lacpd \
-		$(USB_DIAG) $(MHI_QRTR) $(KPI) $(QRTR) $(FAILSAFE) $(NSS_USERSPACE)
+		$(USB_DIAG) $(MHI_QRTR) $(KPI) $(FAILSAFE) $(NSS_USERSPACE)
 endef
 
 define Profile/QSDK_Enterprise/Description
@@ -304,7 +302,7 @@ define Profile/QSDK_MinEnt
 		$(IGMPSNOOPING_RSTP) $(NETWORKING) $(QOS) $(UTILS) $(TEST_TOOLS) $(COREBSP_UTILS) \
 		$(QCA_ECM_ENTERPRISE) $(NSS_CLIENTS_ENTERPRISE) $(NSS_MACSEC) $(NSS_CRYPTO) \
 		$(IPSEC) $(NSS_EIP197_FW) $(CD_ROUTER) $(AQ_PHY) $(CNSS_DIAG) $(FTM) $(QMSCT_CLIENT) -lacpd \
-		$(USB_DIAG) $(MHI_QRTR) $(KPI) $(QRTR) $(FAILSAFE) $(NSS_USERSPACE)
+		$(USB_DIAG) $(MHI_QRTR) $(KPI) $(FAILSAFE) $(NSS_USERSPACE)
 endef
 
 define Profile/QSDK_MinEnt/Description
@@ -323,7 +321,7 @@ define Profile/QSDK_256
 		$(NSS_CLIENTS_256MB) $(FAILSAFE) -lacpd \
 		$(CNSS_DIAG) $(FTM) $(QMSCT_CLIENT)
 endef
-#	$(HYFI) $(QCA_EZMESH) $(QRTR) $(MHI_QRTR) kmod-macvlan $(IGMPSNOOPING_RSTP)
+#	$(HYFI) $(QCA_EZMESH) $(MHI_QRTR) kmod-macvlan $(IGMPSNOOPING_RSTP)
 
 define Profile/QSDK_256/Description
 	QSDK Premium package set configuration.
@@ -344,7 +342,7 @@ define Profile/QSDK_512
 		$(NSS_RMNET)
 endef
 
-#       $(HYFI) $(QCA_EZMESH) $(QRTR) $(MHI_QRTR) kmod-macvlan
+#       $(HYFI) $(QCA_EZMESH) $(MHI_QRTR) kmod-macvlan
 
 define Profile/QSDK_512/Description
 	QSDK Premium package set configuration.
@@ -373,7 +371,7 @@ define Profile/QSDK_16M
 	PACKAGES:=wififw_mount_script $(NSS_COMMON) $(NSS_STANDARD) $(SWITCH_SSDK_PKGS) \
 		$(WIFI_PKGS_16M) qca-wifi-hk-fw-hw1-10.4-asic $(NETWORKING_16MB) \
 		$(IGMPSNOOPING_RSTP) $(QCA_ECM_STANDARD) $(NSS_CLIENTS_256MB) \
-		$(QRTR) $(MHI_QRTR) -qca-ssdk-shell xz xz-utils \
+		$(MHI_QRTR) -qca-ssdk-shell xz xz-utils \
 		-kmod-usb-f-qdss -kmod-bt_tty -kmod-clk-test \
 		-kmod-testssr -kmod-ata-core -kmod-ata-ahci -kmod-ata-ahci-platform \
 		-kmod-usb2 -kmod-usb3 -kmod-usb-phy-ipq5018 -kmod-usb-dwc3-qcom \
