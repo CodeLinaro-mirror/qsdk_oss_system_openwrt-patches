@@ -89,11 +89,11 @@ WIFI_PKGS_MINENT:=kmod-qca-wifi-custc-profile \
 
 WIFI_PKGS_256MB:=kmod-qca-wifi-lowmem-profile \
 	qca-hostap qca-hostapd-cli qca-wpa-supplicant \
-	qca-wpa-cli qca-cfg80211tool qca-wifi-scripts
-#	qca-wpc sigma-dut \
-#	qca-wrapd qca-wapid qca-acfg whc-mesh whc-ui \
-#	qca-iface-mgr-10.4 qca-icm qca-cfg80211 athdiag qca-cnss-daemon \
-#	athtestcmd-lith
+	qca-wpa-cli qca-cfg80211tool qca-wifi-scripts \
+	qca-wpc sigma-dut qca-wrapd qca-wapid qca-acfg \
+	qca-iface-mgr-10.4 qca-icm qca-cfg80211 athdiag qca-cnss-daemon \
+	athtestcmd-lith
+#	whc-mesh whc-ui \
 
 WIFI_PKGS_16M:=kmod-qca-wifi-flash_16mb-profile \
 	qca-hostap qca-hostapd-cli qca-wpa-supplicant \
@@ -127,7 +127,8 @@ NETWORKING:=mcproxy -dnsmasq dnsmasq-dhcpv6 bridge ip-full trace-cmd mwan3 \
 	rp-pppoe-relay iptables-mod-extra iputils-tracepath iputils-tracepath6 \
 	luci-app-upnp luci-app-ddns luci-proto-ipv6 \
 	kmod-nf-nathelper-extra kmod-nf-nathelper \
-	kmod-ipt-nathelper-rtsp
+	kmod-ipt-nathelper-rtsp nftables kmod-nft-netdev \
+	kmod-nft-offload
 
 NETWORKING_256MB:=-dnsmasq dnsmasq-dhcpv6 bridge ip-full trace-cmd \
 	rp-pppoe-relay iptables-mod-extra iputils-tracepath iputils-tracepath6 \
