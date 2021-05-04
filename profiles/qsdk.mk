@@ -123,14 +123,14 @@ COREBSP_UTILS:=pm-utils wififw_mount_script qca-thermald-10.4 qca-qmi-framework 
 
 FAILSAFE:= kmod-bootconfig
 
-NETWORKING:=mcproxy -dnsmasq dnsmasq-dhcpv6 bridge ip-full trace-cmd mwan3 \
+NETWORKING:=mcproxy -dnsmasq dnsmasq-dhcpv6 bridge ip-full mwan3 \
 	rp-pppoe-relay iptables-mod-extra iputils-tracepath iputils-tracepath6 \
 	luci-app-upnp luci-app-ddns luci-proto-ipv6 \
 	kmod-nf-nathelper-extra kmod-nf-nathelper \
 	kmod-ipt-nathelper-rtsp nftables kmod-nft-netdev \
 	kmod-nft-offload
 
-NETWORKING_256MB:=-dnsmasq dnsmasq-dhcpv6 bridge ip-full trace-cmd \
+NETWORKING_256MB:=-dnsmasq dnsmasq-dhcpv6 bridge ip-full \
 	rp-pppoe-relay iptables-mod-extra iputils-tracepath iputils-tracepath6 \
 	kmod-nf-nathelper-extra kmod-ipt-nathelper-rtsp \
 	luci-app-upnp luci-app-ddns luci-proto-ipv6 \
@@ -264,7 +264,7 @@ define Profile/QSDK_QBuilder
 		qca-icm qca-cfg80211 athdiag qca-cnss-daemon athtestcmd-lith qca-wifi-fw-hw2-10.4-asic qca-wifi-fw-hw4-10.4-asic \
 		qca-wifi-fw-hw3-10.4-asic qca-wifi-fw-hw6-10.4-asic qca-wifi-fw-hw5-10.4-asic qca-wifi-fw-hw11-10.4-asic \
 		qca-wifi-hk-fw-hw1-10.4-asic qca-wifi-cyp-fw-hw1-11.0-asic kmod-aq_phy kmod-qca_85xx_sw aq-fw-download mcproxy \
-		-dnsmasq dnsmasq-dhcpv6 bridge ip-full trace-cmd rp-pppoe-relay iptables-mod-extra iputils-tracepath iputils-tracepath6 \
+		-dnsmasq dnsmasq-dhcpv6 bridge ip-full rp-pppoe-relay iptables-mod-extra iputils-tracepath iputils-tracepath6 \
 		kmod-nf-nathelper-extra kmod-ipt-nathelper-rtsp luci-app-upnp luci-app-ddns luci-proto-ipv6 luci-app-multiwan tc kmod-sched \
 		kmod-sched-core kmod-sched-connmark kmod-ifb iptables iptables-mod-filter iptables-mod-ipopt iptables-mod-conntrack-extra \
 		qca-nss-fw-eip-hk qca-nss-fw-eip-cp file luci-app-samba rng-tools profilerd ethtool i2c-tools tcpdump pm-utils \
