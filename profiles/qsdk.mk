@@ -378,8 +378,7 @@ define Profile/QSDK_16M
 	PACKAGES:=wififw_mount_script $(NSS_COMMON) $(NSS_STANDARD) $(SWITCH_SSDK_PKGS) \
 		$(WIFI_PKGS_16M) qca-wifi-hk-fw-hw1-10.4-asic $(NETWORKING_16MB) \
 		$(IGMPSNOOPING_RSTP) $(QCA_ECM_STANDARD) $(NSS_CLIENTS_256MB) \
-		$(MHI_QRTR) -qca-ssdk-shell xz xz-utils \
-		-kmod-usb-f-qdss -kmod-bt_tty -kmod-clk-test \
+		$(MHI_QRTR) xz xz-utils -kmod-usb-f-qdss \
 		-kmod-testssr -kmod-ata-core -kmod-ata-ahci -kmod-ata-ahci-platform \
 		-kmod-usb2 -kmod-usb3 -kmod-usb-phy-ipq5018 -kmod-usb-dwc3-qcom \
 		-kmod-bt_tty -kmod-clk-test -uboot-envtools -mtd -opkg -sysupgrade-helper \
