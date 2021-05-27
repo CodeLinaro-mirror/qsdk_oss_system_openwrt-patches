@@ -3,7 +3,7 @@
 UBOOT-ENVTOOLS_DIR:=$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 define uboot-envtools_install_append
-ifneq ($(CONFIG_TARGET_ipq807x)$(CONFIG_TARGET_ipq50xx)$(CONFIG_TARGET_ipq60xx),)
+ifeq ($(findstring ipq, $(CONFIG_TARGET_BOARD)),ipq)
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_DATA) $(UBOOT-ENVTOOLS_DIR)/files/ipq $(1)/etc/uci-defaults/30_uboot-envtools
 endif
