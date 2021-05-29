@@ -1,0 +1,31 @@
+From a2bbbb0b4c13f060b21e5ea34839ec665963a635 Mon Sep 17 00:00:00 2001
+From: Venkateswara Naralasetty <vnaralas@codeaurora.org>
+Date: Thu, 19 Dec 2019 17:42:24 +0530
+Subject: [PATCH] authsae: add support to parse encypiton tye sae and sae-mixed
+
+this patch add support to parse encyption type sae and
+sae-mixed mode.
+
+Signed-off-by: Venkateswara Naralasetty <vnaralas@codeaurora.org>
+
+--- a/scripts/netifd-wireless.sh	2023-04-14 19:51:39.221775486 -0700
++++ b/scripts/netifd-wireless.sh	2023-04-14 19:55:14.387934326 -0700
+@@ -79,6 +79,9 @@
+ 				*b|*g) band=2g;;
+ 			esac
+ 		;;
++		sae-mixed)
++			auth_type=sae-mixed
++		;;
+ 		*sae*)
+ 			auth_type=sae
+ 		;;
+@@ -230,7 +233,7 @@
+ 	case "$encryption" in
+ 		*tkip+aes|*tkip+ccmp|*aes+tkip|*ccmp+tkip) wpa_cipher="CCMP TKIP";;
+ 		*ccmp256) wpa_cipher="CCMP-256";;
+-		*aes|*ccmp| psk2 | wpa2) wpa_cipher="CCMP";;
++		*aes|*ccmp| psk2 | wpa2 | sae*) wpa_cipher="CCMP";;
+ 		*tkip | wpa | psk ) wpa_cipher="TKIP";;
+ 		*gcmp256) wpa_cipher="GCMP-256";;
+ 		*gcmp) wpa_cipher="GCMP";;
