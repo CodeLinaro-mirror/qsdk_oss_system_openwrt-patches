@@ -207,7 +207,8 @@ MHI_QRTR:=kmod-mhi-qrtr-mproc
 
 EMESH_SP:=kmod-emesh-sp
 
-EXTRA_NETWORKING:= $(CD_ROUTER) $(NSS_EIP197_FW) -rdk-v-wifi-ath10k
+EXTRA_NETWORKING:= $(CD_ROUTER) $(NSS_EIP197_FW) -rdk-v-wifi-ath10k kmod-qca-nss-macsec \
+	$(MACSEC_OPEN_PKGS)
 
 define Profile/QSDK_Premium
 	NAME:=Qualcomm Technologies, Inc SDK Premium Profile
@@ -242,7 +243,7 @@ define Profile/QSDK_Open
 		qrtr $(QMI_SAMPLE_APP) ath11k-fwtest ath11k-qdss libtirpc
 endef
 
-#	$(SHORTCUT_FE) $(HW_CRYPTO) $(QCA_RFS) $(IPSEC) $(QOS) kmod-qca-nss-macsec \
+#	$(SHORTCUT_FE) $(HW_CRYPTO) $(QCA_RFS) $(IPSEC) $(QOS) \
 #	$(MAP_PKGS) $(QCA_ECM_PREMIUM) $(NSS_COMMON) $(NSS_STANDARD) $(AQ_PHY) \
 #	$(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD) $(CD_ROUTER) $(IGMPSNOOPING_RSTP) -rstp
 
