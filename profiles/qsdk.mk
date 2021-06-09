@@ -128,7 +128,7 @@ NETWORKING:=mcproxy -dnsmasq dnsmasq-dhcpv6 bridge ip-full mwan3 \
 	luci-app-upnp luci-app-ddns luci-proto-ipv6 \
 	kmod-nf-nathelper-extra kmod-nf-nathelper \
 	kmod-ipt-nathelper-rtsp nftables kmod-nft-netdev \
-	kmod-nft-offload
+	kmod-nft-offload kmod-bonding
 
 NETWORKING_256MB:=-dnsmasq dnsmasq-dhcpv6 bridge ip-full \
 	rp-pppoe-relay iptables-mod-extra iputils-tracepath iputils-tracepath6 \
