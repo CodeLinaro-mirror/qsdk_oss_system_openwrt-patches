@@ -128,7 +128,7 @@ NETWORKING:=mcproxy -dnsmasq dnsmasq-dhcpv6 bridge ip-full mwan3 \
 	luci-app-upnp luci-app-ddns luci-proto-ipv6 \
 	kmod-nf-nathelper-extra kmod-nf-nathelper \
 	kmod-ipt-nathelper-rtsp nftables kmod-nft-netdev \
-	kmod-nft-offload
+	kmod-nft-offload kmod-bonding
 
 NETWORKING_256MB:=-dnsmasq dnsmasq-dhcpv6 bridge ip-full \
 	rp-pppoe-relay iptables-mod-extra iputils-tracepath iputils-tracepath6 \
@@ -207,7 +207,8 @@ MHI_QRTR:=kmod-mhi-qrtr-mproc
 
 EMESH_SP:=kmod-emesh-sp
 
-EXTRA_NETWORKING:= $(CD_ROUTER) $(NSS_EIP197_FW) -rdk-v-wifi-ath10k
+EXTRA_NETWORKING:= $(CD_ROUTER) $(NSS_EIP197_FW) -rdk-v-wifi-ath10k kmod-qca-nss-macsec \
+	$(MACSEC_OPEN_PKGS)
 
 define Profile/QSDK_Premium
 	NAME:=Qualcomm Technologies, Inc SDK Premium Profile
@@ -242,7 +243,7 @@ define Profile/QSDK_Open
 		qrtr $(QMI_SAMPLE_APP) ath11k-fwtest ath11k-qdss libtirpc
 endef
 
-#	$(SHORTCUT_FE) $(HW_CRYPTO) $(QCA_RFS) $(IPSEC) $(QOS) kmod-qca-nss-macsec \
+#	$(SHORTCUT_FE) $(HW_CRYPTO) $(QCA_RFS) $(IPSEC) $(QOS) \
 #	$(MAP_PKGS) $(AQ_PHY) \
 #	$(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD) $(IGMPSNOOPING_RSTP) -rstp
 
