@@ -244,8 +244,8 @@ define Profile/QSDK_Open
 endef
 
 #	$(SHORTCUT_FE) $(HW_CRYPTO) $(QCA_RFS) $(IPSEC) $(QOS) \
-#	$(MAP_PKGS) $(QCA_ECM_PREMIUM) $(NSS_COMMON) $(NSS_STANDARD) $(AQ_PHY) \
-#	$(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD) $(CD_ROUTER) $(IGMPSNOOPING_RSTP) -rstp
+#	$(MAP_PKGS) $(AQ_PHY) \
+#	$(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD) $(IGMPSNOOPING_RSTP) -rstp
 
 define Profile/QSDK_Open/Description
 	QSDK Open package set configuration.
