@@ -239,7 +239,7 @@ define Profile/QSDK_Open
 		$(FTM) $(KPI) $(UTILS) $(NETWORKING) $(EXTRA_NETWORKING) \
 		$(WIFI_OPEN_PKGS) $(USB_ETHERNET) $(NSS_COMMON) $(NSS_STANDARD) \
 		$(QCA_ECM_PREMIUM) -lacpd  \
-		qca-cnss-daemon qca-wifi-hk-fw-hw1-10.4-asic $(CNSS_DIAG) \
+		qca-cnss-daemon qca-wifi-hk-fw-hw1-10.4-asic $(CNSS_DIAG) athdiag \
 		qrtr $(QMI_SAMPLE_APP) ath11k-fwtest ath11k-qdss libtirpc
 endef
 
