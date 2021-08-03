@@ -5,7 +5,7 @@
 BASEFILES_DIR:=$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 define base-files_install_append
-ifneq ($(CONFIG_TARGET_ipq807x)$(CONFIG_TARGET_ipq50xx)$(CONFIG_TARGET_ipq60xx),)
+ifneq (, $(findstring ipq, $(CONFIG_TARGET_BOARD)))
 	$(CP) $(BASEFILES_DIR)/files/* $(1)/
 endif
 endef
