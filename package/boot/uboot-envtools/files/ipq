@@ -111,7 +111,15 @@ case "$board" in
 	qcom,ipq5018-db-mp03.3 |\
 	qcom,ipq5018-db-mp03.3-c2 |\
 	qcom,ipq5018-tb-mp04 |\
-	qcom,ipq6018-ap-cp01-c1)
+	qcom,ipq6018-ap-cp01-c1 |\
+	qcom,ipq6018-ap-cp01-c2 |\
+	qcom,ipq6018-ap-cp01-c3 |\
+	qcom,ipq6018-ap-cp01-c4 |\
+	qcom,ipq6018-ap-cp01-c5 |\
+	qcom,ipq6018-ap-cp02-c1 |\
+	qcom,ipq6018-ap-cp03-c1 |\
+	qcom,ipq6018-db-cp01 |\
+	qcom,ipq6018-db-cp02)
 		ubootenv_add_uci_config $(ubootenv_mtdinfo)
 		;;
 esac
