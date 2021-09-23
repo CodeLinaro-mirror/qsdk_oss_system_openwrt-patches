@@ -1,6 +1,5 @@
 # Recipe extension for package : mtd-utils
 
-
 define nand-utils_append
    DEPENDS+=+zlib
 endef
