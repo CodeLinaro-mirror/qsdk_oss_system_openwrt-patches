@@ -1,8 +1,6 @@
 QCA_EDMA:=kmod-qca-edma
 NSS_COMMON:= \
-	kmod-qca-nss-dp \
-	kmod-qca-nss-drv \
-	kmod-qca-nss-gmac
+	kmod-qca-nss-dp
 
 NSS_EIP197_FW:=qca-nss-fw-eip-al
 
@@ -189,9 +187,9 @@ define Profile/QSDK_Premium
 	PACKAGES:=$(OPENWRT_STANDARD) $(STORAGE) $(TEST_TOOLS) $(COREBSP_UTILS) \
 		$(AQ_PHY) $(FAILSAFE) -lacpd $(USB_DIAG) $(KPI) $(UTILS) \
 		$(MINIDUMP) $(SWITCH_SSDK_PKGS) $(MAP_PKGS) $(CD_ROUTER) \
-		$(NSS_COMMON) $(NSS_STANDARD) $(QCA_ECM_PREMIUM) $(NSS_CRYPTO) \
-		$(NETWORKING) $(NSS_CLIENTS_STANDARD) $(NSS_USERSPACE) \
-		$(HW_CRYPTO) $(IPSEC) $(NSS_EIP197_FW) $(NSS_MACSEC) \
+		$(NSS_COMMON) $(QCA_ECM_PREMIUM) \
+		$(NETWORKING) \
+		$(HW_CRYPTO) $(IPSEC) $(NSS_MACSEC) \
 		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(FTM) kmod-qca-hyfi-bridge \
 		$(IGMPSNOOPING_RSTP) $(CNSS_DIAG)
 endef
