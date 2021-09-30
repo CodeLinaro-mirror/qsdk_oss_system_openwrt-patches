@@ -67,7 +67,7 @@ WIFI_OPEN_PKGS:= kmod-ath11k wpad-mesh hostapd-utils \
 	 kmod-art2-netlink sigma-dut-open wpa-cli qcmbr-10.4-netlink \
 	 athtestcmd qca-whc-lbd qca-whc-init libhyficommon
 
-WIFI_PKGS:=kmod-qca-wifi-unified-profile \
+WIFI_PKGS:=kmod-qca-wifi-unified-profile-nonss \
 	qca-hostap qca-hostapd-cli qca-wpa-supplicant \
 	qca-wpa-cli qca-cfg80211tool qca-wifi-scripts \
 	qca-acfg qca-wrapd athtestcmd-lith qca-iface-mgr-10.4 \
@@ -75,7 +75,7 @@ WIFI_PKGS:=kmod-qca-wifi-unified-profile \
 	qca-spectral qca-icm qcmbr-10.4 sigma-dut \
 	qca-wpc qca-cfg80211 qca-cnss-daemon
 
-WIFI_PKGS_256MB:=kmod-qca-wifi-lowmem-profile \
+WIFI_PKGS_256MB:=kmod-qca-wifi-lowmem-profile-nonss \
 	qca-hostap qca-hostapd-cli qca-wpa-supplicant \
 	qca-wpa-cli qca-cfg80211tool qca-wifi-scripts \
 	qca-wpc sigma-dut \
