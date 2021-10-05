@@ -34,6 +34,8 @@ QCA_ECM_ENTERPRISE:= kmod-qca-nss-ecm-noload
 
 NSS_CLIENTS_256MB:= kmod-qca-nss-drv-bridge-mgr kmod-qca-nss-drv-pppoe
 
+NSS_PPE:= kmod-qca-nss-ppe-bridge-mgr
+
 NSS_CLIENTS_STANDARD:= kmod-qca-nss-drv-qdisc kmod-qca-nss-drv-igs \
 	kmod-qca-nss-drv-tun6rd kmod-qca-nss-drv-tunipip6 \
 	kmod-qca-nss-drv-l2tpv2 kmod-qca-nss-drv-pptp \
@@ -187,7 +189,7 @@ define Profile/QSDK_Premium
 	PACKAGES:=$(OPENWRT_STANDARD) $(STORAGE) $(TEST_TOOLS) $(COREBSP_UTILS) \
 		$(AQ_PHY) $(FAILSAFE) -lacpd $(USB_DIAG) $(KPI) $(UTILS) \
 		$(MINIDUMP) $(SWITCH_SSDK_PKGS) $(MAP_PKGS) $(CD_ROUTER) \
-		$(NSS_COMMON) $(QCA_ECM_PREMIUM) \
+		$(NSS_COMMON) $(QCA_ECM_PREMIUM) $(NSS_PPE)\
 		$(NETWORKING) $(QOS) \
 		$(HW_CRYPTO) $(IPSEC) $(NSS_MACSEC) \
 		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(FTM) kmod-qca-hyfi-bridge \
@@ -210,7 +212,7 @@ define Profile/QSDK_Enterprise
 	PACKAGES:=$(OPENWRT_STANDARD) $(SWITCH_SSDK_NOHNAT_PKGS) $(STORAGE) \
 		$(UTILS) $(TEST_TOOLS) $(COREBSP_UTILS) $(CD_ROUTER) $(AQ_PHY) \
 		$(NETWORKING) $(QOS) \
-		-lacpd 	$(USB_DIAG) $(KPI) $(FAILSAFE)
+		-lacpd $(USB_DIAG) $(KPI) $(FAILSAFE)
 endef
 
 #		$(NSS_COMMON) $(NSS_ENTERPRISE) $(WIFI_PKGS) $(WIFI_FW_PKGS) \
