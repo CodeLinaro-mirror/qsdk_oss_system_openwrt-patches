@@ -64,8 +64,8 @@ CHAR_DIAG:=kmod-diag-char qca-diag
 SWITCH_SSDK_PKGS:= kmod-qca-ssdk-hnat kmod-qca-ssdk-nohnat qca-ssdk-shell swconfig
 
 WIFI_OPEN_PKGS:= kmod-ath11k wpad-mesh hostapd-utils \
-	 kmod-art2-netlink sigma-dut-open wpa-cli qcmbr-10.4-netlink \
-	 athtestcmd qca-whc-lbd qca-whc-init libhyficommon
+	 sigma-dut-open wpa-cli qcmbr-10.4-netlink iwinfo\
+	 athtestcmd qca-wifi-scripts
 
 WIFI_PKGS:=kmod-qca-wifi-unified-profile-nonss \
 	qca-hostap qca-hostapd-cli qca-wpa-supplicant \
@@ -230,18 +230,19 @@ $(eval $(call Profile,QSDK_Enterprise))
 
 define Profile/QSDK_Open
 	NAME:=Qualcomm Technologies, Inc SDK Open Profile
-	PACKAGES:=$(OPENWRT_STANDARD) $(STORAGE) $(TEST_TOOLS) \
+	PACKAGES:=$(OPENWRT_STANDARD) $(STORAGE) $(TEST_TOOLS)\
 		$(COREBSP_UTILS) $(FAILSAFE) $(USB_DIAG) $(SWITCH_SSDK_NOHNAT_PKGS) \
-		$(NETWORKING) $(QOS) \
-		$(KPI) $(UTILS) $(EXTRA_NETWORKING) $(AQ_PHY) -lacpd libtirpc
+		$(FTM) $(KPI) $(UTILS) $(NETWORKING) $(EXTRA_NETWORKING) \
+		$(WIFI_OPEN_PKGS) $(USB_ETHERNET) $(NSS_COMMON) $(NSS_STANDARD) \
+		$(QCA_ECM_PREMIUM) -lacpd \
+		qca-cnss-daemon qca-wifi-hk-fw-hw1-10.4-asic $(CNSS_DIAG) athdiag\
+		qrtr $(QMI_SAMPLE_APP) ath11k-fwtest ath11k-qdss \
+		$(AQ_PHY) libtirpc
 endef
 
-#	$(NSS_SFE) $(HW_CRYPTO) $(QCA_RFS) $(IPSEC) kmod-qca-nss-macsec \
-#	$(MAP_PKGS) $(QCA_ECM_PREMIUM) $(NSS_COMMON) $(NSS_STANDARD) $(FTM) \
+#	$(SHORTCUT_FE) $(HW_CRYPTO) $(QCA_RFS) $(IPSEC) $(QOS) kmod-qca-nss-macsec \
+#	$(MAP_PKGS)\
 #	$(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD) $(IGMPSNOOPING_RSTP) -rstp \
-#	$(WIFI_OPEN_PKGS) $(USB_ETHERNET) $(NSS_COMMON) $(NSS_STANDARD) \
-#	$(QCA_ECM_PREMIUM) qca-cnss-daemon qca-wifi-hk-fw-hw1-10.4-asic $(CNSS_DIAG) \
-#	qrtr $(QMI_SAMPLE_APP) ath11k-fwtest ath11k-qdss
 
 define Profile/QSDK_Open/Description
 	QSDK Open package set configuration.
