@@ -56,7 +56,7 @@ NSS_RMNET:= kmod-rmnet-nss
 
 HW_CRYPTO:= kmod-crypto-qcrypto
 
-SHORTCUT_FE:= kmod-shortcut-fe kmod-shortcut-fe-cm kmod-shortcut-fe-drv
+SHORTCUT_FE:= kmod-shortcut-fe kmod-shortcut-fe-drv
 
 QCA_RFS:= kmod-qca-rfs
 
