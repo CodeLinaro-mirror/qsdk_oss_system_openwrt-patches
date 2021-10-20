@@ -56,7 +56,7 @@ NSS_RMNET:= kmod-rmnet-nss
 
 HW_CRYPTO:= kmod-crypto-qcrypto
 
-SHORTCUT_FE:= kmod-shortcut-fe kmod-shortcut-fe-drv
+NSS_SFE:= kmod-qca-nss-sfe
 
 QCA_RFS:= kmod-qca-rfs
 
@@ -219,7 +219,7 @@ define Profile/QSDK_Premium
 		$(NSS_STANDARD) $(UTILS) $(NETWORKING) $(CD_ROUTER) $(NSS_CLIENTS_STANDARD) \
 		$(QCA_ECM_PREMIUM) $(NSS_CRYPTO) $(NSS_EIP197_FW) $(IGMPSNOOPING_RSTP) \
 		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(HW_CRYPTO) $(IPSEC) $(MAP_PKGS) $(MINIDUMP) \
-		$(OPENVPN) $(QOS) $(HYFI) $(NSS_MACSEC) $(NSS_USERSPACE) $(NSS_RMNET) $(SHORTCUT_FE) \
+		$(OPENVPN) $(QOS) $(HYFI) $(NSS_MACSEC) $(NSS_USERSPACE) $(NSS_RMNET) $(NSS_SFE) \
 		$(QCA_MAD) $(EMESH_SP) $(QCA_EZMESH) kmod-macvlan
 endef
 
@@ -243,7 +243,7 @@ define Profile/QSDK_Open
 		qrtr $(QMI_SAMPLE_APP) ath11k-fwtest ath11k-qdss libtirpc
 endef
 
-#	$(SHORTCUT_FE) $(HW_CRYPTO) $(QCA_RFS) $(IPSEC) $(QOS) \
+#	$(NSS_SFE) $(HW_CRYPTO) $(QCA_RFS) $(IPSEC) $(QOS) \
 #	$(MAP_PKGS) $(AQ_PHY) \
 #	$(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD) $(IGMPSNOOPING_RSTP) -rstp
 
@@ -261,7 +261,7 @@ define Profile/QSDK_QBuilder
 		kmod-qca-ssdk-nohnat qca-ssdk-shell swconfig \
 		kmod-scsi-core kmod-usb-storage kmod-usb-uas kmod-nls-cp437 kmod-nls-iso8859-1 kmod-fs-msdos \
 		kmod-fs-vfat kmod-fs-ntfs ntfs-3g e2fsprogs losetup \
-		kmod-shortcut-fe kmod-shortcut-fe-cm kmod-shortcut-fe-drv \
+		kmod-qca-nss-sfe \
 		rstp qca-mcs-apps qca-hostap qca-hostapd-cli qca-wpa-supplicant qca-wpa-cli \
 		qca-spectral qca-wpc sigma-dut qcmbr-10.4 qca-wrapd qca-wapid qca-acfg whc-mesh whc-ui \
 		qca-lowi qca-iface-mgr-10.4 qca-icm qca-cfg80211 athdiag qca-cnss-daemon athtestcmd-lith \
@@ -342,7 +342,7 @@ define Profile/QSDK_512
 	NAME:=Qualcomm Technologies, Inc SDK 512MB Profile
 	PACKAGES:=$(OPENWRT_STANDARD) $(NSS_COMMON) $(NSS_STANDARD) $(SWITCH_SSDK_PKGS) \
 		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(STORAGE) $(CD_ROUTER) \
-		$(NETWORKING) $(OPENVPN) $(UTILS) $(SHORTCUT_FE) $(HW_CRYPTO) $(QCA_RFS) \
+		$(NETWORKING) $(OPENVPN) $(UTILS) $(NSS_SFE) $(HW_CRYPTO) $(QCA_RFS) \
 		$(VIDEO) $(IGMPSNOOPING_RSTP) $(IPSEC) $(QOS) $(QCA_ECM_PREMIUM) \
 		$(NSS_MACSEC) $(TEST_TOOLS) $(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD) $(COREBSP_UTILS) \
 		$(MAP_PKGS) $(AQ_PHY) $(FAILSAFE) -lacpd $(USB_DIAG) \
