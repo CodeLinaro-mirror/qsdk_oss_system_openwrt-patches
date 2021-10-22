@@ -54,7 +54,7 @@ NSS_RMNET:= kmod-rmnet-nss
 
 HW_CRYPTO:= kmod-crypto-qcrypto
 
-SHORTCUT_FE:= kmod-shortcut-fe kmod-shortcut-fe-cm kmod-shortcut-fe-drv
+NSS_SFE:= kmod-qca-nss-sfe
 QCA_RFS:= kmod-qca-rfs
 
 CHAR_DIAG:=kmod-diag-char qca-diag
@@ -191,11 +191,11 @@ define Profile/QSDK_Premium
 		$(NETWORKING) $(QOS) \
 		$(HW_CRYPTO) $(IPSEC) $(NSS_MACSEC) \
 		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(FTM) kmod-qca-hyfi-bridge \
-		$(IGMPSNOOPING_RSTP) $(CNSS_DIAG)
+		$(IGMPSNOOPING_RSTP) $(CNSS_DIAG) $(NSS_SFE)
 endef
 #		$(QMSCT_CLIENT) \
 #		$(OPENVPN) $(HYFI) $(NSS_RMNET) \
-#		$(SHORTCUT_FE) $(QCA_MAD) $(CNSS_DIAG) kmod-art2 \
+#		$(NSS_SFE) $(QCA_MAD) $(CNSS_DIAG) kmod-art2 \
 #		$(QCA_EDMA) $(QCA_RFS) $(EMESH_SP) $(QCA_EZMESH) kmod-macvlan
 
 define Profile/QSDK_Premium/Description
@@ -234,7 +234,7 @@ define Profile/QSDK_Open
 		$(KPI) $(UTILS) $(EXTRA_NETWORKING) $(AQ_PHY) -lacpd libtirpc
 endef
 
-#	$(SHORTCUT_FE) $(HW_CRYPTO) $(QCA_RFS) $(IPSEC) kmod-qca-nss-macsec \
+#	$(NSS_SFE) $(HW_CRYPTO) $(QCA_RFS) $(IPSEC) kmod-qca-nss-macsec \
 #	$(MAP_PKGS) $(QCA_ECM_PREMIUM) $(NSS_COMMON) $(NSS_STANDARD) $(FTM) \
 #	$(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD) $(IGMPSNOOPING_RSTP) -rstp \
 #	$(WIFI_OPEN_PKGS) $(USB_ETHERNET) $(NSS_COMMON) $(NSS_STANDARD) \
@@ -257,7 +257,7 @@ define Profile/QSDK_512
 endef
 
 #	$(NSS_COMMON) $(NSS_STANDARD) $(WIFI_PKGS) $(WIFI_FW_PKGS) \
-#	$(OPENVPN) $(SHORTCUT_FE) $(HW_CRYPTO) $(QCA_RFS) $(IGMPSNOOPING_RSTP) \
+#	$(OPENVPN) $(NSS_SFE) $(HW_CRYPTO) $(QCA_RFS) $(IGMPSNOOPING_RSTP) \
 #	$(IPSEC) $(QCA_ECM_PREMIUM) $(NSS_MACSEC) $(NSS_CRYPTO) \
 #	$(NSS_CLIENTS_STANDARD) $(MAP_PKGS) $(NSS_EIP197_FW) $(CNSS_DIAG) \
 #	$(FTM) $(QMSCT_CLIENT) $(NSS_USERSPACE) $(NSS_RMNET) $(HYFI) \
