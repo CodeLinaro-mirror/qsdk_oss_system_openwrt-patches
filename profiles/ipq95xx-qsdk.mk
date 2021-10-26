@@ -231,17 +231,16 @@ $(eval $(call Profile,QSDK_Enterprise))
 define Profile/QSDK_Open
 	NAME:=Qualcomm Technologies, Inc SDK Open Profile
 	PACKAGES:=$(OPENWRT_STANDARD) $(STORAGE) $(TEST_TOOLS)\
-		$(COREBSP_UTILS) $(FAILSAFE) $(USB_DIAG) $(SWITCH_SSDK_NOHNAT_PKGS) \
-		$(FTM) $(KPI) $(UTILS) $(NETWORKING) $(EXTRA_NETWORKING) \
-		$(WIFI_OPEN_PKGS) $(USB_ETHERNET) $(NSS_COMMON) $(NSS_STANDARD) \
-		$(QCA_ECM_PREMIUM) -lacpd \
+		$(COREBSP_UTILS) $(FAILSAFE) $(USB_DIAG) $(SWITCH_SSDK_PKGS) \
+		$(FTM) $(KPI) $(UTILS) $(NETWORKING) $(CD_ROUTER) \
+		$(WIFI_OPEN_PKGS) $(USB_ETHERNET) $(NSS_COMMON) \
+		$(QCA_ECM_PREMIUM) -lacpd $(MAP_PKGS) $(NSS_PPE) $(NSS_SFE) \
 		qca-cnss-daemon qca-wifi-hk-fw-hw1-10.4-asic $(CNSS_DIAG) athdiag\
 		qrtr $(QMI_SAMPLE_APP) ath11k-fwtest ath11k-qdss \
 		$(AQ_PHY) libtirpc
 endef
 
 #	$(SHORTCUT_FE) $(HW_CRYPTO) $(QCA_RFS) $(IPSEC) $(QOS) kmod-qca-nss-macsec \
-#	$(MAP_PKGS)\
 #	$(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD) $(IGMPSNOOPING_RSTP) -rstp \
 
 define Profile/QSDK_Open/Description
