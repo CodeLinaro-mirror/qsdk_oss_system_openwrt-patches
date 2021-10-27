@@ -58,6 +58,8 @@ HW_CRYPTO:= kmod-crypto-qcrypto
 
 NSS_SFE:= kmod-qca-nss-sfe
 
+NSS_MESH:= kmod-qca-nss-drv-wifi-meshmgr
+
 QCA_RFS:= kmod-qca-rfs
 
 SWITCH_SSDK_PKGS:= kmod-qca-ssdk-hnat kmod-qca-ssdk-nohnat qca-ssdk-shell swconfig
@@ -237,7 +239,7 @@ define Profile/QSDK_Open
 	PACKAGES:=$(OPENWRT_STANDARD) $(STORAGE) $(TEST_TOOLS) $(VIDEO) \
 		$(COREBSP_UTILS) $(FAILSAFE) $(USB_DIAG) $(SWITCH_SSDK_NOHNAT_PKGS) \
 		$(FTM) $(KPI) $(UTILS) $(NETWORKING) $(EXTRA_NETWORKING) \
-		$(WIFI_OPEN_PKGS) $(USB_ETHERNET) $(NSS_COMMON) $(NSS_STANDARD) \
+		$(WIFI_OPEN_PKGS) $(USB_ETHERNET) $(NSS_COMMON) $(NSS_STANDARD) $(NSS_MESH) \
 		$(QCA_ECM_PREMIUM) -lacpd  \
 		qca-cnss-daemon qca-wifi-hk-fw-hw1-10.4-asic $(CNSS_DIAG) athdiag \
 		qrtr $(QMI_SAMPLE_APP) ath11k-fwtest ath11k-qdss libtirpc
