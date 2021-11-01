@@ -95,8 +95,8 @@ WIFI_PKGS_256MB:=kmod-qca-wifi-lowmem-profile \
 	qca-wpa-cli qca-cfg80211tool qca-wifi-scripts \
 	qca-wpc sigma-dut qca-wrapd qca-wapid qca-acfg \
 	qca-iface-mgr-10.4 qca-icm qca-cfg80211 athdiag qca-cnss-daemon \
-	athtestcmd-lith
-#	whc-mesh whc-ui \
+	athtestcmd-lith whc-mesh
+#	whc-ui \
 
 WIFI_PKGS_16M:=kmod-qca-wifi-flash_16mb-profile \
 	qca-hostap qca-hostapd-cli qca-wpa-supplicant \
@@ -328,11 +328,11 @@ define Profile/QSDK_256
 		$(WIFI_PKGS_256MB) $(WIFI_FW_PKGS) $(CD_ROUTER_256MB) \
 		$(NETWORKING_256MB) iperf rng-tools $(QCA_RFS) $(CHAR_DIAG) \
 		$(QCA_ECM_STANDARD) $(NSS_MACSEC) $(NSS_CLIENTS_256MB) $(FAILSAFE) \
-		-lacpd $(CNSS_DIAG) $(FTM) $(QMSCT_CLIENT) $(QCA_EZMESH) kmod-macvlan \
+		-lacpd $(CNSS_DIAG) $(FTM) $(QMSCT_CLIENT) $(HYFI) $(QCA_EZMESH) kmod-macvlan \
 		$(IGMPSNOOPING_RSTP) e2fsprogs losetup
 endef
 
-#       $(MHI_QRTR) $(HYFI)
+#       $(MHI_QRTR)
 
 define Profile/QSDK_256/Description
 	QSDK Premium package set configuration.
