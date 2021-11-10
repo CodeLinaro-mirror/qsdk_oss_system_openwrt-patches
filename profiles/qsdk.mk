@@ -119,7 +119,7 @@ USB_ETHERNET:= kmod-usb-net-rtl8152 kmod-usb-net
 
 TEST_TOOLS:=ethtool i2c-tools tcpdump
 
-UTILS:=file luci-app-samba rng-tools profilerd
+UTILS:=file luci-app-samba4 rng-tools profilerd
 
 COREBSP_UTILS:=pm-utils wififw_mount_script qca-thermald qca-qmi-framework qca-time-services \
 	qca-wlanfw-upgrade dashboard
