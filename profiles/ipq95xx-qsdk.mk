@@ -71,7 +71,7 @@ WIFI_PKGS:=kmod-qca-wifi-unified-profile-nonss \
 	qca-hostap qca-hostapd-cli qca-wpa-supplicant \
 	qca-wpa-cli qca-cfg80211tool qca-wifi-scripts \
 	qca-acfg qca-wrapd athtestcmd-lith qca-iface-mgr-10.4 \
-	qca-wapid qca-lowi athdiag whc whc-ui \
+	qca-wapid qca-lowi athdiag whc-mesh whc-ui \
 	qca-spectral qca-icm qcmbr-10.4 sigma-dut \
 	qca-wpc qca-cfg80211 qca-cnss-daemon
 
@@ -137,7 +137,7 @@ QOS:=tc kmod-sched kmod-sched-core kmod-sched-connmark kmod-ifb iptables \
 
 MAP_PKGS:=map 464xlat tayga
 
-HYFI:=hyfi hyfi-ui
+HYFI:=hyfi-mesh hyfi-ui
 
 QCA_MAD:=qca-mad
 
@@ -182,7 +182,7 @@ EMESH_SP:=kmod-emesh-sp
 
 EXTRA_NETWORKING:= $(CD_ROUTER) $(NSS_EIP197_FW) -rdk-v-wifi-ath10k
 
-QCA_EZMESH:=qca-ezmesh qca-ezmesh-ctrl qca-ezmesh-agent
+QCA_EZMESH:=qca-ezmesh qca-ezmesh-ctrl qca-ezmesh-agent qca-ezmesh-alg qca-ezmesh-agentalg
 
 define Profile/QSDK_Premium
 	NAME:=Qualcomm Technologies, Inc SDK Premium Profile
@@ -193,7 +193,7 @@ define Profile/QSDK_Premium
 		$(NETWORKING) $(QOS) \
 		$(HW_CRYPTO) $(IPSEC) $(NSS_MACSEC) \
 		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(FTM) kmod-qca-hyfi-bridge \
-		$(IGMPSNOOPING_RSTP) $(CNSS_DIAG) $(NSS_SFE)
+		$(IGMPSNOOPING_RSTP) $(CNSS_DIAG) $(NSS_SFE) $(HYFI) $(QCA_EZMESH)
 endef
 #		$(QMSCT_CLIENT) \
 #		$(OPENVPN) $(HYFI) $(NSS_RMNET) \
