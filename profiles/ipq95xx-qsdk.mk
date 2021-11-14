@@ -193,12 +193,12 @@ define Profile/QSDK_Premium
 		$(NETWORKING) $(QOS) \
 		$(HW_CRYPTO) $(IPSEC) $(NSS_MACSEC) \
 		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(FTM) kmod-qca-hyfi-bridge \
-		$(IGMPSNOOPING_RSTP) $(CNSS_DIAG) $(NSS_SFE) $(HYFI) $(QCA_EZMESH)
+		$(IGMPSNOOPING_RSTP) $(CNSS_DIAG) $(NSS_SFE) $(HYFI) $(QCA_EZMESH) $(QCA_MAD)
 endef
 #		$(QMSCT_CLIENT) \
 #		$(OPENVPN) $(HYFI) $(NSS_RMNET) \
-#		$(NSS_SFE) $(QCA_MAD) $(CNSS_DIAG) kmod-art2 \
-#		$(QCA_EDMA) $(QCA_RFS) $(EMESH_SP) $(QCA_EZMESH) kmod-macvlan
+#		$(NSS_SFE) $(CNSS_DIAG) kmod-art2 \
+#		$(QCA_EDMA) $(QCA_RFS) $(EMESH_SP) kmod-macvlan
 
 define Profile/QSDK_Premium/Description
 	QSDK Premium package set configuration.
