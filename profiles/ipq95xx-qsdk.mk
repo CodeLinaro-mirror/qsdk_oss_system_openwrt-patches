@@ -64,7 +64,7 @@ CHAR_DIAG:=kmod-diag-char qca-diag
 SWITCH_SSDK_PKGS:= kmod-qca-ssdk-hnat kmod-qca-ssdk-nohnat qca-ssdk-shell swconfig
 
 WIFI_OPEN_PKGS:= kmod-ath11k wpad-mesh hostapd-utils \
-	 sigma-dut-open wpa-cli qcmbr-10.4-netlink iwinfo\
+	 sigma-dut-open wpa-cli qcmbr-10.4-netlink iwinfo \
 	 athtestcmd qca-wifi-scripts
 
 WIFI_PKGS:=kmod-qca-wifi-unified-profile-nonss \
@@ -197,7 +197,7 @@ define Profile/QSDK_Premium
 endef
 #		$(QMSCT_CLIENT) \
 #		$(OPENVPN) $(HYFI) $(NSS_RMNET) \
-#		$(NSS_SFE) $(CNSS_DIAG) kmod-art2 \
+#		$(NSS_SFE) $(CNSS_DIAG) \
 #		$(QCA_EDMA) $(QCA_RFS) $(EMESH_SP) kmod-macvlan
 
 define Profile/QSDK_Premium/Description

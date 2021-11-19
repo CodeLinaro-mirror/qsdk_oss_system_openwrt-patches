@@ -226,7 +226,7 @@ define Profile/QSDK_Premium
 		$(QCA_MAD) $(EMESH_SP) $(QCA_EZMESH) kmod-macvlan
 endef
 
-#		kmod-art2 $(QCA_RFS)
+#		$(QCA_RFS)
 
 define Profile/QSDK_Premium/Description
 	QSDK Premium package set configuration.
