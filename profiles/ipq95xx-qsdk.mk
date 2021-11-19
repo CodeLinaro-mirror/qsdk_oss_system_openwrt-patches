@@ -63,6 +63,8 @@ CHAR_DIAG:=kmod-diag-char qca-diag
 
 SWITCH_SSDK_PKGS:= kmod-qca-ssdk-hnat kmod-qca-ssdk-nohnat qca-ssdk-shell swconfig
 
+MACSEC_OPEN_PKGS:= kmod-qca-nss-macsec wpa-supplicant-macsec hostapd-macsec
+
 WIFI_OPEN_PKGS:= kmod-ath11k wpad-mesh hostapd-utils \
 	 sigma-dut-open wpa-cli qcmbr-10.4-netlink iwinfo \
 	 athtestcmd qca-wifi-scripts
@@ -238,10 +240,10 @@ define Profile/QSDK_Open
 		$(QCA_ECM_PREMIUM) -lacpd $(MAP_PKGS) $(NSS_PPE) $(NSS_SFE) \
 		qca-cnss-daemon qca-wifi-hk-fw-hw1-10.4-asic $(CNSS_DIAG) athdiag\
 		qrtr $(QMI_SAMPLE_APP) ath11k-fwtest ath11k-qdss \
-		$(AQ_PHY) libtirpc
+		$(AQ_PHY) libtirpc $(MACSEC_OPEN_PKGS)
 endef
 
-#	$(SHORTCUT_FE) $(HW_CRYPTO) $(QCA_RFS) $(IPSEC) $(QOS) kmod-qca-nss-macsec \
+#	$(SHORTCUT_FE) $(HW_CRYPTO) $(QCA_RFS) $(IPSEC) $(QOS) \
 #	$(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD) $(IGMPSNOOPING_RSTP) -rstp \
 
 define Profile/QSDK_Open/Description
