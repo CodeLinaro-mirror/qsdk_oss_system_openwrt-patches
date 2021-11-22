@@ -241,14 +241,14 @@ define Profile/QSDK_Open
 		$(COREBSP_UTILS) $(FAILSAFE) $(USB_DIAG) $(SWITCH_SSDK_NOHNAT_PKGS) \
 		$(FTM) $(KPI) $(UTILS) $(NETWORKING) $(EXTRA_NETWORKING) \
 		$(WIFI_OPEN_PKGS) $(USB_ETHERNET) $(NSS_COMMON) $(NSS_STANDARD) $(NSS_MESH) \
-		$(QCA_ECM_PREMIUM) -lacpd  \
-		qca-cnss-daemon qca-wifi-hk-fw-hw1-10.4-asic $(CNSS_DIAG) athdiag \
-		qrtr $(QMI_SAMPLE_APP) ath11k-fwtest ath11k-qdss libtirpc cfr_tools
+		$(QCA_ECM_PREMIUM) $(MAP_PKGS) $(IGMPSNOOPING_RSTP) $(IPSEC) $(QOS) -lacpd  \
+		qca-cnss-daemon qca-wifi-hk-fw-hw1-10.4-asic $(CNSS_DIAG) athdiag $(EMESH_SP) \
+		qrtr $(QMI_SAMPLE_APP) $(NSS_SFE) ath11k-fwtest ath11k-qdss libtirpc cfr_tools kmod-qca-ovsmgr
 endef
 
-#	$(NSS_SFE) $(HW_CRYPTO) $(QCA_RFS) $(IPSEC) $(QOS) \
-#	$(MAP_PKGS) $(AQ_PHY) \
-#	$(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD) $(IGMPSNOOPING_RSTP) -rstp
+#	$(HW_CRYPTO) $(QCA_RFS) \
+#	$(AQ_PHY) \
+#	$(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD)
 
 define Profile/QSDK_Open/Description
 	QSDK Open package set configuration.
