@@ -36,6 +36,10 @@ NSS_CLIENTS_256MB:= kmod-qca-nss-drv-bridge-mgr kmod-qca-nss-drv-pppoe
 
 NSS_PPE:= kmod-qca-nss-ppe-bridge-mgr
 
+NSS_CLIENTS_HOST_DP:= \
+	kmod-qca-ovsmgr \
+	kmod-qca-nss-drv-mscs
+
 NSS_CLIENTS_STANDARD:= kmod-qca-nss-drv-qdisc kmod-qca-nss-drv-igs \
 	kmod-qca-nss-drv-tun6rd kmod-qca-nss-drv-tunipip6 \
 	kmod-qca-nss-drv-l2tpv2 kmod-qca-nss-drv-pptp \
@@ -191,7 +195,7 @@ define Profile/QSDK_Premium
 	PACKAGES:=$(OPENWRT_STANDARD) $(STORAGE) $(TEST_TOOLS) $(COREBSP_UTILS) \
 		$(AQ_PHY) $(FAILSAFE) -lacpd $(USB_DIAG) $(KPI) $(UTILS) \
 		$(MINIDUMP) $(SWITCH_SSDK_PKGS) $(MAP_PKGS) $(CD_ROUTER) \
-		$(NSS_COMMON) $(QCA_ECM_PREMIUM) $(NSS_PPE)\
+		$(NSS_COMMON) $(QCA_ECM_PREMIUM) $(NSS_PPE) $(NSS_CLIENTS_HOST_DP) \
 		$(NETWORKING) $(QOS) \
 		$(HW_CRYPTO) $(IPSEC) $(NSS_MACSEC) \
 		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(FTM) kmod-qca-hyfi-bridge \
@@ -214,7 +218,7 @@ define Profile/QSDK_Enterprise
 	PACKAGES:=$(OPENWRT_STANDARD) $(SWITCH_SSDK_NOHNAT_PKGS) $(STORAGE) \
 		$(UTILS) $(TEST_TOOLS) $(COREBSP_UTILS) $(CD_ROUTER) $(AQ_PHY) \
 		$(NETWORKING) $(QOS) $(QCA_ECM_ENTERPRISE) $(NSS_COMMON) $(NSS_SFE) \
-		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(NSS_MACSEC) $(IPSEC) $(NSS_PPE) \
+		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(NSS_MACSEC) $(IPSEC) $(NSS_PPE) kmod-qca-nss-drv-mscs \
 		-lacpd $(USB_DIAG) $(KPI) $(FAILSAFE)
 endef
 
@@ -239,7 +243,7 @@ define Profile/QSDK_Open
 		$(WIFI_OPEN_PKGS) $(USB_ETHERNET) $(NSS_COMMON) \
 		$(QCA_ECM_PREMIUM) -lacpd $(MAP_PKGS) $(NSS_PPE) $(NSS_SFE) \
 		qca-cnss-daemon qca-wifi-hk-fw-hw1-10.4-asic $(CNSS_DIAG) athdiag\
-		qrtr $(QMI_SAMPLE_APP) ath11k-fwtest ath11k-qdss \
+		qrtr $(QMI_SAMPLE_APP) ath11k-fwtest ath11k-qdss kmod-qca-ovsmgr \
 		$(AQ_PHY) libtirpc $(MACSEC_OPEN_PKGS)
 endef
 
@@ -260,7 +264,7 @@ define Profile/QSDK_512
 		$(NETWORKING) $(QOS) -lacpd $(USB_DIAG) $(KPI) $(NSS_COMMON) \
 		$(NSS_SFE) $(QCA_ECM_PREMIUM) $(NSS_PPE) $(IGMPSNOOPING_RSTP) \
 		$(HYFI) kmod-qca-hyfi-bridge $(QCA_EZMESH) $(MAP_PKGS) \
-		$(WIFI_PKGS) $(WIFI_FW_PKGS) \
+		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(NSS_CLIENTS_HOST_DP) \
 		$(MINIDUMP) $(MAP_PKGS) $(HW_CRYPTO) $(IPSEC) $(NSS_MACSEC)
 endef
 
