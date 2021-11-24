@@ -211,7 +211,7 @@ MHI_QRTR:=kmod-mhi-qrtr-mproc
 EMESH_SP:=kmod-emesh-sp
 
 EXTRA_NETWORKING:= $(CD_ROUTER) $(NSS_EIP197_FW) -rdk-v-wifi-ath10k kmod-qca-nss-macsec \
-	$(MACSEC_OPEN_PKGS)
+	$(MACSEC_OPEN_PKGS) $(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD)
 
 define Profile/QSDK_Premium
 	NAME:=Qualcomm Technologies, Inc SDK Premium Profile
@@ -247,8 +247,7 @@ define Profile/QSDK_Open
 endef
 
 #	$(HW_CRYPTO) $(QCA_RFS) \
-#	$(AQ_PHY) \
-#	$(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD)
+#	$(AQ_PHY)
 
 define Profile/QSDK_Open/Description
 	QSDK Open package set configuration.
