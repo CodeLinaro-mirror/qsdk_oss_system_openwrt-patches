@@ -78,7 +78,7 @@ WIFI_OPEN_PKGS_8M:= kmod-ath11k wpad-mesh hostapd-utils \
 WIFI_PKGS:=kmod-qca-wifi-unified-profile \
 	qca-hostap qca-hostapd-cli qca-wpa-supplicant \
 	qca-wpa-cli qca-cfg80211tool qca-wifi-scripts \
-	qca-acfg qca-wrapd athtestcmd-lith qca-iface-mgr-10.4 \
+	qca-acfg qca-wrapd athtestcmd-lith qca-iface-mgr \
 	qca-wapid qca-lowi athdiag whc-mesh whc-ui \
 	qca-spectral qca-icm qcmbr-10.4 sigma-dut \
 	qca-wpc qca-cfg80211 qca-cnss-daemon
@@ -94,7 +94,7 @@ WIFI_PKGS_256MB:=kmod-qca-wifi-lowmem-profile \
 	qca-hostap qca-hostapd-cli qca-wpa-supplicant \
 	qca-wpa-cli qca-cfg80211tool qca-wifi-scripts \
 	qca-wpc sigma-dut qca-wrapd qca-wapid qca-acfg \
-	qca-iface-mgr-10.4 qca-icm qca-cfg80211 athdiag qca-cnss-daemon \
+	qca-iface-mgr qca-icm qca-cfg80211 athdiag qca-cnss-daemon \
 	athtestcmd-lith whc-mesh
 #	whc-ui \
 
@@ -266,7 +266,7 @@ define Profile/QSDK_QBuilder
 		kmod-qca-nss-sfe \
 		rstp qca-mcs-apps qca-hostap qca-hostapd-cli qca-wpa-supplicant qca-wpa-cli \
 		qca-spectral qca-wpc sigma-dut qcmbr-10.4 qca-wrapd qca-wapid qca-acfg whc-mesh whc-ui \
-		qca-lowi qca-iface-mgr-10.4 qca-icm qca-cfg80211 athdiag qca-cnss-daemon athtestcmd-lith \
+		qca-lowi qca-iface-mgr qca-icm qca-cfg80211 athdiag qca-cnss-daemon athtestcmd-lith \
 		qca-wifi-hk-fw-hw1-10.4-asic kmod-aq_phy kmod-qca_85xx_sw aq-fw-download mcproxy mwan3 \
 		-dnsmasq dnsmasq-dhcpv6 bridge ip-full trace-cmd rp-pppoe-relay iptables-mod-extra \
 		iputils-tracepath iputils-tracepath6 \
