@@ -106,7 +106,7 @@ WIFI_FW_PKGS:=qca-wifi-hk-fw-hw1-10.4-asic qca-wifi-cyp-fw-hw1-11.0-asic qca-wif
 
 OPENWRT_STANDARD:= luci openssl-util
 
-OPENWRT_256MB:=luci pm-utils wififw_mount_script qca-thermald-10.4 qca-wlanfw-upgrade -file \
+OPENWRT_256MB:=luci pm-utils wififw_mount_script qca-thermald qca-wlanfw-upgrade -file \
 	-kmod-ata-core -kmod-ata-ahci -kmod-ata-ahci-platform \
 	-kmod-usb2 -kmod-usb3 -kmod-usb-dwc3-qcom \
 	-kmod-usb-phy-qcom-dwc3 -kmod-usb-dwc3-of-simple \
@@ -121,7 +121,7 @@ TEST_TOOLS:=ethtool i2c-tools tcpdump
 
 UTILS:=file luci-app-samba rng-tools profilerd
 
-COREBSP_UTILS:=pm-utils wififw_mount_script qca-thermald-10.4 qca-qmi-framework qca-time-services \
+COREBSP_UTILS:=pm-utils wififw_mount_script qca-thermald qca-qmi-framework qca-time-services \
 	qca-wlanfw-upgrade dashboard
 
 FAILSAFE:= kmod-bootconfig
@@ -276,7 +276,7 @@ define Profile/QSDK_QBuilder
 		iptables-mod-filter iptables-mod-ipopt iptables-mod-conntrack-extra \
 		qca-nss-fw-eip-hk qca-nss-fw-eip-cp kmod-qca-ovsmgr \
 		file luci-app-samba rng-tools profilerd ethtool i2c-tools tcpdump \
-		pm-utils wififw_mount_script qca-thermald-10.4 qca-qmi-framework qca-time-services \
+		pm-utils wififw_mount_script qca-thermald qca-qmi-framework qca-time-services \
 		qca-wlanfw-upgrade dashboard iperf sysstat nlcfg kmod-bootconfig qca-cfg80211tool
 endef
 
