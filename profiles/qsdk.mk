@@ -102,7 +102,7 @@ WIFI_PKGS_16M:=kmod-qca-wifi-flash_16mb-profile \
 	qca-hostap qca-hostapd-cli qca-wpa-supplicant \
 	qca-wpa-cli qca-cfg80211 qca-cfg80211tool qca-wifi-scripts
 
-WIFI_FW_PKGS:=qca-wifi-hk-fw-hw1-10.4-asic qca-wifi-cyp-fw-hw1-11.0-asic
+WIFI_FW_PKGS:=qca-wifi-hk-fw-hw1-10.4-asic qca-wifi-cyp-fw-hw1-11.0-asic qca-wifi-wkk-fw-hw1-asic
 
 OPENWRT_STANDARD:= luci openssl-util
 

@@ -89,7 +89,8 @@ WIFI_PKGS_256MB:=kmod-qca-wifi-lowmem-profile-nonss \
 	qca-iface-mgr-10.4 qca-icm qca-cfg80211 athdiag qca-cnss-daemon \
 	athtestcmd-lith
 
-WIFI_FW_PKGS:=qca-wifi-hk-fw-hw1-10.4-asic
+WIFI_FW_PKGS:=qca-wifi-hk-fw-hw1-10.4-asic qca-wifi-wkk-fw-hw1-asic
+
 
 OPENWRT_STANDARD:= \
 	luci openssl-util
