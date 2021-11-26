@@ -257,15 +257,15 @@ define Profile/QSDK_512
 		$(UTILS) $(TEST_TOOLS) $(COREBSP_UTILS) $(AQ_PHY) $(FAILSAFE) \
 		$(NETWORKING) $(QOS) -lacpd $(USB_DIAG) $(KPI) $(NSS_COMMON) \
 		$(NSS_SFE) $(QCA_ECM_PREMIUM) $(NSS_PPE) $(IGMPSNOOPING_RSTP) \
+		$(HYFI) kmod-qca-hyfi-bridge $(QCA_EZMESH) $(MAP_PKGS) \
 		$(WIFI_PKGS) $(WIFI_FW_PKGS) \
 		$(MINIDUMP) $(MAP_PKGS) $(HW_CRYPTO) $(IPSEC) $(NSS_MACSEC)
 endef
 
-#	$(NSS_STANDARD) \
-#	$(OPENVPN) $(QCA_RFS) $(NSS_CRYPTO) \
-#	$(NSS_CLIENTS_STANDARD) $(NSS_EIP197_FW) $(CNSS_DIAG) \
-#	$(FTM) $(QMSCT_CLIENT) $(NSS_USERSPACE) $(NSS_RMNET) $(HYFI) \
-#	$(QCA_EZMESH) $(QRTR) $(MHI_QRTR) kmod-macvlan
+#	$(OPENVPN) $(QCA_RFS) \
+#	$(CNSS_DIAG) \
+#	$(FTM) $(QMSCT_CLIENT) \
+#	$(QRTR) $(MHI_QRTR) kmod-macvlan
 
 define Profile/QSDK_512/Description
 	QSDK Premium package set configuration.
