@@ -328,7 +328,7 @@ define Profile/QSDK_256
 		$(NETWORKING_256MB) iperf rng-tools $(QCA_RFS) $(CHAR_DIAG) \
 		$(QCA_ECM_STANDARD) $(NSS_MACSEC) $(NSS_CLIENTS_256MB) $(FAILSAFE) \
 		-lacpd $(CNSS_DIAG) $(FTM) $(QMSCT_CLIENT) $(HYFI) $(QCA_EZMESH) kmod-macvlan \
-		$(IGMPSNOOPING_RSTP) e2fsprogs losetup
+		$(IGMPSNOOPING_RSTP) $(EMESH_SP) e2fsprogs losetup
 endef
 
 #       $(MHI_QRTR)
