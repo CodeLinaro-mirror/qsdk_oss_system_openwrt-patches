@@ -68,7 +68,7 @@ SWITCH_SSDK_PKGS:= kmod-qca-ssdk-hnat kmod-qca-ssdk-nohnat qca-ssdk-shell swconf
 MACSEC_OPEN_PKGS:= wpa-supplicant-macsec hostapd-macsec
 
 WIFI_OPEN_PKGS:= kmod-ath11k wpad-mesh hostapd-utils \
-	sigma-dut-open wpa-cli qcmbr-10.4-netlink iwinfo \
+	sigma-dut-open wpa-cli qcmbr-netlink iwinfo \
 	athtestcmd-lith-nl -qca-whc-lbd -qca-whc-init -libhyficommon qca-wifi-scripts
 
 WIFI_OPEN_PKGS_8M:= kmod-ath11k wpad-mesh hostapd-utils \
@@ -80,13 +80,13 @@ WIFI_PKGS:=kmod-qca-wifi-unified-profile \
 	qca-wpa-cli qca-cfg80211tool qca-wifi-scripts \
 	qca-acfg qca-wrapd athtestcmd-lith qca-iface-mgr \
 	qca-wapid qca-lowi athdiag whc-mesh whc-ui \
-	qca-spectral qca-icm qcmbr-10.4 sigma-dut \
+	qca-spectral qca-icm qcmbr sigma-dut \
 	qca-wpc qca-cfg80211 qca-cnss-daemon
 
 WIFI_PKGS_MINENT:=kmod-qca-wifi-custc-profile \
 	qca-hostap qca-hostapd-cli qca-wpa-supplicant \
 	qca-wpa-cli qca-spectral qca-wpc sigma-dut \
-	qcmbr-10.4 qca-wrapd qca-wapid qca-acfg \
+	qcmbr qca-wrapd qca-wapid qca-acfg \
 	qca-lowi qca-icm qca-cfg80211 athdiag qca-cnss-daemon \
 	athtestcmd-lith qca-cfg80211tool
 
@@ -265,7 +265,7 @@ define Profile/QSDK_QBuilder
 		kmod-fs-vfat kmod-fs-ntfs ntfs-3g e2fsprogs losetup \
 		kmod-qca-nss-sfe \
 		rstp qca-mcs-apps qca-hostap qca-hostapd-cli qca-wpa-supplicant qca-wpa-cli \
-		qca-spectral qca-wpc sigma-dut qcmbr-10.4 qca-wrapd qca-wapid qca-acfg whc-mesh whc-ui \
+		qca-spectral qca-wpc sigma-dut qcmbr qca-wrapd qca-wapid qca-acfg whc-mesh whc-ui \
 		qca-lowi qca-iface-mgr qca-icm qca-cfg80211 athdiag qca-cnss-daemon athtestcmd-lith \
 		qca-wifi-hk-fw-hw1-10.4-asic kmod-aq_phy kmod-qca_85xx_sw aq-fw-download mcproxy mwan3 \
 		-dnsmasq dnsmasq-dhcpv6 bridge ip-full trace-cmd rp-pppoe-relay iptables-mod-extra \

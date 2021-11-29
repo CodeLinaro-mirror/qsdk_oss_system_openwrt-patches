@@ -70,7 +70,7 @@ SWITCH_SSDK_PKGS:= kmod-qca-ssdk-hnat kmod-qca-ssdk-nohnat qca-ssdk-shell swconf
 MACSEC_OPEN_PKGS:= kmod-qca-nss-macsec wpa-supplicant-macsec hostapd-macsec
 
 WIFI_OPEN_PKGS:= kmod-ath11k wpad-mesh hostapd-utils \
-	 sigma-dut-open wpa-cli qcmbr-10.4-netlink iwinfo \
+	 sigma-dut-open wpa-cli qcmbr-netlink iwinfo \
 	 athtestcmd qca-wifi-scripts
 
 WIFI_PKGS:=kmod-qca-wifi-unified-profile-nonss \
@@ -78,7 +78,7 @@ WIFI_PKGS:=kmod-qca-wifi-unified-profile-nonss \
 	qca-wpa-cli qca-cfg80211tool qca-wifi-scripts \
 	qca-acfg qca-wrapd athtestcmd-lith qca-iface-mgr \
 	qca-wapid qca-lowi athdiag whc-mesh whc-ui \
-	qca-spectral qca-icm qcmbr-10.4 sigma-dut \
+	qca-spectral qca-icm qcmbr sigma-dut \
 	qca-wpc qca-cfg80211 qca-cnss-daemon
 
 WIFI_PKGS_256MB:=kmod-qca-wifi-lowmem-profile-nonss \
