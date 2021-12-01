@@ -63,6 +63,8 @@ CHAR_DIAG:=kmod-diag-char qca-diag
 
 SWITCH_SSDK_PKGS:= kmod-qca-ssdk-hnat kmod-qca-ssdk-nohnat qca-ssdk-shell swconfig
 
+MACSEC_OPEN_PKGS:= kmod-qca-nss-macsec wpa-supplicant-macsec hostapd-macsec
+
 WIFI_OPEN_PKGS:= kmod-ath11k wpad-mesh hostapd-utils \
 	 sigma-dut-open wpa-cli qcmbr-10.4-netlink iwinfo \
 	 athtestcmd qca-wifi-scripts
@@ -211,15 +213,16 @@ define Profile/QSDK_Enterprise
 	NAME:=Qualcomm Technologies, Inc SDK Enterprise Profile
 	PACKAGES:=$(OPENWRT_STANDARD) $(SWITCH_SSDK_NOHNAT_PKGS) $(STORAGE) \
 		$(UTILS) $(TEST_TOOLS) $(COREBSP_UTILS) $(CD_ROUTER) $(AQ_PHY) \
-		$(NETWORKING) $(QOS) \
+		$(NETWORKING) $(QOS) $(QCA_ECM_ENTERPRISE) $(NSS_COMMON) $(NSS_SFE) \
+		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(NSS_MACSEC) $(IPSEC) $(NSS_PPE) \
 		-lacpd $(USB_DIAG) $(KPI) $(FAILSAFE)
 endef
 
-#		$(NSS_COMMON) $(NSS_ENTERPRISE) $(WIFI_PKGS) $(WIFI_FW_PKGS) \
+#		$(NSS_ENTERPRISE) \
 #		$(HW_CRYPTO) $(QCA_RFS) $(IGMPSNOOPING_RSTP) \
-#		$(QCA_ECM_ENTERPRISE) $(NSS_CLIENTS_ENTERPRISE) $(NSS_MACSEC) \
-#		$(NSS_CRYPTO) $(IPSEC) $(NSS_EIP197_FW) $(CNSS_DIAG) $(FTM) \
-#		$(QMSCT_CLIENT) $(QRTR) $(MHI_QRTR) $(NSS_USERSPACE)
+#		$(NSS_CLIENTS_ENTERPRISE) $(NSS_USERSPACE) \
+#		$(NSS_CRYPTO) $(NSS_EIP197_FW) $(CNSS_DIAG) $(FTM) \
+#		$(QMSCT_CLIENT) $(QRTR) $(MHI_QRTR)
 
 define Profile/QSDK_Enterprise/Description
 	QSDK Enterprise package set configuration.
@@ -237,10 +240,10 @@ define Profile/QSDK_Open
 		$(QCA_ECM_PREMIUM) -lacpd $(MAP_PKGS) $(NSS_PPE) $(NSS_SFE) \
 		qca-cnss-daemon qca-wifi-hk-fw-hw1-10.4-asic $(CNSS_DIAG) athdiag\
 		qrtr $(QMI_SAMPLE_APP) ath11k-fwtest ath11k-qdss \
-		$(AQ_PHY) libtirpc
+		$(AQ_PHY) libtirpc $(MACSEC_OPEN_PKGS)
 endef
 
-#	$(SHORTCUT_FE) $(HW_CRYPTO) $(QCA_RFS) $(IPSEC) $(QOS) kmod-qca-nss-macsec \
+#	$(SHORTCUT_FE) $(HW_CRYPTO) $(QCA_RFS) $(IPSEC) $(QOS) \
 #	$(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD) $(IGMPSNOOPING_RSTP) -rstp \
 
 define Profile/QSDK_Open/Description
@@ -256,14 +259,15 @@ define Profile/QSDK_512
 		$(UTILS) $(TEST_TOOLS) $(COREBSP_UTILS) $(AQ_PHY) $(FAILSAFE) \
 		$(NETWORKING) $(QOS) -lacpd $(USB_DIAG) $(KPI) $(NSS_COMMON) \
 		$(NSS_SFE) $(QCA_ECM_PREMIUM) $(NSS_PPE) $(IGMPSNOOPING_RSTP) \
+		$(HYFI) kmod-qca-hyfi-bridge $(QCA_EZMESH) $(MAP_PKGS) \
+		$(WIFI_PKGS) $(WIFI_FW_PKGS) \
 		$(MINIDUMP) $(MAP_PKGS) $(HW_CRYPTO) $(IPSEC) $(NSS_MACSEC)
 endef
 
-#	$(NSS_STANDARD) $(WIFI_PKGS) $(WIFI_FW_PKGS) \
-#	$(OPENVPN) $(QCA_RFS) $(NSS_CRYPTO) \
-#	$(NSS_CLIENTS_STANDARD) $(NSS_EIP197_FW) $(CNSS_DIAG) \
-#	$(FTM) $(QMSCT_CLIENT) $(NSS_USERSPACE) $(NSS_RMNET) $(HYFI) \
-#	$(QCA_EZMESH) $(QRTR) $(MHI_QRTR) kmod-macvlan
+#	$(OPENVPN) $(QCA_RFS) \
+#	$(CNSS_DIAG) \
+#	$(FTM) $(QMSCT_CLIENT) \
+#	$(QRTR) $(MHI_QRTR) kmod-macvlan
 
 define Profile/QSDK_512/Description
 	QSDK Premium package set configuration.
