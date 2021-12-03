@@ -126,7 +126,7 @@ COREBSP_UTILS:=pm-utils wififw_mount_script qca-thermald-10.4 qca-qmi-framework 
 
 FAILSAFE:= kmod-bootconfig
 
-NETWORKING:=mcproxy -dnsmasq dnsmasq-dhcpv6 bridge ip-full mwan3 \
+NETWORKING:=mcproxy -dnsmasq dnsmasq-dhcpv6 bridge ip-bridge ip-full mwan3 \
 	rp-pppoe-relay iptables-mod-extra iputils-tracepath iputils-tracepath6 \
 	luci-app-upnp luci-app-ddns luci-proto-ipv6 \
 	kmod-nf-nathelper-extra kmod-nf-nathelper \
@@ -328,7 +328,7 @@ define Profile/QSDK_256
 		$(NETWORKING_256MB) iperf rng-tools $(QCA_RFS) $(CHAR_DIAG) \
 		$(QCA_ECM_STANDARD) $(NSS_MACSEC) $(NSS_CLIENTS_256MB) $(FAILSAFE) \
 		-lacpd $(CNSS_DIAG) $(FTM) $(QMSCT_CLIENT) $(HYFI) $(QCA_EZMESH) kmod-macvlan \
-		$(IGMPSNOOPING_RSTP) e2fsprogs losetup
+		$(IGMPSNOOPING_RSTP) $(EMESH_SP) e2fsprogs losetup
 endef
 
 #       $(MHI_QRTR)
@@ -349,7 +349,7 @@ define Profile/QSDK_512
 		$(NSS_MACSEC) $(TEST_TOOLS) $(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD) $(COREBSP_UTILS) \
 		$(MAP_PKGS) $(AQ_PHY) $(FAILSAFE) -lacpd $(USB_DIAG) \
 		$(NSS_EIP197_FW) $(CNSS_DIAG) $(FTM) $(QMSCT_CLIENT) $(KPI) $(NSS_USERSPACE) \
-		$(NSS_RMNET) $(HYFI) $(QCA_EZMESH) kmod-macvlan
+		$(NSS_RMNET) $(HYFI) $(EMESH_SP) $(QCA_EZMESH) kmod-macvlan
 endef
 
 #       $(MHI_QRTR)
