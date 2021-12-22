@@ -242,14 +242,15 @@ define Profile/QSDK_Open
 		$(COREBSP_UTILS) $(FAILSAFE) $(USB_DIAG) $(SWITCH_SSDK_PKGS) \
 		$(FTM) $(KPI) $(UTILS) $(NETWORKING) $(CD_ROUTER) \
 		$(WIFI_OPEN_PKGS) $(USB_ETHERNET) $(NSS_COMMON) \
-		$(QCA_ECM_PREMIUM) -lacpd $(MAP_PKGS) $(NSS_PPE) $(NSS_SFE) \
+		$(QCA_ECM_PREMIUM) $(IGMPSNOOPING_RSTP) -rstp $(IPSEC) $(QOS) -lacpd \
+		$(MAP_PKGS) $(NSS_PPE) $(NSS_SFE) \
 		qca-cnss-daemon qca-wifi-hk-fw-hw1-10.4-asic $(CNSS_DIAG) athdiag\
 		qrtr $(QMI_SAMPLE_APP) ath11k-fwtest ath11k-qdss kmod-qca-ovsmgr \
 		$(AQ_PHY) libtirpc $(MACSEC_OPEN_PKGS)
 endef
 
-#	$(SHORTCUT_FE) $(HW_CRYPTO) $(QCA_RFS) $(IPSEC) $(QOS) \
-#	$(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD) $(IGMPSNOOPING_RSTP) -rstp \
+#	$(SHORTCUT_FE) $(HW_CRYPTO) $(QCA_RFS) \
+#	$(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD) \
 
 define Profile/QSDK_Open/Description
 	QSDK Open package set configuration.
