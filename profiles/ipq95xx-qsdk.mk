@@ -246,7 +246,7 @@ define Profile/QSDK_Open
 		$(MAP_PKGS) $(NSS_PPE) $(NSS_SFE) \
 		qca-cnss-daemon qca-wifi-hk-fw-hw1-10.4-asic $(CNSS_DIAG) athdiag\
 		qrtr $(QMI_SAMPLE_APP) ath11k-fwtest ath11k-qdss kmod-qca-ovsmgr \
-		$(AQ_PHY) libtirpc $(MACSEC_OPEN_PKGS)
+		$(AQ_PHY) libtirpc $(MACSEC_OPEN_PKGS) -qca-mcs-apps
 endef
 
 #	$(SHORTCUT_FE) $(HW_CRYPTO) $(QCA_RFS) \
