@@ -244,7 +244,7 @@ define Profile/QSDK_Open
 		$(WIFI_OPEN_PKGS) $(USB_ETHERNET) $(NSS_COMMON) $(NSS_STANDARD) $(NSS_MESH) \
 		$(QCA_ECM_PREMIUM) $(MAP_PKGS) $(IGMPSNOOPING_RSTP) $(IPSEC) $(QOS) -lacpd  \
 		qca-cnss-daemon qca-wifi-hk-fw-hw1-10.4-asic $(CNSS_DIAG) athdiag $(EMESH_SP) \
-		qrtr $(QMI_SAMPLE_APP) $(NSS_SFE) ath11k-fwtest ath11k-qdss libtirpc cfr_tools kmod-qca-ovsmgr
+		qrtr $(QMI_SAMPLE_APP) $(NSS_SFE) ath11k-fwtest ath11k-qdss libtirpc cfr_tools kmod-qca-ovsmgr -qca-mcs-apps
 endef
 
 #	$(HW_CRYPTO) $(QCA_RFS) \
