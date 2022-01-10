@@ -155,7 +155,7 @@ CD_ROUTER_256MB:=kmod-ipt-ipopt kmod-ipt-sctp lacpd \
 	arptables ddns-scripts \
 	quagga quagga-ripd quagga-zebra quagga-watchquagga quagga-vtysh \
 	kmod-ipv6 ip6tables iptables-mod-filter \
-	isc-dhcp-relay-ipv6 rp-pppoe-server
+	isc-dhcp-relay-ipv6 rp-pppoe-server iptables-mod-physdev
 
 BLUETOOTH:=kmod-bluetooth bluez-libs bluez-utils kmod-ath3k
 
