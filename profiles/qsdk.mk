@@ -68,7 +68,7 @@ SWITCH_SSDK_PKGS:= kmod-qca-ssdk-hnat kmod-qca-ssdk-nohnat qca-ssdk-shell swconf
 MACSEC_OPEN_PKGS:= wpa-supplicant-macsec hostapd-macsec
 
 WIFI_OPEN_PKGS:= kmod-ath11k wpad-mesh hostapd-utils \
-	sigma-dut-open wpa-cli qcmbr-netlink iwinfo \
+	sigma-dut-open wpa-cli iwinfo \
 	athtestcmd-lith-nl -qca-whc-lbd -qca-whc-init -libhyficommon qca-wifi-scripts
 
 WIFI_OPEN_PKGS_8M:= kmod-ath11k wpad-mesh hostapd-utils \
@@ -239,7 +239,7 @@ $(eval $(call Profile,QSDK_Premium))
 define Profile/QSDK_Open
 	NAME:=Qualcomm Technologies, Inc SDK Open Profile
 	PACKAGES:=$(OPENWRT_STANDARD) $(STORAGE) $(TEST_TOOLS) $(AUDIO) $(VIDEO) \
-		$(COREBSP_UTILS) $(FAILSAFE) $(USB_DIAG) $(SWITCH_SSDK_NOHNAT_PKGS) \
+		$(COREBSP_UTILS) -qca-thermald $(FAILSAFE) $(USB_DIAG) $(SWITCH_SSDK_NOHNAT_PKGS) \
 		$(FTM) $(KPI) $(UTILS) $(NETWORKING) $(EXTRA_NETWORKING) \
 		$(WIFI_OPEN_PKGS) $(USB_ETHERNET) $(NSS_COMMON) $(NSS_STANDARD) $(NSS_MESH) \
 		$(QCA_ECM_PREMIUM) $(MAP_PKGS) $(IGMPSNOOPING_RSTP) $(IPSEC) $(QOS) -lacpd  \

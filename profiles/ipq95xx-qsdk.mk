@@ -239,7 +239,7 @@ $(eval $(call Profile,QSDK_Enterprise))
 define Profile/QSDK_Open
 	NAME:=Qualcomm Technologies, Inc SDK Open Profile
 	PACKAGES:=$(OPENWRT_STANDARD) $(STORAGE) $(TEST_TOOLS)\
-		$(COREBSP_UTILS) $(FAILSAFE) $(USB_DIAG) $(SWITCH_SSDK_PKGS) \
+		$(COREBSP_UTILS) -qca-thermald $(FAILSAFE) $(USB_DIAG) $(SWITCH_SSDK_PKGS) \
 		$(FTM) $(KPI) $(UTILS) $(NETWORKING) $(CD_ROUTER) \
 		$(WIFI_OPEN_PKGS) $(USB_ETHERNET) $(NSS_COMMON) \
 		$(QCA_ECM_PREMIUM) $(IGMPSNOOPING_RSTP) -rstp $(IPSEC) $(QOS) -lacpd \
