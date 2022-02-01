@@ -14,6 +14,7 @@
 #ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 #OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+export status="off"
 
 # GPS out of reset
 gps_start() {
@@ -32,17 +33,35 @@ gps_start() {
 			sleep 1; \
 			echo 1 > /sys/class/gpio/gpio$gpio_reset/value; \
 			sleep 1; }
+		status=off
+		echo $status > gps_status.txt
 	fi
-
+}
+gps_on() {
 	if [[ ! -e /sys/class/gpio/gpio$gpio_on_off ]]; then
 		echo $gpio_on_off > /sys/class/gpio/export
 		echo out > /sys/class/gpio/gpio$gpio_on_off/direction
+		echo "Enabling GPS Module..." > /dev/console
 		{ echo 0 > /sys/class/gpio/gpio$gpio_on_off/value ; \
 			sleep 1; \
 			echo 1 > /sys/class/gpio/gpio$gpio_on_off/value; \
-			sleep 1;
-			echo "GPS Module Enabled...." > /dev/console; }
+			sleep 1; }
+		status=on
+		echo $status > gps_status.txt
 	fi
+}
+gps_off() {
+	if [[ ! -e /sys/class/gpio/gpio$gpio_on_off ]]; then
+		echo $gpio_on_off > /sys/class/gpio/export
+		echo out > /sys/class/gpio/gpio$gpio_on_off/direction
+	fi
+	echo 0 > /sys/class/gpio/gpio$gpio_on_off/value;
+	sleep 1;
+	echo 1 > /sys/class/gpio/gpio$gpio_on_off/value;
+	sleep 1;
+	status=off
+	echo $status > gps_status.txt
+	echo "GPS Module is turned off..." > /dev/console
 }
 
 while [ -n "$1" ]; do
@@ -97,6 +116,20 @@ echo -e "\nSetting UART3 baud rate to 4800\n"
 stty -F /dev/ttyMSM2 4800
 
 gps_start
+if [ "$1" == "on" ]; then
+	gps_on
+elif [ "$1" == "off" ]; then
+	status=$(cat gps_status.txt)
+	if [ $status == "on" ];then
+		gps_off
+		echo $gpio_on_off > /sys/class/gpio/unexport
+	else
+		echo -e "\nGPS module is already turned off..Please turn it on\n"
+	fi
+	exit 1
+else
+	gps_on
+fi
 echo -e "\nReading GPS data : \n"
 #cat /dev/ttyMSM2
 gpsd /dev/ttyMSM2
