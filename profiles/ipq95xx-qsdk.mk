@@ -29,8 +29,8 @@ NSS_MACSEC:= \
 	qca-hostap-macsec
 
 QCA_ECM_STANDARD:= kmod-qca-nss-ecm-standard
-QCA_ECM_PREMIUM:= kmod-qca-nss-ecm-premium
-QCA_ECM_ENTERPRISE:= kmod-qca-nss-ecm-noload
+QCA_ECM_PREMIUM:= kmod-qca-nss-ecm-premium kmod-qca-nss-ecm-wifi-plugin
+QCA_ECM_ENTERPRISE:= kmod-qca-nss-ecm-noload kmod-qca-nss-ecm-wifi-plugin
 
 NSS_CLIENTS_256MB:= kmod-qca-nss-drv-bridge-mgr kmod-qca-nss-drv-pppoe
 
@@ -251,7 +251,7 @@ define Profile/QSDK_Open
 		$(MAP_PKGS) $(NSS_PPE) $(NSS_SFE) \
 		qca-cnss-daemon qca-wifi-hk-fw-hw1-10.4-asic $(CNSS_DIAG) athdiag\
 		qrtr $(QMI_SAMPLE_APP) ath11k-fwtest ath11k-qdss kmod-qca-ovsmgr \
-		$(AQ_PHY) libtirpc $(MACSEC_OPEN_PKGS) -qca-mcs-apps
+		$(AQ_PHY) libtirpc $(MACSEC_OPEN_PKGS) -qca-mcs-apps -kmod-qca-nss-ecm-wifi-plugin
 endef
 
 #	$(SHORTCUT_FE) $(HW_CRYPTO) $(QCA_RFS) \
