@@ -59,6 +59,8 @@ HW_CRYPTO:= kmod-crypto-qcrypto
 
 NSS_SFE:= kmod-qca-nss-sfe
 
+NSS_UDP_ST:= kmod-nss-udp-st-drv nss-udp-st
+
 NSS_MESH:= kmod-qca-nss-drv-wifi-meshmgr
 
 QCA_RFS:= kmod-qca-rfs
@@ -223,7 +225,7 @@ define Profile/QSDK_Premium
 		$(NSS_STANDARD) $(UTILS) $(NETWORKING) $(CD_ROUTER) $(NSS_CLIENTS_STANDARD) \
 		$(QCA_ECM_PREMIUM) $(NSS_CRYPTO) $(NSS_EIP197_FW) $(IGMPSNOOPING_RSTP) \
 		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(HW_CRYPTO) $(IPSEC) $(MAP_PKGS) $(MINIDUMP) \
-		$(OPENVPN) $(QOS) $(HYFI) $(NSS_MACSEC) $(NSS_USERSPACE) $(NSS_RMNET) $(NSS_SFE) \
+		$(OPENVPN) $(QOS) $(HYFI) $(NSS_MACSEC) $(NSS_USERSPACE) $(NSS_RMNET) $(NSS_SFE) $(NSS_UDP_ST)\
 		$(QCA_MAD) $(EMESH_SP) $(QCA_EZMESH) kmod-macvlan
 endef
 
