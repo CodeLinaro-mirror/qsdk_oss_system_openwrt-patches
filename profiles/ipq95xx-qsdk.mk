@@ -64,6 +64,8 @@ NSS_SFE:= kmod-qca-nss-sfe
 
 NSS_UDP_ST:= kmod-nss-udp-st-drv nss-udp-st
 
+NSS_NSM:= qca-nsm-app
+
 QCA_RFS:= kmod-qca-rfs
 
 CHAR_DIAG:=kmod-diag-char qca-diag
@@ -205,7 +207,8 @@ define Profile/QSDK_Premium
 		$(NETWORKING) $(QOS) \
 		$(HW_CRYPTO) $(IPSEC) $(NSS_MACSEC) \
 		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(FTM) $(CTRL_APP_DUT) kmod-qca-hyfi-bridge \
-		$(IGMPSNOOPING_RSTP) $(CNSS_DIAG) $(NSS_SFE) $(HYFI) $(QCA_EZMESH) $(QCA_MAD) $(EMESH_SP) $(NSS_UDP_ST)
+		$(IGMPSNOOPING_RSTP) $(CNSS_DIAG) $(NSS_SFE) $(HYFI) $(QCA_EZMESH) $(QCA_MAD) $(EMESH_SP) $(NSS_UDP_ST) \
+		$(NSS_NSM)
 endef
 #		$(QMSCT_CLIENT) \
 #		$(OPENVPN) $(HYFI) \
