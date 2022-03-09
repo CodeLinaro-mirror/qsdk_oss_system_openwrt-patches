@@ -174,8 +174,6 @@ USB_DIAG:=kmod-diag-char kmod-usb-f-diag qca-diag kmod-usb-gdiag
 
 CNSS_DIAG:=cnssdiag
 
-CTRL_APP_DUT:=ctrl_app_dut
-
 FTM:=ftm
 
 QMSCT_CLIENT:=qmsct_client
@@ -208,7 +206,7 @@ define Profile/QSDK_Premium
 		$(NSS_COMMON) $(QCA_ECM_PREMIUM) $(NSS_PPE) $(NSS_CLIENTS_HOST_DP) $(NSS_RMNET) \
 		$(NETWORKING) $(QOS) \
 		$(HW_CRYPTO) $(IPSEC) $(NSS_MACSEC) \
-		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(FTM) $(CTRL_APP_DUT) kmod-qca-hyfi-bridge \
+		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(FTM)  kmod-qca-hyfi-bridge \
 		$(IGMPSNOOPING_RSTP) $(CNSS_DIAG) $(NSS_SFE) $(HYFI) $(QCA_EZMESH) $(QCA_MAD) $(EMESH_SP) $(NSS_UDP_ST) \
 		$(NSS_NSM) $(SAL_QOS)
 endef
@@ -229,7 +227,7 @@ define Profile/QSDK_Enterprise
 	PACKAGES:=$(OPENWRT_STANDARD) $(SWITCH_SSDK_NOHNAT_PKGS) $(STORAGE) \
 		$(UTILS) $(TEST_TOOLS) $(COREBSP_UTILS) $(CD_ROUTER) $(AQ_PHY) \
 		$(NETWORKING) $(QOS) $(QCA_ECM_ENTERPRISE) $(NSS_COMMON) $(NSS_SFE) \
-		$(WIFI_PKGS) $(CTRL_APP_DUT) $(WIFI_FW_PKGS) $(NSS_MACSEC) $(IPSEC) $(NSS_PPE) kmod-qca-nss-drv-mscs \
+		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(NSS_MACSEC) $(IPSEC) $(NSS_PPE) kmod-qca-nss-drv-mscs \
 		-lacpd $(USB_DIAG) $(KPI) $(FAILSAFE) $(FTM)
 endef
 
