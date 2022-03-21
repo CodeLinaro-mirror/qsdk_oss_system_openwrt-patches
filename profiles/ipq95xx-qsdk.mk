@@ -230,13 +230,13 @@ define Profile/QSDK_Enterprise
 		$(UTILS) $(TEST_TOOLS) $(COREBSP_UTILS) $(CD_ROUTER) $(AQ_PHY) \
 		$(NETWORKING) $(QOS) $(QCA_ECM_ENTERPRISE) $(NSS_COMMON) $(NSS_SFE) \
 		$(WIFI_PKGS) $(CTRL_APP_DUT) $(WIFI_FW_PKGS) $(NSS_MACSEC) $(IPSEC) $(NSS_PPE) kmod-qca-nss-drv-mscs \
-		-lacpd $(USB_DIAG) $(KPI) $(FAILSAFE)
+		-lacpd $(USB_DIAG) $(KPI) $(FAILSAFE) $(FTM)
 endef
 
 #		$(NSS_ENTERPRISE) \
 #		$(HW_CRYPTO) $(QCA_RFS) $(IGMPSNOOPING_RSTP) \
 #		$(NSS_CLIENTS_ENTERPRISE) $(NSS_USERSPACE) \
-#		$(NSS_CRYPTO) $(NSS_EIP197_FW) $(CNSS_DIAG) $(FTM) \
+#		$(NSS_CRYPTO) $(NSS_EIP197_FW) $(CNSS_DIAG) \
 #		$(QMSCT_CLIENT) $(QRTR) $(MHI_QRTR)
 
 define Profile/QSDK_Enterprise/Description
@@ -275,14 +275,14 @@ define Profile/QSDK_512
 		$(UTILS) $(TEST_TOOLS) $(COREBSP_UTILS) $(AQ_PHY) $(FAILSAFE) \
 		$(NETWORKING) $(QOS) -lacpd $(USB_DIAG) $(KPI) $(NSS_COMMON) \
 		$(NSS_SFE) $(QCA_ECM_PREMIUM) $(NSS_PPE) $(IGMPSNOOPING_RSTP) \
-		$(HYFI) kmod-qca-hyfi-bridge $(QCA_EZMESH) $(MAP_PKGS) \
+		$(HYFI) kmod-qca-hyfi-bridge $(QCA_EZMESH) $(MAP_PKGS) $(FTM) \
 		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(NSS_CLIENTS_HOST_DP) $(NSS_RMNET) \
 		$(MINIDUMP) $(MAP_PKGS) $(HW_CRYPTO) $(IPSEC) $(NSS_MACSEC)
 endef
 
 #	$(OPENVPN) $(QCA_RFS) \
 #	$(CNSS_DIAG) \
-#	$(FTM) $(QMSCT_CLIENT) \
+#	$(QMSCT_CLIENT) \
 #	$(QRTR) $(MHI_QRTR) kmod-macvlan
 
 define Profile/QSDK_512/Description
