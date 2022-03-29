@@ -59,8 +59,6 @@ HW_CRYPTO:= kmod-crypto-qcrypto
 
 NSS_SFE:= kmod-qca-nss-sfe
 
-NSS_SFE_OPEN:= kmod-shortcut-fe kmod-shortcut-fe-cm kmod-shortcut-fe-drv
-
 NSS_MESH:= kmod-qca-nss-drv-wifi-meshmgr
 
 QCA_RFS:= kmod-qca-rfs
@@ -246,7 +244,7 @@ define Profile/QSDK_Open
 		$(WIFI_OPEN_PKGS) $(USB_ETHERNET) $(NSS_COMMON) $(NSS_STANDARD) $(NSS_MESH) \
 		$(QCA_ECM_PREMIUM) $(MAP_PKGS) $(IGMPSNOOPING_RSTP) $(IPSEC) $(QOS) -lacpd  \
 		qca-cnss-daemon qca-wifi-hk-fw-hw1-10.4-asic $(CNSS_DIAG) athdiag $(EMESH_SP) \
-		qrtr $(QMI_SAMPLE_APP) $(NSS_SFE_OPEN) ath11k-fwtest ath11k-qdss libtirpc cfr_tools kmod-qca-ovsmgr -qca-mcs-apps
+		qrtr $(QMI_SAMPLE_APP) $(NSS_SFE) ath11k-fwtest ath11k-qdss libtirpc cfr_tools kmod-qca-ovsmgr -qca-mcs-apps
 endef
 
 #	$(HW_CRYPTO) $(QCA_RFS) \
