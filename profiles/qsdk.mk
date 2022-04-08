@@ -134,7 +134,7 @@ NETWORKING:=mcproxy -dnsmasq dnsmasq-dhcpv6 bridge ip-bridge ip-full trace-cmd m
 	luci-app-upnp luci-app-ddns luci-proto-ipv6 \
 	kmod-nf-nathelper-extra kmod-nf-nathelper \
 	kmod-ipt-nathelper-rtsp nftables kmod-nft-netdev \
-	kmod-nft-offload kmod-bonding vxlan kmod-gre6
+	kmod-nft-offload kmod-bonding vxlan kmod-gre6 conntrack
 
 NETWORKING_256MB:=-dnsmasq dnsmasq-dhcpv6 bridge ip-full trace-cmd \
 	rp-pppoe-relay iptables-mod-extra iputils-tracepath iputils-tracepath6 \
