@@ -134,7 +134,8 @@ case "$board" in
 	qcom,ipq9574-db-al01-c3 |\
 	qcom,ipq9574-db-al02-c1 |\
 	qcom,ipq9574-db-al02-c2 |\
-	qcom,ipq9574-db-al02-c3)
+	qcom,ipq9574-db-al02-c3 |\
+	qcom,devsoc-ap-emulation)
 		ubootenv_add_uci_config $(ubootenv_mtdinfo)
 		;;
 esac
