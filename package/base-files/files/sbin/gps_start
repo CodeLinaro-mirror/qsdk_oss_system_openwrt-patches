@@ -16,12 +16,9 @@
 
 export status="off"
 
-# In ORG4572 as a temp rework, GPIO_21 is connected to ON_OFF input of the GPS module.
-# As GPIO_21 is assigned to gps_reset in dtsi, gps_reset is assigned to on_off_gpio_pin
 gps_start_org4572() {
-        reset_gpio_pin=$(cat /proc/device-tree/soc/pinctrl@1000000/gps_pins/gps_on_off/pins | sed s/"gpio"//)
-        on_off_gpio_pin=$(cat /proc/device-tree/soc/pinctrl@1000000/gps_pins/gps_reset/pins | sed s/"gpio"//)
-        [ -z "$reset_gpio_pin" -o -z "$on_off_gpio_pin" ] && { echo "ERROR: GPIO not available" > /dev/console ; return; }
+        on_off_gpio_pin=$(cat /proc/device-tree/soc/pinctrl@1000000/gps_pins/gps_on_off/pins | sed s/"gpio"//)
+        [ -z "$on_off_gpio_pin" ] && { echo "ERROR: GPIO not available" > /dev/console ; return; }
         gpio_base=$(cat /sys/class/gpio/gpiochip*/base | head -n1)
         gpio_on_off=$(( gpio_base + on_off_gpio_pin ))
         if [[ ! -e /sys/class/gpio/gpio$gpio_on_off ]]; then
