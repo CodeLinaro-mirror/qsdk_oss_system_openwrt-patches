@@ -60,8 +60,6 @@ NSS_RMNET:= kmod-rmnet-nss
 
 HW_CRYPTO:= kmod-crypto-qcrypto
 
-NSS_SFE:= kmod-qca-nss-sfe
-
 NSS_UDP_ST:= kmod-nss-udp-st-drv nss-udp-st
 
 NSS_NSM:= qca-nsm-app
@@ -207,12 +205,12 @@ define Profile/QSDK_Premium
 		$(NETWORKING) $(QOS) \
 		$(HW_CRYPTO) $(IPSEC) $(NSS_MACSEC) \
 		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(FTM)  kmod-qca-hyfi-bridge \
-		$(IGMPSNOOPING_RSTP) $(CNSS_DIAG) $(NSS_SFE) $(HYFI) $(QCA_EZMESH) $(QCA_MAD) $(EMESH_SP) $(NSS_UDP_ST) \
+		$(IGMPSNOOPING_RSTP) $(CNSS_DIAG) $(HYFI) $(QCA_EZMESH) $(QCA_MAD) $(EMESH_SP) $(NSS_UDP_ST) \
 		$(NSS_NSM) $(SAL_QOS)
 endef
 #		$(QMSCT_CLIENT) \
 #		$(OPENVPN) $(HYFI) \
-#		$(NSS_SFE) $(CNSS_DIAG) \
+#		$(CNSS_DIAG) \
 #		$(QCA_EDMA) $(QCA_RFS) $(EMESH_SP) kmod-macvlan
 
 define Profile/QSDK_Premium/Description
@@ -226,7 +224,7 @@ define Profile/QSDK_Enterprise
 	NAME:=Qualcomm Technologies, Inc SDK Enterprise Profile
 	PACKAGES:=$(OPENWRT_STANDARD) $(SWITCH_SSDK_NOHNAT_PKGS) $(STORAGE) \
 		$(UTILS) $(TEST_TOOLS) $(COREBSP_UTILS) $(CD_ROUTER) $(AQ_PHY) \
-		$(NETWORKING) $(QOS) $(QCA_ECM_ENTERPRISE) $(NSS_COMMON) $(NSS_SFE) \
+		$(NETWORKING) $(QOS) $(QCA_ECM_ENTERPRISE) $(NSS_COMMON) \
 		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(NSS_MACSEC) $(IPSEC) $(NSS_PPE) kmod-qca-nss-drv-mscs \
 		-lacpd $(USB_DIAG) $(KPI) $(FAILSAFE) $(FTM)
 endef
@@ -251,7 +249,7 @@ define Profile/QSDK_Open
 		$(FTM) $(KPI) $(UTILS) $(NETWORKING) $(CD_ROUTER) \
 		$(WIFI_OPEN_PKGS) $(USB_ETHERNET) $(NSS_COMMON) \
 		$(QCA_ECM_PREMIUM) $(IGMPSNOOPING_RSTP) -rstp $(IPSEC) $(QOS) -lacpd \
-		$(MAP_PKGS) $(NSS_PPE) $(NSS_SFE) \
+		$(MAP_PKGS) $(NSS_PPE) \
 		qca-cnss-daemon qca-wifi-hk-fw-hw1-10.4-asic $(CNSS_DIAG) athdiag\
 		qrtr $(QMI_SAMPLE_APP) ath11k-fwtest ath11k-qdss kmod-qca-ovsmgr \
 		$(AQ_PHY) libtirpc $(MACSEC_OPEN_PKGS) -qca-mcs-apps -kmod-qca-nss-ecm-wifi-plugin
@@ -272,7 +270,7 @@ define Profile/QSDK_512
 	PACKAGES:=$(OPENWRT_STANDARD) $(STORAGE) $(CD_ROUTER) $(SWITCH_SSDK_PKGS) \
 		$(UTILS) $(TEST_TOOLS) $(COREBSP_UTILS) $(AQ_PHY) $(FAILSAFE) \
 		$(NETWORKING) $(QOS) -lacpd $(USB_DIAG) $(KPI) $(NSS_COMMON) \
-		$(NSS_SFE) $(QCA_ECM_PREMIUM) $(NSS_PPE) $(IGMPSNOOPING_RSTP) \
+		$(QCA_ECM_PREMIUM) $(NSS_PPE) $(IGMPSNOOPING_RSTP) \
 		$(HYFI) kmod-qca-hyfi-bridge $(QCA_EZMESH) $(MAP_PKGS) $(FTM) \
 		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(NSS_CLIENTS_HOST_DP) $(NSS_RMNET) \
 		$(MINIDUMP) $(MAP_PKGS) $(HW_CRYPTO) $(IPSEC) $(NSS_MACSEC)
