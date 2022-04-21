@@ -91,10 +91,6 @@ echo "ERROR: GPSD is not installed. Exiting.."
 exit 1
 fi
 
-#Change baud rate to 4800:
-echo -e "\nSetting UART3 baud rate to 4800\n"
-stty -F /dev/ttyMSM2 4800
-
 gps_start_org4572
 gpsd /dev/ttyMSM2
 
@@ -102,7 +98,7 @@ if [ "$1" == "on" ]; then
         status=$(cat gps_status.txt)
         if [ $status == "off" ]; then
                 gps_on_org4572
-		echo "GPS_ORG4572 module is turned on!!" > /dev/console
+		echo "\nGPS_ORG4572 module is turned on!!" > /dev/console
         else
                 echo -e "\nGPS module is already turned ON!!!\n"
         fi
@@ -110,32 +106,27 @@ elif [ "$1" == "off" ]; then
 	status=$(cat gps_status.txt)
         if [ $status == "on" ]; then
                 gps_off_org4572
-		echo "GPS_ORG4572 module is turned off!!" > /dev/console
+		echo -e "\nGPS_ORG4572 module is turned off!!\n" > /dev/console
 	else
 		echo -e "\nGPS module is already turned off..Please turn it on\n"
 	fi
 elif [ "$1" == "parse" ]; then
-        i=0
-	echo "Waiting for GPS data...." > /dev/console
-	while [ $i -lt 20 ]
-	do
-	#echo "Iteration:$((i+1))"
-	i=$((i+1))
+	echo -e "\nSetting UART3 baud rate to 4800\n"
+	stty -F /dev/ttyMSM2 4800
+	echo -e "Turning on GPS_ORG4572 module\n" > /dev/console
 	gps_on_org4572
-        gpsclient
-        if [ $? -eq 0 ]; then
-		exit 0
-        else
-		gps_off_org4572
-        fi
-	done
-	if [ $i -eq 20 ]; then
-		echo -e "\nGPS wait timed out...exiting\n"
-		exit 1
+	echo -e "Switching to SiRF mode\n" > /dev/console
+	echo -e "\$PSRF100,0,115200,8,1,0*04<CR><LF>" > /dev/ttyMSM2
+	echo -e "Setting UART3 baud rate to 115200\n"
+	stty -F /dev/ttyMSM2 115200
+	sleep 2;
+	gpsclient
+	if [ $? -eq 0 ]; then
+		killall -9 gpsd
+                exit 0
 	fi
 else
-	echo "Turning on GPS_ORG4572 module" > /dev/console
-	gps_on_org4572
+	echo -e "Nothing to do...Please provide a valid argument!!\n" > /dev/console
 fi
 #echo -e "\nReading GPS data : \n"
 #cat /dev/ttyMSM2
