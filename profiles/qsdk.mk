@@ -325,7 +325,7 @@ define Profile/QSDK_MinEnt
 		$(NETWORKING) $(QOS) $(UTILS) $(TEST_TOOLS) $(COREBSP_UTILS) \
 		$(QCA_ECM_ENTERPRISE) $(NSS_CLIENTS_ENTERPRISE) $(NSS_MACSEC) $(NSS_CRYPTO) \
 		$(IPSEC) $(NSS_EIP197_FW) $(CD_ROUTER) $(AQ_PHY) $(CNSS_DIAG) \
-		$(CTRL_APP_DUT) $(FTM) $(QMSCT_CLIENT) -lacpd \
+		$(CTRL_APP_DUT) $(FTM) $(QMSCT_CLIENT) -lacpd -kmod-qca-nss-ecm-wifi-plugin \
 		$(USB_DIAG) $(MHI_QRTR) $(KPI) $(FAILSAFE) $(NSS_USERSPACE) $(NSS_PPE)
 endef
 
