@@ -32,7 +32,10 @@ QCA_ECM_STANDARD:= kmod-qca-nss-ecm-standard
 QCA_ECM_ENTERPRISE:= kmod-qca-nss-ecm-noload kmod-qca-nss-ecm-wifi-plugin
 QCA_ECM_PREMIUM:= kmod-qca-nss-ecm-premium kmod-qca-nss-ecm-wifi-plugin
 
-NSS_PPE:= kmod-qca-nss-ppe-bridge-mgr
+NSS_PPE:= kmod-qca-nss-ppe \
+	kmod-qca-nss-ppe-bridge-mgr \
+	kmod-qca-nss-ppe-pppoe-mgr \
+	kmod-qca-nss-ppe-lag-mgr
 
 NSS_CLIENTS_STANDARD:= kmod-qca-nss-drv-qdisc kmod-qca-nss-drv-igs kmod-qca-nss-drv-tun6rd \
 	kmod-qca-nss-drv-tunipip6 kmod-qca-nss-drv-l2tpv2 kmod-qca-nss-drv-pptp \
@@ -79,7 +82,7 @@ WIFI_OPEN_PKGS_8M:= kmod-ath11k wpad-mesh hostapd-utils \
 WIFI_PKGS:=kmod-qca-wifi-unified-profile \
 	qca-hostap qca-hostapd-cli qca-wpa-supplicant \
 	qca-wpa-cli qca-cfg80211tool qca-wifi-scripts \
-	qca-acfg qca-wrapd athtestcmd-lith qca-iface-mgr \
+	qca-acfg qca-wrapd athtestcmd-lith myftm qca-iface-mgr \
 	qca-wapid qca-lowi athdiag whc-mesh whc-ui \
 	qca-spectral qca-icm qcmbr sigma-dut \
 	qca-wpc qca-cfg80211 qca-cnss-daemon
@@ -127,14 +130,14 @@ COREBSP_UTILS:=pm-utils wififw_mount_script qca-thermald qca-qmi-framework qca-t
 
 FAILSAFE:= kmod-bootconfig
 
-NETWORKING:=mcproxy -dnsmasq dnsmasq-dhcpv6 bridge ip-bridge ip-full trace-cmd mwan3 \
+NETWORKING:=mcproxy -dnsmasq dnsmasq-dhcpv6 bridge ip-bridge ip-full mwan3 \
 	rp-pppoe-relay iptables-mod-extra iputils-tracepath iputils-tracepath6 \
 	luci-app-upnp luci-app-ddns luci-proto-ipv6 \
 	kmod-nf-nathelper-extra kmod-nf-nathelper \
 	kmod-ipt-nathelper-rtsp nftables kmod-nft-netdev \
 	kmod-nft-offload kmod-bonding vxlan kmod-gre6 conntrack
 
-NETWORKING_256MB:=-dnsmasq dnsmasq-dhcpv6 bridge ip-full trace-cmd \
+NETWORKING_256MB:=-dnsmasq dnsmasq-dhcpv6 bridge ip-full \
 	rp-pppoe-relay iptables-mod-extra iputils-tracepath iputils-tracepath6 \
 	kmod-nf-nathelper-extra kmod-ipt-nathelper-rtsp \
 	luci-app-upnp luci-app-ddns luci-proto-ipv6 \
@@ -277,7 +280,7 @@ define Profile/QSDK_QBuilder
 		qca-spectral qca-wpc sigma-dut ctrl_app_dut qcmbr qca-wrapd qca-wapid qca-acfg whc-mesh whc-ui \
 		qca-lowi qca-iface-mgr qca-icm qca-cfg80211 athdiag qca-cnss-daemon athtestcmd-lith \
 		qca-wifi-hk-fw-hw1-10.4-asic kmod-aq_phy kmod-qca_85xx_sw aq-fw-download mcproxy mwan3 \
-		-dnsmasq dnsmasq-dhcpv6 bridge ip-full trace-cmd rp-pppoe-relay iptables-mod-extra \
+		-dnsmasq dnsmasq-dhcpv6 bridge ip-full rp-pppoe-relay iptables-mod-extra \
 		iputils-tracepath iputils-tracepath6 \
 		kmod-nf-nathelper-extra kmod-nf-nathelper kmod-ipt-nathelper-rtsp luci-app-upnp \
 		luci-app-ddns luci-proto-ipv6 luci-app-multiwan tc kmod-sched \
@@ -323,7 +326,7 @@ define Profile/QSDK_MinEnt
 		$(QCA_ECM_ENTERPRISE) $(NSS_CLIENTS_ENTERPRISE) $(NSS_MACSEC) $(NSS_CRYPTO) \
 		$(IPSEC) $(NSS_EIP197_FW) $(CD_ROUTER) $(AQ_PHY) $(CNSS_DIAG) \
 		$(CTRL_APP_DUT) $(FTM) $(QMSCT_CLIENT) -lacpd \
-		$(USB_DIAG) $(MHI_QRTR) $(KPI) $(FAILSAFE) $(NSS_USERSPACE)
+		$(USB_DIAG) $(MHI_QRTR) $(KPI) $(FAILSAFE) $(NSS_USERSPACE) $(NSS_PPE)
 endef
 
 define Profile/QSDK_MinEnt/Description
