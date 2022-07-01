@@ -218,6 +218,8 @@ QRTR:=qca-qrtr
 
 EMESH_SP:=kmod-emesh-sp
 
+RSRC_MGR:=qca-rsrcmgr
+
 EXTRA_NETWORKING:= $(CD_ROUTER) $(NSS_EIP197_FW) -rdk-v-wifi-ath10k kmod-qca-nss-macsec \
 	$(MACSEC_OPEN_PKGS) $(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD)
 
@@ -233,7 +235,7 @@ define Profile/QSDK_Premium
 		$(QOS) $(HYFI) $(NSS_MACSEC) $(NSS_USERSPACE) $(NSS_RMNET) \
 		$(NSS_UDP_ST) $(NSS_PPE) $(QCA_MAD) $(EMESH_SP) \
 		$(QCA_EZMESH) $(OPENVPN) kmod-macvlan kmod-qca-hyfi-bridge \
-		$(NSS_NSM) $(SAL_QOS)
+		$(NSS_NSM) $(SAL_QOS) $(RSRC_MGR)
 endef
 
 #		$(QCA_RFS)
