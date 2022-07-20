@@ -38,7 +38,8 @@ NSS_PPE:= kmod-qca-nss-ppe \
 	kmod-qca-nss-ppe-lag-mgr \
 	kmod-qca-nss-ppe-tunipip6 \
 	kmod-qca-nss-ppe-gretap \
-	kmod-qca-nss-ppe-vxlanmgr
+	kmod-qca-nss-ppe-vxlanmgr \
+	kmod-qca-nss-ppe-mapt
 
 NSS_CLIENTS_STANDARD:= kmod-qca-nss-drv-qdisc kmod-qca-nss-drv-igs kmod-qca-nss-drv-tun6rd \
 	kmod-qca-nss-drv-tunipip6 kmod-qca-nss-drv-l2tpv2 kmod-qca-nss-drv-pptp \
