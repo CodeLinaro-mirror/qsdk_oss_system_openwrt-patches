@@ -222,7 +222,7 @@ QRTR:=qca-qrtr
 
 EMESH_SP:=kmod-emesh-sp
 
-RSRC_MGR:=qca-rsrcmgr
+RSRC_MGR:=qca-rsrcmgr qca-rsrcmgr-secure-libs
 
 EXTRA_NETWORKING:= $(CD_ROUTER) $(NSS_EIP197_FW) -rdk-v-wifi-ath10k kmod-qca-nss-macsec \
 	$(MACSEC_OPEN_PKGS) $(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD)
