@@ -14,8 +14,6 @@
 #ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 #OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-export status="off"
-
 gps_start_org4572() {
         on_off_gpio_pin=$(cat /proc/device-tree/soc/pinctrl@1000000/gps_pins/gps_on_off/pins | sed s/"gpio"//)
         [ -z "$on_off_gpio_pin" ] && { echo "ERROR: GPIO not available" > /dev/console ; return; }
@@ -24,8 +22,7 @@ gps_start_org4572() {
         if [[ ! -e /sys/class/gpio/gpio$gpio_on_off ]]; then
                 echo $gpio_on_off > /sys/class/gpio/export
                 echo out > /sys/class/gpio/gpio$gpio_on_off/direction
-                status=off
-                echo $status > gps_status.txt
+                gps_switch_to_osp_mode
         fi
 }
 gps_on_org4572() {
@@ -46,6 +43,20 @@ gps_off_org4572() {
         status=off
         echo $status > gps_status.txt
         #echo "GPS_ORG4572 Module is turned off..." > /dev/console
+}
+gps_switch_to_osp_mode() {
+        echo "Starting the GPS Daemon" > /dev/console
+        gpsd /dev/ttyMSM2
+        echo "Turning on GPS_ORG4572 module" > /dev/console
+        gps_on_org4572
+        echo "Setting UART3 baud rate to 4800" > /dev/console
+        stty -F /dev/ttyMSM2 4800
+        echo "Switching to SiRF mode" > /dev/console
+        echo -e "\$PSRF100,0,115200,8,1,0*04<CR><LF>" > /dev/ttyMSM2
+        echo "Setting UART3 baud rate to 115200" > /dev/console
+        stty -F /dev/ttyMSM2 115200
+        echo "Fetching the location data" > /dev/console
+        sleep 2;
 }
 
 while [ -n "$1" ]; do
@@ -92,41 +103,35 @@ exit 1
 fi
 
 gps_start_org4572
-gpsd /dev/ttyMSM2
 
 if [ "$1" == "on" ]; then
         status=$(cat gps_status.txt)
         if [ $status == "off" ]; then
                 gps_on_org4572
-		echo "\nGPS_ORG4572 module is turned on!!" > /dev/console
+                echo "GPS_ORG4572 module is turned on!!" > /dev/console
         else
                 echo -e "\nGPS module is already turned ON!!!\n"
         fi
 elif [ "$1" == "off" ]; then
-	status=$(cat gps_status.txt)
+        status=$(cat gps_status.txt)
         if [ $status == "on" ]; then
                 gps_off_org4572
-		echo -e "\nGPS_ORG4572 module is turned off!!\n" > /dev/console
-	else
-		echo -e "\nGPS module is already turned off..Please turn it on\n"
-	fi
+                echo -e "\nGPS_ORG4572 module is turned off!!\n" > /dev/console
+        else
+                echo -e "\nGPS module is already turned off..Please turn it on\n"
+        fi
 elif [ "$1" == "parse" ]; then
-	echo -e "\nSetting UART3 baud rate to 4800\n"
-	stty -F /dev/ttyMSM2 4800
-	echo -e "Turning on GPS_ORG4572 module\n" > /dev/console
-	gps_on_org4572
-	echo -e "Switching to SiRF mode\n" > /dev/console
-	echo -e "\$PSRF100,0,115200,8,1,0*04<CR><LF>" > /dev/ttyMSM2
-	echo -e "Setting UART3 baud rate to 115200\n"
-	stty -F /dev/ttyMSM2 115200
-	sleep 2;
-	gpsclient
-	if [ $? -eq 0 ]; then
-		killall -9 gpsd
+        status=$(cat gps_status.txt)
+        if [ $status == "off" ]; then
+                echo "Turning on the GPS module for fetching the data" > /dev/console
+                gps_on_org4572
+        fi
+        gpsclient
+        if [ $? -eq 0 ]; then
                 exit 0
-	fi
+        fi
 else
-	echo -e "Nothing to do...Please provide a valid argument!!\n" > /dev/console
+        echo -e "Nothing to do...Please provide a valid argument!!\n" > /dev/console
 fi
 #echo -e "\nReading GPS data : \n"
 #cat /dev/ttyMSM2
