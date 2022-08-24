@@ -180,7 +180,7 @@ HYFI:=hyfi-mesh hyfi-ui
 
 QCA_MAD:=qca-mad
 
-QCA_EZMESH:=qca-ezmesh qca-ezmesh-ctrl qca-ezmesh-agent qca-ezmesh-alg qca-ezmesh-agentalg
+QCA_EZMESH:=qca-ezmesh qca-ezmesh-ctrl qca-ezmesh-agent qca-ezmesh-alg qca-ezmesh-agentalg qca-ezmesh-alg-static
 
 AQ_PHY:=kmod-aq_phy kmod-qca_85xx_sw aq-fw-download
 
