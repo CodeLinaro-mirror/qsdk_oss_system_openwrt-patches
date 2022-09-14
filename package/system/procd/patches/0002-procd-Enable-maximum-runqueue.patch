@@ -20,7 +20,7 @@ index c2e1abb..80a6111 100644
  #include <sys/types.h>
  #include <sys/stat.h>
  #include <fcntl.h>
-@@ -178,11 +179,36 @@ static int _rc(struct runqueue *q, char
+@@ -178,11 +179,40 @@ static int _rc(struct runqueue *q, char
 	return 0;
  }
 
@@ -35,6 +35,10 @@ index c2e1abb..80a6111 100644
 +	char cmdline[COMMAND_LINE_SIZE];
 +	int fd, ret = -1;
 +	int max_running_tasks=1;
++
++	if (file_exists("/tmp/.multicore_boot")) {
++		return max_running_tasks;
++	}
 +
 +	if ((fd = open("/proc/cmdline", O_RDONLY)) != -1) {
 +		ret = read(fd, cmdline, sizeof(cmdline) - 1);
