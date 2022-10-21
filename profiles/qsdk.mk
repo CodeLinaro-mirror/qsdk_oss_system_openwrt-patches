@@ -40,7 +40,8 @@ NSS_PPE:= kmod-qca-nss-ppe \
 	kmod-qca-nss-ppe-tunipip6 \
 	kmod-qca-nss-ppe-gretap \
 	kmod-qca-nss-ppe-vxlanmgr \
-	kmod-qca-nss-ppe-mapt
+	kmod-qca-nss-ppe-mapt \
+	kmod-qca-nss-ppe-rule
 
 NSS_CLIENTS_STANDARD:= kmod-qca-nss-drv-qdisc kmod-qca-nss-drv-igs kmod-qca-nss-drv-tun6rd \
 	kmod-qca-nss-drv-tunipip6 kmod-qca-nss-drv-l2tpv2 kmod-qca-nss-drv-pptp \
@@ -56,7 +57,8 @@ NSS_CLIENTS_ENTERPRISE:= kmod-qca-nss-drv-qdisc kmod-qca-nss-drv-profile \
 	kmod- kmod-qca-nss-drv-bridge-mgr kmod-qca-nss-drv-netlink kmod-qca-nss-drv-tlsmgr \
 	kmod-qca-nss-drv-match kmod-qca-nss-drv-mirror kmod-qca-nss-drv-mscs
 
-NSS_CRYPTO:= kmod-qca-nss-crypto kmod-qca-nss-cfi-cryptoapi -kmod-qca-nss-cfi-ocf kmod-qca-nss-drv-ipsecmgr kmod-qca-nss-drv-ipsecmgr-xfrm -kmod-crypto-ocf -kmod-qca-nss-drv-ipsecmgr-klips
+NSS_CRYPTO:= kmod-qca-nss-crypto kmod-qca-nss-cfi-cryptoapi -kmod-qca-nss-cfi-ocf kmod-qca-nss-drv-ipsecmgr kmod-qca-nss-drv-ipsecmgr-xfrm -kmod-crypto-ocf -kmod-qca-nss-drv-ipsecmgr-klips \
+	kmod-qca-nss-eip kmod-qca-nss-eip-crypto kmod-qca-nss-eip-ipsec
 
 NSS_RMNET:= kmod-rmnet-nss
 
@@ -180,7 +182,7 @@ HYFI:=hyfi-mesh hyfi-ui
 
 QCA_MAD:=qca-mad
 
-QCA_EZMESH:=qca-ezmesh qca-ezmesh-ctrl qca-ezmesh-agent qca-ezmesh-alg qca-ezmesh-agentalg qca-ezmesh-alg-static
+QCA_EZMESH:=qca-ezmesh qca-ezmesh-ctrl qca-ezmesh-agent qca-ezmesh-alg qca-ezmesh-agentalg
 
 AQ_PHY:=kmod-aq_phy kmod-qca_85xx_sw aq-fw-download
 
