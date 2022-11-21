@@ -133,7 +133,7 @@ TEST_TOOLS:=ethtool i2c-tools tcpdump
 UTILS:=file luci-app-samba4 rng-tools profilerd
 
 COREBSP_UTILS:=pm-utils wififw_mount_script qca-thermald qca-qmi-framework qca-time-services \
-	qca-wlanfw-upgrade qti-license-pfm dashboard qapp-store
+	qca-wlanfw-upgrade qti-license-pfm dashboard
 
 FAILSAFE:= kmod-bootconfig
 
@@ -264,7 +264,7 @@ define Profile/QSDK_Open
 		$(QCA_ECM_PREMIUM) $(MAP_PKGS) $(IGMPSNOOPING_RSTP) $(IPSEC) $(QOS) -lacpd  \
 		$(NSS_PPE) $(AQ_PHY) $(MACSEC_OPEN_PKGS) \
 		qca-cnss-daemon qca-wifi-hk-fw-hw1-10.4-asic $(CNSS_DIAG) athdiag $(EMESH_SP) \
-		qrtr $(QMI_SAMPLE_APP) ath11k-fwtest ath11k-qdss -qapp-store \
+		qrtr $(QMI_SAMPLE_APP) ath11k-fwtest ath11k-qdss \
 		libtirpc cfr_tools kmod-qca-ovsmgr -qca-mcs-apps -kmod-qca-nss-ecm-wifi-plugin
 endef
 
