@@ -257,6 +257,30 @@ endef
 
 $(eval $(call Profile,QSDK_Premium))
 
+define Profile/QSDK_BigEndian
+        NAME:=Qualcomm Technologies, Inc SDK Big Endian Profile
+        PACKAGES:=$(OPENWRT_STANDARD) $(STORAGE) $(AUDIO) \
+                $(VIDEO) $(TEST_TOOLS) $(COREBSP_UTILS) \
+                $(AQ_PHY) $(FAILSAFE) -lacpd $(USB_DIAG) $(SWITCH_SSDK_PKGS) $(CNSS_DIAG) \
+                $(FTM) $(CTRL_APP_DUT) $(QMSCT_CLIENT) $(KPI) $(NSS_COMMON) \
+                $(NSS_STANDARD) $(UTILS) $(NETWORKING) $(CD_ROUTER) $(NSS_CLIENTS_STANDARD) \
+                $(QCA_ECM_PREMIUM) $(NSS_CRYPTO) $(NSS_EIP197_FW) $(IGMPSNOOPING_RSTP) \
+                $(WIFI_PKGS) $(WIFI_FW_PKGS) $(HW_CRYPTO) $(IPSEC) $(MAP_PKGS) $(MINIDUMP) \
+                $(QOS) $(HYFI) $(NSS_MACSEC) $(NSS_USERSPACE) $(NSS_RMNET) \
+                $(NSS_UDP_ST) $(NSS_PPE) $(QCA_MAD) $(EMESH_SP) \
+                $(QCA_EZMESH) $(OPENVPN) kmod-macvlan kmod-qca-hyfi-bridge \
+                $(NSS_NSM) $(SAL_QOS) $(RSRC_MGR)
+endef
+
+#               $(QCA_RFS)
+
+define Profile/QSDK_BigEndian/Description
+        QSDK Big Endian package set configuration.
+        Enables qca-wifi 11.0 packages
+endef
+
+$(eval $(call Profile,QSDK_BigEndian))
+
 define Profile/QSDK_Open
 	NAME:=Qualcomm Technologies, Inc SDK Open Profile
 	PACKAGES:=$(OPENWRT_STANDARD) $(STORAGE) $(TEST_TOOLS) $(AUDIO) $(VIDEO) \
