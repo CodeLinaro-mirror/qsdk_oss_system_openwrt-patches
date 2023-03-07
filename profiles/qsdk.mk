@@ -102,7 +102,7 @@ WIFI_PKGS_MINENT:=kmod-qca-wifi-custc-profile \
 	qca-wpa-cli qca-spectral qca-wpc sigma-dut \
 	qcmbr qca-wrapd qca-wapid qca-acfg \
 	qca-lowi qca-icm qca-cfg80211 athdiag qca-cnss-daemon \
-	athtestcmd-lith qca-cfg80211tool
+	athtestcmd-lith qca-cfg80211tool myftm
 
 WIFI_PKGS_256MB:=kmod-qca-wifi-lowmem-profile \
 	qca-hostap qca-hostapd-cli qca-wpa-supplicant \
