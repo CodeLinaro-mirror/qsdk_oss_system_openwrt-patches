@@ -9,22 +9,23 @@ Change-Id: Iea0368f3513cb59bb9b649a9ca0e2f62ba36c22c
 Signed-off-by: Ermine Jose <quic_erminejo@quicinc.com>
 ---
 
-Index: u-boot-2018.03/tools/env/fw_env.c
+Index: u-boot-2021.10/tools/env/fw_env.c
 ===================================================================
---- u-boot-2018.03.orig/tools/env/fw_env.c
-+++ u-boot-2018.03/tools/env/fw_env.c
-@@ -883,6 +883,19 @@ static int flash_bad_block(int fd, uint8
+--- u-boot-2022.10.orig/tools/env/fw_env.c
++++ u-boot-2022.10/tools/env/fw_env.c
+@@ -888,6 +888,20 @@ static int flash_bad_block(int fd, uint8
  	return 0;
  }
  
 +int find_mtd_size(int fd)
 +{
 +	struct mtd_info_user mtdinfo;
-+	int size = 0;
++	int size=0;
 +
-+	if (ioctl(fd, MEMGETINFO, &mtdinfo) == -1) {
++	if(ioctl(fd, MEMGETINFO, &mtdinfo) == -1) {
 +		return size;
 +	}
++
 +	size = mtdinfo.size;
 +
 +	return size;
@@ -33,11 +34,11 @@ Index: u-boot-2018.03/tools/env/fw_env.c
  /*
   * Read data from flash at an offset into a provided buffer. On NAND it skips
   * bad blocks but makes sure it stays within ENVSECTORS (dev) starting from
-@@ -895,11 +908,13 @@ static int flash_read_buf (int dev, int
+@@ -900,11 +914,13 @@ static int flash_read_buf(int dev, int f
  				   0 on NOR */
  	size_t processed = 0;	/* progress counter */
  	size_t readlen = count;	/* current read length */
-+	off_t top_of_range;     /* end of the last block we may use */
++	off_t top_of_range;	/* end of the last block we may use */
  	off_t block_seek;	/* offset inside the current block to the start
  				   of the data */
  	loff_t blockstart;	/* running start of the current block -
@@ -45,16 +46,16 @@ Index: u-boot-2018.03/tools/env/fw_env.c
  	int rc;
 +	int size;
  
- 	blockstart = (offset / DEVESIZE (dev)) * DEVESIZE (dev);
+ 	blockstart = (offset / DEVESIZE(dev)) * DEVESIZE(dev);
  
-@@ -913,11 +928,19 @@ static int flash_read_buf (int dev, int
+@@ -918,11 +934,19 @@ static int flash_read_buf(int dev, int f
  		 */
- 		blocklen = DEVESIZE (dev);
+ 		blocklen = DEVESIZE(dev);
  
 +		/*
-+		* To calculate the top of the range, we have to use the
-+		* global DEVOFFSET (dev), which can be different from offset
-+		*/
++		 * To calculate the top of the range, we have to use the
++		 * global DEVOFFSET (dev), which can be different from offset
++		 */
 +		top_of_range = ((DEVOFFSET(dev) / blocklen) +
 +				ENVSECTORS (dev)) * blocklen;
 +
@@ -67,8 +68,8 @@ Index: u-boot-2018.03/tools/env/fw_env.c
  	}
  
  	/* This only runs once on NOR flash */
-@@ -926,7 +949,11 @@ static int flash_read_buf (int dev, int
- 		if (rc < 0)		/* block test failed */
+@@ -931,7 +955,11 @@ static int flash_read_buf(int dev, int f
+ 		if (rc < 0)	/* block test failed */
  			return -1;
  
 -		if (blockstart + block_seek + readlen > environment_end(dev)) {
@@ -76,17 +77,18 @@ Index: u-boot-2018.03/tools/env/fw_env.c
 +			top_of_range += readlen;
 +
 +		size = find_mtd_size(fd);
-+		if ((blockstart + block_seek + readlen > top_of_range) || (size > 0 &&  top_of_range > size)) {
++		if ((blockstart + block_seek + readlen > top_of_range) || (size > 0 && top_of_range > size)) {
  			/* End of range is reached */
- 			fprintf (stderr,
- 				 "Too few good blocks within range\n");
-@@ -986,15 +1013,18 @@ static int flash_write_buf(int dev, int
+ 			fprintf(stderr, "Too few good blocks within range\n");
+ 			return -1;
+@@ -998,16 +1026,19 @@ static int flash_write_buf(int dev, int
  				   below offset */
  	off_t block_seek;	/* offset inside the erase block to the start
  				   of the data */
-+	off_t top_of_range;     /* end of the last block we may use */
++	off_t top_of_range;     /* end of the lst block we may use */
  	loff_t blockstart;	/* running start of the current block -
  				   MEMGETBADBLOCK needs 64 bits */
+ 	int was_locked = 0;	/* flash lock flag */
  	int rc;
 +	int size;
  
@@ -99,7 +101,7 @@ Index: u-boot-2018.03/tools/env/fw_env.c
  		erase_len = blocklen;
  		blockstart = DEVOFFSET(dev);
  		block_seek = 0;
-@@ -1002,10 +1032,13 @@ static int flash_write_buf(int dev, int
+@@ -1015,10 +1046,13 @@ static int flash_write_buf(int dev, int
  	} else {
  		blocklen = DEVESIZE(dev);
  
@@ -114,16 +116,16 @@ Index: u-boot-2018.03/tools/env/fw_env.c
  
  		blockstart = erase_offset;
  
-@@ -1080,7 +1113,11 @@ static int flash_write_buf(int dev, int
- 		if (rc < 0)		/* block test failed */
+@@ -1093,7 +1127,11 @@ static int flash_write_buf(int dev, int
+ 		if (rc < 0)	/* block test failed */
  			return rc;
  
 -		if (blockstart + erasesize > environment_end(dev)) {
-+		if(rc)
++		if (rc)
 +			top_of_range += blocklen;
 +
 +		size = find_mtd_size(fd);
 +		if ((blockstart + erasesize > top_of_range) || (size > 0 && top_of_range > size)) {
- 			fprintf (stderr, "End of range reached, aborting\n");
+ 			fprintf(stderr, "End of range reached, aborting\n");
  			return -1;
  		}
