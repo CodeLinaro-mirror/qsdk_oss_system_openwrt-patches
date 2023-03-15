@@ -151,7 +151,6 @@ case "$board" in
 	qcom,ipq9574-db-al02-c2 |\
 	qcom,ipq9574-db-al02-c3 |\
 	qcom,ipq5332-ap-emulation |\
-	qcom,ipq5332-ap-mi01.1 |\
 	qcom,ipq5332-ap-mi01.2 |\
 	qcom,ipq5332-ap-mi01.2-qcn9160-c1 |\
 	qcom,ipq5332-ap-mi01.4 |\
