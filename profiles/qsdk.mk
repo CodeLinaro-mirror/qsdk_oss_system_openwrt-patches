@@ -32,6 +32,12 @@ QCA_ECM_STANDARD:= kmod-qca-nss-ecm-standard
 QCA_ECM_ENTERPRISE:= kmod-qca-nss-ecm-noload kmod-qca-nss-ecm-wifi-plugin
 QCA_ECM_PREMIUM:= kmod-qca-nss-ecm-premium kmod-qca-nss-ecm-wifi-plugin
 
+NSS_PPE_256:= kmod-qca-nss-ppe \
+	kmod-qca-nss-ppe-vp \
+	kmod-qca-nss-ppe-bridge-mgr \
+	kmod-qca-nss-ppe-pppoe-mgr \
+	kmod-qca-nss-ppe-lag-mgr
+
 NSS_PPE:= kmod-qca-nss-ppe \
 	kmod-qca-nss-ppe-vp \
 	kmod-qca-nss-ppe-bridge-mgr \
@@ -380,7 +386,7 @@ define Profile/QSDK_256
 	PACKAGES:=$(OPENWRT_256MB) $(NSS_COMMON) $(NSS_STANDARD) $(SWITCH_SSDK_PKGS) \
 		$(WIFI_PKGS_256MB) $(WIFI_FW_PKGS) $(CD_ROUTER_256MB) \
 		$(NETWORKING_256MB) iperf rng-tools $(QCA_RFS) $(CHAR_DIAG) \
-		$(QCA_ECM_STANDARD) $(NSS_MACSEC) $(NSS_CLIENTS_256MB) $(FAILSAFE) \
+		$(QCA_ECM_STANDARD) $(NSS_PPE_256) $(NSS_MACSEC) $(NSS_CLIENTS_256MB) $(FAILSAFE) \
 		-lacpd $(CNSS_DIAG) $(CTRL_APP_DUT) $(FTM) $(QMSCT_CLIENT) $(HYFI) $(QCA_EZMESH) kmod-macvlan \
 		$(IGMPSNOOPING_RSTP) $(EMESH_SP) e2fsprogs losetup
 endef
