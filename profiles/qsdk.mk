@@ -161,6 +161,8 @@ NETWORKING_8MB:=dnsmasq -dnsmasq-dhcpv6 kmod-nf-nathelper-extra kmod-ipt-nathelp
 NETWORKING_16MB:=-dnsmasq dnsmasq-dhcpv6 kmod-nf-nathelper-extra kmod-ipt-nathelper-rtsp ip \
 	rp-pppoe-relay
 
+NPT66:= kmod-ipt-nat6 iptables-mod-nat-extra
+
 CD_ROUTER:=kmod-ipt-ipopt kmod-bonding kmod-ipt-sctp lacpd \
 	arptables ds-lite 6rd ddns-scripts xl2tpd \
 	quagga quagga-ripd quagga-zebra quagga-watchquagga quagga-vtysh \
@@ -250,7 +252,7 @@ define Profile/QSDK_Premium
 		$(QOS) $(HYFI) $(NSS_MACSEC) $(NSS_USERSPACE) $(NSS_RMNET) \
 		$(NSS_UDP_ST) $(NSS_PPE) $(QCA_MAD) $(EMESH_SP) \
 		$(QCA_EZMESH) $(OPENVPN) kmod-macvlan kmod-qca-hyfi-bridge \
-		$(NSS_NSM) $(SAL_QOS) $(RSRC_MGR) $(NSS_FLOWID) $(NSS_FLS)
+		$(NSS_NSM) $(SAL_QOS) $(RSRC_MGR) $(NSS_FLOWID) $(NSS_FLS) $(NPT66)
 endef
 
 #		$(QCA_RFS)
@@ -274,7 +276,7 @@ define Profile/QSDK_BigEndian
                 $(QOS) $(HYFI) $(NSS_MACSEC) $(NSS_USERSPACE) $(NSS_RMNET) \
                 $(NSS_UDP_ST) $(NSS_PPE) $(QCA_MAD) $(EMESH_SP) \
                 $(QCA_EZMESH) $(OPENVPN) kmod-macvlan kmod-qca-hyfi-bridge \
-                $(NSS_NSM) $(SAL_QOS) $(RSRC_MGR) $(NSS_FLOWID) $(NSS_FLS)
+                $(NSS_NSM) $(SAL_QOS) $(RSRC_MGR) $(NSS_FLOWID) $(NSS_FLS) $(NPT66)
 endef
 
 #               $(QCA_RFS)
