@@ -201,6 +201,8 @@ VIDEO:=kmod-qpic_panel_ertft
 
 NSS_USERSPACE:=nlcfg
 
+NSS_FLOWID:=ifli
+
 KPI:=iperf sysstat
 
 CHAR_DIAG:=kmod-diag-char qca-diag
@@ -246,7 +248,7 @@ define Profile/QSDK_Premium
 		$(QOS) $(HYFI) $(NSS_MACSEC) $(NSS_USERSPACE) $(NSS_RMNET) \
 		$(NSS_UDP_ST) $(NSS_PPE) $(QCA_MAD) $(EMESH_SP) \
 		$(QCA_EZMESH) $(OPENVPN) kmod-macvlan kmod-qca-hyfi-bridge \
-		$(NSS_NSM) $(SAL_QOS) $(RSRC_MGR)
+		$(NSS_NSM) $(SAL_QOS) $(RSRC_MGR) $(NSS_FLOWID)
 endef
 
 #		$(QCA_RFS)
@@ -270,7 +272,7 @@ define Profile/QSDK_BigEndian
                 $(QOS) $(HYFI) $(NSS_MACSEC) $(NSS_USERSPACE) $(NSS_RMNET) \
                 $(NSS_UDP_ST) $(NSS_PPE) $(QCA_MAD) $(EMESH_SP) \
                 $(QCA_EZMESH) $(OPENVPN) kmod-macvlan kmod-qca-hyfi-bridge \
-                $(NSS_NSM) $(SAL_QOS) $(RSRC_MGR)
+                $(NSS_NSM) $(SAL_QOS) $(RSRC_MGR) $(NSS_FLOWID)
 endef
 
 #               $(QCA_RFS)
