@@ -40,6 +40,10 @@ if KERNEL_DEBUG_KMEMLEAK
 		bool "Default kmemleak to off"
 endif
 
+config KERNEL_DEFAULT_QDISC_DISABLE
+	bool "Disable default qdisc configuration on Network Interfaces"
+	default y
+
 config KERNEL_STACKTRACE
 	bool "STACK TRACE"
 	default n
