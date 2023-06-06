@@ -38,6 +38,12 @@ NSS_PPE_256:= kmod-qca-nss-ppe \
 	kmod-qca-nss-ppe-pppoe-mgr \
 	kmod-qca-nss-ppe-lag-mgr
 
+NSS_PPE_16M:= kmod-qca-nss-ppe \
+	kmod-qca-nss-ppe-vp \
+	kmod-qca-nss-ppe-bridge-mgr \
+	kmod-qca-nss-ppe-pppoe-mgr \
+	kmod-qca-nss-ppe-lag-mgr
+
 NSS_PPE:= kmod-qca-nss-ppe \
 	kmod-qca-nss-ppe-vp \
 	kmod-qca-nss-ppe-mirror-test \
@@ -450,14 +456,15 @@ $(eval $(call Profile,QSDK_8M))
 
 define Profile/QSDK_16M
 	NAME:=Qualcomm Technologies, Inc SDK 16MB Flash Profile
-	PACKAGES:=wififw_mount_script $(NSS_COMMON) $(NSS_STANDARD) $(SWITCH_SSDK_PKGS) \
+	PACKAGES:=wififw_mount_script $(NSS_COMMON) $(NSS_PPE_16M) $(SWITCH_SSDK_PKGS) \
 		$(WIFI_PKGS_16M) qca-wifi-hk-fw-hw1-10.4-asic $(NETWORKING_16MB) \
 		$(IGMPSNOOPING_RSTP) $(QCA_ECM_STANDARD) $(NSS_CLIENTS_256MB) \
-		$(MHI_QRTR) xz xz-utils -kmod-usb-f-qdss \
+		xz xz-utils -kmod-usb-f-qdss \
 		-kmod-testssr -kmod-ata-core -kmod-ata-ahci -kmod-ata-ahci-platform \
 		-kmod-usb2 -kmod-usb3 -kmod-usb-phy-ipq5018 -kmod-usb-dwc3-qcom \
 		-kmod-bt_tty -kmod-clk-test -sysupgrade-helper \
-		-fwupgrade-tools -urandom-seed -urngd
+		-fwupgrade-tools -urandom-seed -urngd -kmod-usb-core -kmod-usb-dwc3-internal \
+		-kmod-usb-dwc3-qcom-internal -kmod-usb-gadget -kmod-usb-phy-ipq807x -kmod-usb-phy-ipq5018
 endef
 
 define Profile/QSDK_16M/Description
