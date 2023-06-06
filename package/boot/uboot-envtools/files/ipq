@@ -66,7 +66,7 @@ validate_device_node() {
 	config_foreach validate_device_node ubootenv $(default_uboot_env)
 }
 
-touch /etc/config/ubootenv
+echo "" > /etc/config/ubootenv
 
 case "$board" in
 	qcom,ipq8074-ap-hk01-c1 |\
