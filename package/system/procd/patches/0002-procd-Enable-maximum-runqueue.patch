@@ -49,7 +49,7 @@ index c2e1abb..80a6111 100644
 +		return max_running_tasks;
 +	}
 +	system("touch /tmp/.multicore_boot");
-+	max_running_tasks = get_nprocs();
++	max_running_tasks = 1; //get_nprocs();
 +	return (max_running_tasks > 3 ? (max_running_tasks-2) : max_running_tasks);
 +}
 +
