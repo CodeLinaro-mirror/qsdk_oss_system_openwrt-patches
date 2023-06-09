@@ -72,7 +72,7 @@ NSS_UDP_ST:= kmod-nss-udp-st-drv nss-udp-st
 
 NSS_NSM:= qca-nsm-app
 
-NSS_FLS:= qca-nss-fls
+NSS_FLS:= kmod-qca-nss-fls
 
 NSS_MESH:= kmod-qca-nss-drv-wifi-meshmgr
 
