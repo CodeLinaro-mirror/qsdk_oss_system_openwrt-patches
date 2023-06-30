@@ -205,6 +205,8 @@ VIDEO:=kmod-qpic_panel_ertft
 
 NSS_USERSPACE:=nlcfg
 
+NSS_USERSPACE_OSS:=ppecfg
+
 NSS_FLOWID:=ifli
 
 KPI:=iperf sysstat
@@ -249,7 +251,7 @@ define Profile/QSDK_Premium
 		$(NSS_STANDARD) $(UTILS) $(NETWORKING) $(CD_ROUTER) $(NSS_CLIENTS_STANDARD) \
 		$(QCA_ECM_PREMIUM) $(NSS_CRYPTO) $(NSS_EIP197_FW) $(IGMPSNOOPING_RSTP) \
 		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(HW_CRYPTO) $(IPSEC) $(MAP_PKGS) $(MINIDUMP) \
-		$(QOS) $(HYFI) $(NSS_MACSEC) $(NSS_USERSPACE) $(NSS_RMNET) \
+		$(QOS) $(HYFI) $(NSS_MACSEC) $(NSS_USERSPACE) $(NSS_USERSPACE_OSS) $(NSS_RMNET) \
 		$(NSS_UDP_ST) $(NSS_PPE) $(QCA_MAD) $(EMESH_SP) \
 		$(QCA_EZMESH) $(OPENVPN) kmod-macvlan kmod-qca-hyfi-bridge \
 		$(NSS_NSM) $(SAL_QOS) $(RSRC_MGR) $(NSS_FLOWID) $(NSS_FLS) $(NPT66)
@@ -273,7 +275,7 @@ define Profile/QSDK_BigEndian
                 $(NSS_STANDARD) $(UTILS) $(NETWORKING) $(CD_ROUTER) $(NSS_CLIENTS_STANDARD) \
                 $(QCA_ECM_PREMIUM) $(NSS_CRYPTO) $(NSS_EIP197_FW) $(IGMPSNOOPING_RSTP) \
                 $(WIFI_PKGS) $(WIFI_FW_PKGS) $(HW_CRYPTO) $(IPSEC) $(MAP_PKGS) $(MINIDUMP) \
-                $(QOS) $(HYFI) $(NSS_MACSEC) $(NSS_USERSPACE) $(NSS_RMNET) \
+                $(QOS) $(HYFI) $(NSS_MACSEC) $(NSS_USERSPACE) $(NSS_USERSPACE_OSS) $(NSS_RMNET) \
                 $(NSS_UDP_ST) $(NSS_PPE) $(QCA_MAD) $(EMESH_SP) \
                 $(QCA_EZMESH) $(OPENVPN) kmod-macvlan kmod-qca-hyfi-bridge \
                 $(NSS_NSM) $(SAL_QOS) $(RSRC_MGR) $(NSS_FLOWID) $(NSS_FLS) $(NPT66)
@@ -296,7 +298,7 @@ define Profile/QSDK_Open
 		$(FTM) $(KPI) $(UTILS) $(NETWORKING) $(EXTRA_NETWORKING) \
 		$(WIFI_OPEN_PKGS) $(USB_ETHERNET) $(NSS_COMMON) $(NSS_STANDARD) $(NSS_MESH) \
 		$(QCA_ECM_PREMIUM) $(MAP_PKGS) $(IGMPSNOOPING_RSTP) $(IPSEC) -openswan $(QOS) -lacpd  \
-		$(NSS_PPE) $(AQ_PHY) $(MACSEC_OPEN_PKGS) \
+		$(NSS_PPE) $(NSS_USERSPACE_OSS) $(AQ_PHY) $(MACSEC_OPEN_PKGS) \
 		qca-cnss-daemon qca-wifi-hk-fw-hw1-10.4-asic $(CNSS_DIAG) athdiag $(EMESH_SP) \
 		qrtr $(QMI_SAMPLE_APP) ath11k-fwtest ath11k-qdss -qapp-store \
 		libtirpc cfr_tools kmod-qca-ovsmgr -qca-mcs-apps -kmod-qca-nss-ecm-wifi-plugin \
@@ -351,7 +353,7 @@ define Profile/QSDK_Enterprise
 		$(QCA_ECM_ENTERPRISE) $(NSS_CLIENTS_ENTERPRISE) $(NSS_MACSEC) $(NSS_CRYPTO) \
 		$(IPSEC) $(NSS_EIP197_FW) $(CD_ROUTER) $(AQ_PHY) \
 		$(CNSS_DIAG) $(CTRL_APP_DUT) $(FTM) $(QMSCT_CLIENT) -lacpd \
-		$(USB_DIAG) $(MHI_QRTR) $(KPI) $(FAILSAFE) $(NSS_USERSPACE) \
+		$(USB_DIAG) $(MHI_QRTR) $(KPI) $(FAILSAFE) $(NSS_USERSPACE) $(NSS_USERSPACE_OSS) \
 		$(NSS_PPE) kmod-qca-nss-drv-mscs $(RSRC_MGR)
 endef
 
@@ -370,7 +372,7 @@ define Profile/QSDK_MinEnt
 		$(QCA_ECM_ENTERPRISE) $(NSS_CLIENTS_ENTERPRISE) $(NSS_MACSEC) $(NSS_CRYPTO_MINENT) \
 		$(IPSEC) $(NSS_EIP197_FW) $(CD_ROUTER) $(AQ_PHY) $(CNSS_DIAG) \
 		$(CTRL_APP_DUT) $(FTM) $(QMSCT_CLIENT) -lacpd -kmod-qca-nss-ecm-wifi-plugin \
-		$(USB_DIAG) $(MHI_QRTR) $(KPI) $(FAILSAFE) $(NSS_USERSPACE) $(NSS_PPE) \
+		$(USB_DIAG) $(MHI_QRTR) $(KPI) $(FAILSAFE) $(NSS_USERSPACE) $(NSS_USERSPACE_OSS) $(NSS_PPE) \
 		$(RSRC_MGR)
 endef
 
@@ -409,7 +411,7 @@ define Profile/QSDK_512
 		$(NSS_MACSEC) $(TEST_TOOLS) $(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD) \
 		$(COREBSP_UTILS) $(MAP_PKGS) $(AQ_PHY) $(FAILSAFE) -lacpd $(USB_DIAG) \
 		$(NSS_EIP197_FW) $(CNSS_DIAG) $(CTRL_APP_DUT) $(FTM) $(QMSCT_CLIENT) $(KPI) \
-		$(NSS_USERSPACE) $(NSS_RMNET) $(HYFI) kmod-qca-hyfi-bridge $(EMESH_SP) \
+		$(NSS_USERSPACE) $(NSS_USERSPACE_OSS) $(NSS_RMNET) $(HYFI) kmod-qca-hyfi-bridge $(EMESH_SP) \
 		$(QCA_EZMESH) kmod-macvlan $(MINIDUMP) $(RSRC_MGR)
 endef
 
