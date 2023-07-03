@@ -78,6 +78,8 @@ NSS_UDP_ST:= kmod-nss-udp-st-drv nss-udp-st
 
 NSS_NSM:= qca-nsm-app
 
+NSS_FLS:= kmod-qca-nss-fls
+
 NSS_MESH:= kmod-qca-nss-drv-wifi-meshmgr
 
 SAL_QOS:= qca-sal-qos-test qca-sal-rule-test
@@ -254,7 +256,7 @@ define Profile/QSDK_Premium
 		$(QOS) $(HYFI) $(NSS_MACSEC) $(NSS_USERSPACE) $(NSS_RMNET) \
 		$(NSS_UDP_ST) $(NSS_PPE) $(QCA_MAD) $(EMESH_SP) \
 		$(QCA_EZMESH) $(OPENVPN) kmod-macvlan kmod-qca-hyfi-bridge \
-		$(NSS_NSM) $(SAL_QOS) $(RSRC_MGR) $(NSS_FLOWID)
+		$(NSS_NSM) $(SAL_QOS) $(RSRC_MGR) $(NSS_FLOWID) $(NSS_FLS)
 endef
 
 #		$(QCA_RFS)
@@ -278,7 +280,7 @@ define Profile/QSDK_BigEndian
                 $(QOS) $(HYFI) $(NSS_MACSEC) $(NSS_USERSPACE) $(NSS_RMNET) \
                 $(NSS_UDP_ST) $(NSS_PPE) $(QCA_MAD) $(EMESH_SP) \
                 $(QCA_EZMESH) $(OPENVPN) kmod-macvlan kmod-qca-hyfi-bridge \
-                $(NSS_NSM) $(SAL_QOS) $(RSRC_MGR) $(NSS_FLOWID)
+                $(NSS_NSM) $(SAL_QOS) $(RSRC_MGR) $(NSS_FLOWID) $(NSS_FLS)
 endef
 
 #               $(QCA_RFS)
