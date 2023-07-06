@@ -40,6 +40,7 @@ NSS_PPE_256:= kmod-qca-nss-ppe \
 
 NSS_PPE:= kmod-qca-nss-ppe \
 	kmod-qca-nss-ppe-vp \
+	kmod-qca-nss-ppe-mirror-test \
 	kmod-qca-nss-ppe-bridge-mgr \
 	kmod-qca-nss-ppe-pppoe-mgr \
 	kmod-qca-nss-ppe-lag-mgr \
