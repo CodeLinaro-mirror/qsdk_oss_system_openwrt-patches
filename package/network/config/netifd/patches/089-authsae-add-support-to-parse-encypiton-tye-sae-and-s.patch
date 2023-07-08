@@ -8,24 +8,33 @@ sae-mixed mode.
 
 Signed-off-by: Venkateswara Naralasetty <vnaralas@codeaurora.org>
 
---- a/scripts/netifd-wireless.sh	2023-04-14 19:51:39.221775486 -0700
-+++ b/scripts/netifd-wireless.sh	2023-04-14 19:55:14.387934326 -0700
-@@ -79,6 +79,9 @@
- 				*b|*g) band=2g;;
+--- a/scripts/netifd-wireless.sh
++++ b/scripts/netifd-wireless.sh
+@@ -227,7 +227,7 @@ wireless_vif_parse_encryption() {
+ 	case "$encryption" in
+ 		*tkip+aes|*tkip+ccmp|*aes+tkip|*ccmp+tkip) wpa_cipher="CCMP TKIP";;
+ 		*ccmp256) wpa_cipher="CCMP-256";;
+-		*aes|*ccmp| psk2 | wpa2) wpa_cipher="CCMP";;
++		*aes|*ccmp| psk2 | wpa2 | sae* | owe) wpa_cipher="CCMP";;
+ 		*tkip | wpa | psk ) wpa_cipher="TKIP";;
+ 		*gcmp256) wpa_cipher="GCMP-256";;
+ 		*gcmp) wpa_cipher="GCMP";;
+@@ -276,7 +276,7 @@ wireless_vif_parse_encryption() {
+ 		wpa3*)
+ 			auth_type=eap192
+ 		;;
+-		psk3-mixed*|sae-mixed*)
++		psk3-mixed*)
+ 			auth_type=psk-sae
+ 		;;
+ 		psk3*|sae*)
+@@ -308,6 +308,9 @@ wireless_vif_parse_encryption() {
+ 				;;
  			esac
  		;;
 +		sae-mixed)
 +			auth_type=sae-mixed
 +		;;
- 		*sae*)
- 			auth_type=sae
- 		;;
-@@ -230,7 +233,7 @@
+ 	esac
+ 
  	case "$encryption" in
- 		*tkip+aes|*tkip+ccmp|*aes+tkip|*ccmp+tkip) wpa_cipher="CCMP TKIP";;
- 		*ccmp256) wpa_cipher="CCMP-256";;
--		*aes|*ccmp| psk2 | wpa2) wpa_cipher="CCMP";;
-+		*aes|*ccmp| psk2 | wpa2 | sae*) wpa_cipher="CCMP";;
- 		*tkip | wpa | psk ) wpa_cipher="TKIP";;
- 		*gcmp256) wpa_cipher="GCMP-256";;
- 		*gcmp) wpa_cipher="GCMP";;
