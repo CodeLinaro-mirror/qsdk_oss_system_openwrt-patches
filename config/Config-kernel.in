@@ -84,7 +84,32 @@ if KERNEL_SKB_DEBUG
 	config KERNEL_DEBUG_OBJECTS_ENABLE_DEFAULT
 		int "debug_objects bootup default value (0-1)"
 		default 1
+
+	config KERNEL_DEBUG_OBJECTS_SKBUFF
+		bool "Debug sk_buff allocations"
+		default y
 endif
+
+config KERNEL_SKB_RECYCLER_PREALLOC
+	bool "Enable preallocation of SKBs"
+	default n
+
+config KERNEL_SKB_RECYCLE_MAX_PREALLOC_SKBS
+	int "Number of SKBs to be preallocated"
+	depends on KERNEL_SKB_RECYCLER_PREALLOC
+	default 16384
+
+config KERNEL_SKB_RECYCLER
+	bool "Generic skb recycling"
+	default y
+
+config KERNEL_SKB_RECYCLER_MULTI_CPU
+	bool "Cross-CPU recycling for CPU-locked workloads"
+	default y
+
+config KERNEL_ALLOC_SKB_PAGE_FRAG_DISABLE
+	bool "Disable alloc skb page frag"
+	default n
 
 config KERNEL_NET_IPGRE_BROADCAST
 	bool "IP: broadcast GRE over IP"
