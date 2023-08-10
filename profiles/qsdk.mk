@@ -303,7 +303,7 @@ define Profile/QSDK_Open
 		$(NSS_PPE) $(NSS_NSM) $(AQ_PHY) $(MACSEC_OPEN_PKGS) \
 		qca-cnss-daemon qca-wifi-hk-fw-hw1-10.4-asic $(CNSS_DIAG) athdiag $(EMESH_SP) \
 		qrtr $(QMI_SAMPLE_APP) ath11k-fwtest ath11k-qdss -qapp-store \
-		libtirpc cfr_tools kmod-qca-ovsmgr -qca-mcs-apps -kmod-qca-nss-ecm-wifi-plugin \
+		libtirpc cfr_tools kmod-qca-ovsmgr -qca-mcs-apps kmod-qca-nss-ecm-wifi-plugin \
 		kmod-macvlan myftm kmod-qca-nss-ppe-ds
 endef
 
