@@ -98,6 +98,21 @@ if KERNEL_SKB_DEBUG
 		default y
 endif
 
+config KERNEL_IPQ_MEM_PROFILE
+	int "Different memory profile"
+	range 0 1024
+	default 0
+	help
+	  This option select memory profile to used, which defines
+	  the reserved memory configuration used in device tree
+
+config KERNEL_ARCH_IPQ256M
+	bool "Compile kernel for 256M profile"
+	default n
+	help
+	  Compile kernel for 256M profile, this option enables kernel
+	  to add 8MB of DDR to kernel lowmem in 256M profile.
+
 config KERNEL_SKB_RECYCLER_PREALLOC
 	bool "Enable preallocation of SKBs"
 	default n
