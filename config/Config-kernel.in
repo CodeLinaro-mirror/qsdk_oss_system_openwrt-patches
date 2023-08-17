@@ -54,6 +54,10 @@ config KERNEL_CPU_THERMAL
 	bool "Enable CPU cooling device support"
 	default n
 
+config KERNEL_CPU_FREQ_THERMAL
+	bool "Enable CPU frequency cooling device support"
+	default n
+
 config KERNEL_SKB_DEBUG
 	bool "Enable DEBUG Object support"
 
