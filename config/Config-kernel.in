@@ -40,6 +40,10 @@ if KERNEL_DEBUG_KMEMLEAK
 		bool "Default kmemleak to off"
 endif
 
+config KERNEL_STACKTRACE
+	bool "STACK TRACE"
+	default n
+
 config KERNEL_HWMON
 	tristate "Hardware Monitoring support"
 	depends on HAS_IOMEM
