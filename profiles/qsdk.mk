@@ -34,6 +34,7 @@ QCA_ECM_PREMIUM:= kmod-qca-nss-ecm-premium kmod-qca-nss-ecm-wifi-plugin
 
 NSS_PPE:= kmod-qca-nss-ppe \
 	kmod-qca-nss-ppe-vp \
+	kmod-qca-nss-ppe-mirror-test \
 	kmod-qca-nss-ppe-bridge-mgr \
 	kmod-qca-nss-ppe-pppoe-mgr \
 	kmod-qca-nss-ppe-lag-mgr \
@@ -239,7 +240,7 @@ EMESH_SP:=kmod-emesh-sp
 
 RSRC_MGR:=qca-rsrcmgr qca-rsrcmgr-secure-libs
 
-STRONGSWAN:=strongswan strongswan-default strongswan-ipsec strongswan-mod-stroke strongswan-mod-uci
+STRONGSWAN:=strongswan strongswan-default strongswan-ipsec strongswan-mod-ctr strongswan-mod-gcm strongswan-mod-stroke strongswan-mod-uci
 
 EXTRA_NETWORKING:= $(CD_ROUTER) $(NSS_EIP197_FW) -rdk-v-wifi-ath10k kmod-qca-nss-macsec \
 	$(MACSEC_OPEN_PKGS) $(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD)
