@@ -130,6 +130,12 @@ config KERNEL_SKB_RECYCLER_MULTI_CPU
 	bool "Cross-CPU recycling for CPU-locked workloads"
 	default y
 
+config KERNEL_SKB_FIXED_SIZE_2K
+	bool "SKB size fixed at 2K"
+	default n
+	help
+	   SKB size fixed at 2K.
+
 config KERNEL_ALLOC_SKB_PAGE_FRAG_DISABLE
 	bool "Disable alloc skb page frag"
 	default n
