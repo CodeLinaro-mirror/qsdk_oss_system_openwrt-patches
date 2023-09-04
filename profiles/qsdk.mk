@@ -428,7 +428,7 @@ define Profile/QSDK_512
 		$(COREBSP_UTILS) $(MAP_PKGS) $(AQ_PHY) $(FAILSAFE) -lacpd $(USB_DIAG) \
 		$(NSS_EIP197_FW) $(CNSS_DIAG) $(CTRL_APP_DUT) $(FTM) $(QMSCT_CLIENT) $(KPI) \
 		$(NSS_USERSPACE) $(NSS_USERSPACE_OSS) $(NSS_RMNET) $(HYFI) kmod-qca-hyfi-bridge $(EMESH_SP) \
-		$(QCA_EZMESH) kmod-macvlan $(MINIDUMP) $(RSRC_MGR)
+		$(QCA_EZMESH) kmod-macvlan $(MINIDUMP) $(RSRC_MGR) $(SAL_QOS)
 endef
 
 #       $(MHI_QRTR)
