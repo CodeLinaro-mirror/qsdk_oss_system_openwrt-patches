@@ -168,7 +168,7 @@ case "$board" in
 	qcom,ipq5332-ap-rdp481 |\
 	qcom,ipq5332-db-mi01.1 |\
 	qcom,ipq5332-db-mi02.1 |\
-	qcom,ipq9574-rdp467)
+	qcom,ipq9574-ap-rdp467)
 		ubootenv_add_uci_config $(ubootenv_mtdinfo)
 		;;
 esac
