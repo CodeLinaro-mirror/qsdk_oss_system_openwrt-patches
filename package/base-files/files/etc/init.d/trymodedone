@@ -33,19 +33,27 @@ start() {
 		qcom,ipq9574-ap-al06)
 			if [ $is_in_trymode -eq 1 ]; then
 				if [ $age0 -le $age1 ]; then
-					fw_setenv sw_active0_ok 1
-					fw_setenv sw_active1_ok 0
+					eval $(fw_printenv sw_active0_ok 2>/dev/null)
+					[ "$sw_active0_ok" != "1" ] && fw_setenv sw_active0_ok 1
+					eval $(fw_printenv sw_active1_ok 2>/dev/null)
+					[ "$sw_active1_ok" != "0" ] && fw_setenv sw_active1_ok 0
 				else
-					fw_setenv sw_active1_ok 1
-					fw_setenv sw_active0_ok 0
+					eval $(fw_printenv sw_active1_ok 2>/dev/null)
+					[ "$sw_active1_ok" != "1" ] && fw_setenv sw_active1_ok 1
+					eval $(fw_printenv sw_active0_ok 2>/dev/null)
+					[ "$sw_active0_ok" != "0" ] && fw_setenv sw_active0_ok 0
 				fi
 			else
 				if [ $age0 -ge $age1 ]; then
-					fw_setenv sw_active0_ok 1
-					fw_setenv sw_active1_ok 0
+					eval $(fw_printenv sw_active0_ok 2>/dev/null)
+					[ "$sw_active0_ok" != "1" ] && fw_setenv sw_active0_ok 1
+					eval $(fw_printenv sw_active1_ok 2>/dev/null)
+					[ "$sw_active1_ok" != "0" ] && fw_setenv sw_active1_ok 0
 				else
-					fw_setenv sw_active1_ok 1
-					fw_setenv sw_active0_ok 0
+					eval $(fw_printenv sw_active1_ok 2>/dev/null)
+					[ "$sw_active1_ok" != "1" ] && fw_setenv sw_active1_ok 1
+					eval $(fw_printenv sw_active0_ok 2>/dev/null)
+					[ "$sw_active0_ok" != "0" ] && fw_setenv sw_active0_ok 0
 				fi
 			fi
 			return 1;
