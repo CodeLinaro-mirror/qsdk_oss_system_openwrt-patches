@@ -147,3 +147,7 @@ config KERNEL_ALLOC_SKB_PAGE_FRAG_DISABLE
 config KERNEL_NET_IPGRE_BROADCAST
 	bool "IP: broadcast GRE over IP"
 	default y
+
+config KERNEL_DEBUG_MEM_USAGE
+	bool "Kernel Memory Tracer"
+	default n
