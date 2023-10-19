@@ -28,7 +28,7 @@ index 6cbce5c..25b089b 100644
  		*tkip+aes|*tkip+ccmp|*aes+tkip|*ccmp+tkip) wpa_cipher="CCMP TKIP";;
  		*ccmp256) wpa_cipher="CCMP-256";;
 -		*aes|*ccmp| psk2 | wpa2 | sae* | owe) wpa_cipher="CCMP";;
-+		*aes|*ccmp| psk2 | wpa2 | sae | owe) wpa_cipher="CCMP";;
++		*aes|*ccmp| psk2 | wpa2 | sae | owe | sae-mixed) wpa_cipher="CCMP";;
  		*tkip | wpa | psk ) wpa_cipher="TKIP";;
  		*gcmp256) wpa_cipher="GCMP-256";;
 -		*gcmp) wpa_cipher="GCMP";;
