@@ -10,16 +10,8 @@
  	# Examples:
  	# psk-mixed/tkip    => WPA1+2 PSK, TKIP
  	# wpa-psk2/tkip+aes => WPA2 PSK, CCMP+TKIP
-@@ -255,12 +252,17 @@ wireless_vif_parse_encryption() {
- 			wpa=1
- 		;;
- 		*)
--			# TKIP alone is now prohibited by WFA so the only
--			# combination left must be CCMP+TKIP (wpa=3)
--			wpa=3
--			wpa_cipher="CCMP TKIP"
-+			wpa=0
-+			wpa_cipher=
+@@ -248,6 +248,13 @@ wireless_vif_parse_encryption() {
+ 			wpa_cipher=
  		;;
  	esac
 +	# Standlone TKIP is no longer allowed
