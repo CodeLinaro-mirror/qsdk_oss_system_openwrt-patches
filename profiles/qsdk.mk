@@ -273,7 +273,7 @@ define Profile/QSDK_Premium
 		$(QOS) $(HYFI) $(NSS_MACSEC) $(NSS_USERSPACE) $(NSS_USERSPACE_OSS) $(NSS_RMNET) \
 		$(NSS_UDP_ST) $(NSS_PPE) $(QCA_MAD) $(EMESH_SP) $(NETSTANDBY) \
 		$(QCA_EZMESH) $(OPENVPN) kmod-macvlan kmod-qca-hyfi-bridge kmod-netstandby-eawtp-drv \
-		$(NSS_NSM) $(SAL_QOS) $(RSRC_MGR) $(NSS_FLOWID) $(NSS_FLS) $(NPT66)
+		$(NSS_NSM) $(SAL_QOS) $(RSRC_MGR) $(NSS_FLS) $(NPT66)
 endef
 
 #		$(QCA_RFS)
@@ -297,7 +297,7 @@ define Profile/QSDK_BigEndian
                 $(QOS) $(HYFI) $(NSS_MACSEC) $(NSS_USERSPACE) $(NSS_USERSPACE_OSS) $(NSS_RMNET) \
                 $(NSS_UDP_ST) $(NSS_PPE) $(QCA_MAD) $(EMESH_SP) \
                 $(QCA_EZMESH) $(OPENVPN) kmod-macvlan kmod-qca-hyfi-bridge \
-                $(NSS_NSM) $(SAL_QOS) $(RSRC_MGR) $(NSS_FLOWID) $(NSS_FLS) $(NPT66)
+                $(NSS_NSM) $(SAL_QOS) $(RSRC_MGR) $(NSS_FLS) $(NPT66)
 endef
 
 #               $(QCA_RFS)
