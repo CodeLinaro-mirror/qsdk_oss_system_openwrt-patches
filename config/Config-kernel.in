@@ -117,6 +117,10 @@ config KERNEL_ARCH_IPQ256M
 	  Compile kernel for 256M profile, this option enables kernel
 	  to add 8MB of DDR to kernel lowmem in 256M profile.
 
+config KERNEL_SKB_FAST_RECYCLABLE_DEBUG_ENABLE
+	bool "Enable debug API for fast recycled skb"
+	default n
+
 config KERNEL_SKB_RECYCLER_PREALLOC
 	bool "Enable preallocation of SKBs"
 	default n
