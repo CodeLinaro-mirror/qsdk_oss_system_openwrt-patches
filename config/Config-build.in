@@ -15,3 +15,7 @@ config LOWMEM_FLASH
 config LINUX_IS_FLATTENED_TREE
 	bool "build linux source as flattened tree"
 	default y
+
+config EXTERNAL_LINUX_CONFIG_NAME
+	string "Enter your config name"
+	default ""
