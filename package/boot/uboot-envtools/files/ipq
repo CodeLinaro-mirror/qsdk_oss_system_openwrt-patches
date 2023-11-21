@@ -165,6 +165,7 @@ case "$board" in
 	qcom,ipq5332-ap-mi01.7 |\
 	qcom,ipq5332-ap-mi01.9 |\
 	qcom,ipq5332-ap-mi01.12 |\
+	qcom,ipq5332-ap-mi01.13 |\
 	qcom,ipq5332-ap-mi01.14 |\
 	qcom,ipq5332-ap-mi04.1 |\
 	qcom,ipq5332-ap-mi04.1-c2 |\
