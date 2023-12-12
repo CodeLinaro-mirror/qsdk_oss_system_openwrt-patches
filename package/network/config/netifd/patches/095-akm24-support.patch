@@ -19,11 +19,9 @@ Signed-off-by: Karthik M <quic_karm@quicinc.com>
  scripts/netifd-wireless.sh | 9 ++++++---
  1 file changed, 6 insertions(+), 3 deletions(-)
 
-diff --git a/scripts/netifd-wireless.sh b/scripts/netifd-wireless.sh
-index 6cbce5c..25b089b 100644
 --- a/scripts/netifd-wireless.sh
 +++ b/scripts/netifd-wireless.sh
-@@ -227,10 +227,10 @@ wireless_vif_parse_encryption() {
+@@ -222,10 +222,10 @@
  	case "$encryption" in
  		*tkip+aes|*tkip+ccmp|*aes+tkip|*ccmp+tkip) wpa_cipher="CCMP TKIP";;
  		*ccmp256) wpa_cipher="CCMP-256";;
@@ -33,11 +31,10 @@ index 6cbce5c..25b089b 100644
  		*gcmp256) wpa_cipher="GCMP-256";;
 -		*gcmp) wpa_cipher="GCMP";;
 +		*gcmp | sae-ext-key) wpa_cipher="GCMP";;
-		wpa3-192*) wpa_cipher="GCMP-256";;
+ 		wpa3-192*) wpa_cipher="GCMP-256";;
  	esac
  
- 	# Examples:
-@@ -279,7 +279,7 @@ wireless_vif_parse_encryption() {
+@@ -274,7 +274,7 @@
  		psk3-mixed*)
  			auth_type=psk-sae
  		;;
@@ -46,7 +43,7 @@ index 6cbce5c..25b089b 100644
  			auth_type=sae
  		;;
  		*psk*)
-@@ -311,6 +311,9 @@ wireless_vif_parse_encryption() {
+@@ -306,6 +306,9 @@
  		sae-mixed)
  			auth_type=sae-mixed
  		;;
@@ -56,6 +53,3 @@ index 6cbce5c..25b089b 100644
  	esac
  
  	case "$encryption" in
--- 
-2.17.1
-

@@ -19,12 +19,10 @@ Signed-off-by: Karthik M <quic_karm@quicinc.com>
  scripts/netifd-wireless.sh | 7 +++++--
  1 file changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/scripts/netifd-wireless.sh b/scripts/netifd-wireless.sh
-index 25b089b..146f084 100644
 --- a/scripts/netifd-wireless.sh
 +++ b/scripts/netifd-wireless.sh
-@@ -225,7 +225,7 @@ wireless_vif_parse_encryption() {
- 		*aes|*ccmp| psk2 | wpa2 | sae | owe) wpa_cipher="CCMP";;
+@@ -225,7 +225,7 @@
+ 		*aes|*ccmp| psk2 | wpa2 | sae | owe | sae-mixed) wpa_cipher="CCMP";;
  		*tkip | wpa | psk ) wpa_cipher="TKIP";;
  		*gcmp256) wpa_cipher="GCMP-256";;
 -		*gcmp | sae-ext-key) wpa_cipher="GCMP";;
@@ -32,7 +30,7 @@ index 25b089b..146f084 100644
  		wpa3-192*) wpa_cipher="GCMP-256";;
  	esac
  
-@@ -235,7 +235,7 @@ wireless_vif_parse_encryption() {
+@@ -235,7 +235,7 @@
  	# wpa2/tkip+aes     => WPA2 RADIUS, CCMP+TKIP
  
  	case "$encryption" in
@@ -41,9 +39,9 @@ index 25b089b..146f084 100644
  			wpa=2
  		;;
  		wpa*mixed*|*psk*mixed*)
-@@ -306,6 +306,9 @@ wireless_vif_parse_encryption() {
- 		sae-mixed)
- 			auth_type=sae-mixed
+@@ -309,6 +309,9 @@
+ 		sae-ext-key)
+ 			auth_type=sae-ext-key
  		;;
 +		ft-sae-ext-key)
 +			auth_type=ft-sae-ext-key
@@ -51,6 +49,3 @@ index 25b089b..146f084 100644
  	esac
  
  	case "$encryption" in
--- 
-2.17.1
-
