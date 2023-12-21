@@ -21,16 +21,21 @@ Signed-off-by: Karthik M <quic_karm@quicinc.com>
 
 --- a/scripts/netifd-wireless.sh
 +++ b/scripts/netifd-wireless.sh
-@@ -225,7 +225,7 @@
- 		*aes|*ccmp| psk2 | wpa2 | sae | owe | sae-mixed) wpa_cipher="CCMP";;
- 		*tkip | wpa | psk ) wpa_cipher="TKIP";;
- 		*gcmp256) wpa_cipher="GCMP-256";;
--		*gcmp | sae-ext-key) wpa_cipher="GCMP";;
+@@ -222,11 +222,10 @@ wireless_vif_parse_encryption() {
+ 	case "$encryption" in
+ 		*tkip+aes|*tkip+ccmp|*aes+tkip|*ccmp+tkip) wpa_cipher="CCMP TKIP";;
+ 		*ccmp256) wpa_cipher="CCMP-256";;
+-		sae-ext-key) wpa_cipher="GCMP";;
 +		*gcmp | *sae-ext-key) wpa_cipher="GCMP";;
- 		wpa3-192*) wpa_cipher="GCMP-256";;
++		*gcmp256 | wpa3-192*) wpa_cipher="GCMP-256";;
+ 		*aes|*ccmp| psk2 | wpa2 | sae* | owe) wpa_cipher="CCMP";;
+ 		*tkip | wpa | psk ) wpa_cipher="TKIP";;
+-		*gcmp256 | wpa3-192*) wpa_cipher="GCMP-256";;
+-		*gcmp) wpa_cipher="GCMP";;
  	esac
  
-@@ -235,7 +235,7 @@
+ 	# Examples:
+@@ -235,7 +234,7 @@ wireless_vif_parse_encryption() {
  	# wpa2/tkip+aes     => WPA2 RADIUS, CCMP+TKIP
  
  	case "$encryption" in
@@ -39,13 +44,30 @@ Signed-off-by: Karthik M <quic_karm@quicinc.com>
  			wpa=2
  		;;
  		wpa*mixed*|*psk*mixed*)
-@@ -309,6 +309,9 @@
+@@ -271,12 +270,15 @@ wireless_vif_parse_encryption() {
+ 		wpa3*)
+ 			auth_type=eap2
+ 		;;
+-		psk3-mixed*)
++		psk3-mixed* | sae-mixed)
+ 			auth_type=psk-sae
+ 		;;
  		sae-ext-key)
  			auth_type=sae-ext-key
  		;;
 +		ft-sae-ext-key)
 +			auth_type=ft-sae-ext-key
 +		;;
+ 		psk3*|sae*)
+ 			auth_type=sae
+ 		;;
+@@ -306,9 +308,6 @@ wireless_vif_parse_encryption() {
+ 				;;
+ 			esac
+ 		;;
+-		sae-mixed)
+-			auth_type=sae-mixed
+-		;;
  	esac
  
  	case "$encryption" in
