@@ -69,6 +69,59 @@ validate_device_node() {
 echo "" > /etc/config/ubootenv
 
 case "$board" in
+	qcom,ipq8074-ap-hk01-c1 |\
+	qcom,ipq8074-ap-hk01-c2 |\
+	qcom,ipq8074-ap-hk01-c3 |\
+	qcom,ipq8074-ap-hk01-c4 |\
+	qcom,ipq8074-ap-hk01-c5 |\
+	qcom,ipq8074-ap-hk01-c6 |\
+	qcom,ipq8074-ap-hk02 |\
+	qcom,ipq8074-ap-hk06 |\
+	qcom,ipq8074-ap-hk07 |\
+	qcom,ipq8074-ap-hk08 |\
+	qcom,ipq8074-ap-hk09 |\
+	qcom,ipq8074-ap-hk10-c1 |\
+	qcom,ipq8074-ap-hk10-c2 |\
+	qcom,ipq8074-ap-hk11-c1 |\
+	qcom,ipq8074-ap-hk12 |\
+	qcom,ipq8074-ap-hk14 |\
+	qcom,ipq8074-db-hk01 |\
+	qcom,ipq8074-db-hk02 |\
+	qcom,ipq8074-ap-ac01 |\
+	qcom,ipq8074-ap-ac02 |\
+	qcom,ipq8074-ap-ac03 |\
+	qcom,ipq8074-ap-ac04 |\
+	qcom,ipq8074-ap-oak02 |\
+	qcom,ipq8074-ap-oak03 |\
+	qcom,ipq5018-ap-mp02.1 |\
+	qcom,ipq5018-ap-mp03.1 |\
+	qcom,ipq5018-ap-mp03.1-c2 |\
+	qcom,ipq5018-ap-mp03.1-c3 |\
+	qcom,ipq5018-ap-mp03.3 |\
+	qcom,ipq5018-ap-mp03.3-c2 |\
+	qcom,ipq5018-ap-mp03.4-c1 |\
+	qcom,ipq5018-ap-mp03.4-c2 |\
+	qcom,ipq5018-ap-mp03.5-c1 |\
+	qcom,ipq5018-ap-mp03.5-c2 |\
+	qcom,ipq5018-ap-mp03.6-c1 |\
+	qcom,ipq5018-ap-mp03.6-c2 |\
+	qcom,ipq5018-ap-mp05.1 |\
+	qcom,ipq5018-db-mp02.1 |\
+	qcom,ipq5018-db-mp03.1 |\
+	qcom,ipq5018-db-mp03.1-c2 |\
+	qcom,ipq5018-db-mp03.3 |\
+	qcom,ipq5018-db-mp03.3-c2 |\
+	qcom,ipq5018-mp-emu |\
+	qcom,ipq5018-tb-mp04 |\
+	qcom,ipq6018-ap-cp01-c1 |\
+	qcom,ipq6018-ap-cp01-c2 |\
+	qcom,ipq6018-ap-cp01-c3 |\
+	qcom,ipq6018-ap-cp01-c4 |\
+	qcom,ipq6018-ap-cp01-c5 |\
+	qcom,ipq6018-ap-cp02-c1 |\
+	qcom,ipq6018-ap-cp03-c1 |\
+	qcom,ipq6018-db-cp01 |\
+	qcom,ipq6018-db-cp02 |\
 	qcom,ipq9574-ap-al01-c1 |\
 	qcom,ipq9574-ap-al02-c1 |\
 	qcom,ipq9574-ap-al03-c1 |\
