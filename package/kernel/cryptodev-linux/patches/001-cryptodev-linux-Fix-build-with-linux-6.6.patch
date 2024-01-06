@@ -40,7 +40,16 @@ Signed-off-by: Ram Chandra Jangir <quic_rjangir@quicinc.com>
  {
 --- a/ioctl.c
 +++ b/ioctl.c
-@@ -1184,7 +1184,6 @@ static struct ctl_table verbosity_ctl_ro
+@@ -1169,7 +1169,7 @@ cryptodev_deregister(void)
+ }
+ 
+ /* ====== Module init/exit ====== */
+-static struct ctl_table verbosity_ctl_dir[] = {
++/*static struct ctl_table verbosity_ctl_dir[] = {
+ 	{
+ 		.procname       = "cryptodev_verbosity",
+ 		.data           = &cryptodev_verbosity,
+@@ -1184,11 +1184,10 @@ static struct ctl_table verbosity_ctl_ro
  	{
  		.procname       = "ioctl",
  		.mode           = 0555,
@@ -48,6 +57,11 @@ Signed-off-by: Ram Chandra Jangir <quic_rjangir@quicinc.com>
  	},
  	{},
  };
+-static struct ctl_table_header *verbosity_sysctl_header;
++static struct ctl_table_header *verbosity_sysctl_header;*/
+ static int __init init_cryptodev(void)
+ {
+ 	int rc;
 @@ -1205,7 +1204,6 @@ static int __init init_cryptodev(void)
  		return rc;
  	}
@@ -68,11 +82,18 @@ Signed-off-by: Ram Chandra Jangir <quic_rjangir@quicinc.com>
  }
 --- a/zc.c
 +++ b/zc.c
-@@ -83,7 +83,7 @@ int __get_userbuf(uint8_t __user *addr,
- #else
+@@ -80,10 +80,14 @@ int __get_userbuf(uint8_t __user *addr,
+ 	ret = get_user_pages_remote(task, mm,
+ 			(unsigned long)addr, pgcount, write ? FOLL_WRITE : 0,
+ 			pg, NULL, NULL);
+-#else
++#elif (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
  	ret = get_user_pages_remote(mm,
  			(unsigned long)addr, pgcount, write ? FOLL_WRITE : 0,
--			pg, NULL, NULL);
+ 			pg, NULL, NULL);
++#else
++	ret = get_user_pages_remote(mm,
++			(unsigned long)addr, pgcount, write ? FOLL_WRITE : 0,
 +			pg, NULL);
  #endif
  #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0))
