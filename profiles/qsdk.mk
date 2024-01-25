@@ -272,7 +272,7 @@ define Profile/QSDK_Premium
 		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(HW_CRYPTO) $(IPSEC) $(MAP_PKGS) $(MINIDUMP) \
 		$(QOS) $(HYFI) $(NSS_MACSEC) $(NSS_USERSPACE) $(NSS_USERSPACE_OSS) $(NSS_RMNET) \
 		$(NSS_UDP_ST) $(NSS_PPE) $(QCA_MAD) $(EMESH_SP) $(NETSTANDBY) \
-		$(QCA_EZMESH) $(OPENVPN) kmod-macvlan kmod-qca-hyfi-bridge \
+		$(QCA_EZMESH) $(OPENVPN) kmod-macvlan kmod-qca-hyfi-bridge kmod-netstandby-eawtp-drv \
 		$(NSS_NSM) $(SAL_QOS) $(RSRC_MGR) $(NSS_FLOWID) $(NSS_FLS) $(NPT66)
 endef
 
@@ -371,7 +371,7 @@ define Profile/QSDK_Enterprise
 		$(IGMPSNOOPING_RSTP) $(NETWORKING) $(QOS) $(UTILS) $(TEST_TOOLS) $(COREBSP_UTILS) \
 		$(QCA_ECM_ENTERPRISE) $(NSS_CLIENTS_ENTERPRISE) $(NSS_MACSEC) $(NSS_CRYPTO) \
 		$(IPSEC) $(STRONGSWAN) $(NSS_EIP197_FW) $(CD_ROUTER) $(AQ_PHY) \
-		$(CNSS_DIAG) $(CTRL_APP_DUT) $(FTM) $(QMSCT_CLIENT) -lacpd \
+		$(CNSS_DIAG) $(CTRL_APP_DUT) $(FTM) $(QMSCT_CLIENT) -lacpd kmod-netstandby-eawtp-drv \
 		$(USB_DIAG) $(MHI_QRTR) $(KPI) $(FAILSAFE) $(NSS_USERSPACE) $(NSS_USERSPACE_OSS) \
 		$(NSS_PPE) kmod-qca-nss-drv-mscs $(RSRC_MGR)
 endef
@@ -409,7 +409,7 @@ define Profile/QSDK_256
 		$(NETWORKING_256MB) iperf rng-tools $(QCA_RFS) $(CHAR_DIAG) \
 		$(QCA_ECM_STANDARD) $(NSS_PPE_256) $(NSS_CLIENTS_256MB) $(FAILSAFE) \
 		-lacpd $(CNSS_DIAG) $(CTRL_APP_DUT) $(FTM) $(QMSCT_CLIENT) $(HYFI) $(QCA_EZMESH) kmod-macvlan \
-		$(IGMPSNOOPING_RSTP) $(EMESH_SP) e2fsprogs losetup -kmod-usb-dwc3-qcom-internal \
+		$(IGMPSNOOPING_RSTP) $(EMESH_SP) e2fsprogs losetup -kmod-usb-dwc3-qcom-internal kmod-netstandby-eawtp-drv \
 		kmod-qca-nss-ecm-wifi-plugin
 endef
 
@@ -425,7 +425,7 @@ $(eval $(call Profile,QSDK_256))
 define Profile/QSDK_512
 	NAME:=Qualcomm Technologies, Inc SDK 512MB Profile
 	PACKAGES:=$(OPENWRT_STANDARD) $(AUDIO) $(NSS_COMMON) $(NSS_STANDARD) $(SWITCH_SSDK_PKGS) \
-		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(STORAGE) $(CD_ROUTER) \
+		$(WIFI_PKGS) $(WIFI_FW_PKGS) $(STORAGE) $(CD_ROUTER) kmod-netstandby-eawtp-drv \
 		$(NETWORKING) $(OPENVPN) $(UTILS) $(HW_CRYPTO) $(QCA_RFS) \
 		$(VIDEO) $(IGMPSNOOPING_RSTP) $(IPSEC) $(QOS) $(QCA_ECM_PREMIUM) $(NSS_PPE) \
 		$(NSS_MACSEC) $(TEST_TOOLS) $(NSS_CRYPTO) $(NSS_CLIENTS_STANDARD) \
@@ -467,7 +467,7 @@ define Profile/QSDK_16M
 		xz xz-utils -kmod-usb-f-qdss \
 		-kmod-testssr -kmod-ata-core -kmod-ata-ahci -kmod-ata-ahci-platform \
 		-kmod-usb2 -kmod-usb3 -kmod-usb-phy-ipq5018 -kmod-usb-dwc3-qcom \
-		-kmod-bt_tty -kmod-clk-test -sysupgrade-helper \
+		-kmod-bt_tty -kmod-clk-test -sysupgrade-helper kmod-netstandby-eawtp-drv \
 		-fwupgrade-tools -urandom-seed -urngd -kmod-usb-core -kmod-usb-dwc3-internal \
 		-kmod-usb-dwc3-qcom-internal -kmod-usb-gadget -kmod-usb-phy-ipq807x -kmod-usb-phy-ipq5018
 endef
