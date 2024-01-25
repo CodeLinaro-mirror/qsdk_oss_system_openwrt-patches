@@ -1,6 +1,6 @@
 #!/bin/sh /etc/rc.common
 
-# Copyright (c) 2023, Qualcomm Innovation Center, Inc. All rights reserved.
+# Copyright (c) 2023-2024, Qualcomm Innovation Center, Inc. All rights reserved.
 #
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -16,6 +16,9 @@
 
 START=99
 boot() {
+
+	hostname=$(uci get system.@system[0].hostname)
+	echo "$hostname" > /proc/sys/kernel/hostname
 	# Clean up file cache
 	echo 3 > /proc/sys/vm/drop_caches
 }
