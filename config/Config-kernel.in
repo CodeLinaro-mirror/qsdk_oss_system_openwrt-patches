@@ -130,13 +130,27 @@ config KERNEL_SKB_RECYCLE_MAX_PREALLOC_SKBS
 	depends on KERNEL_SKB_RECYCLER_PREALLOC
 	default 16384
 
+config KERNEL_SKB_RECYCLER_LOW_MEM
+        bool "Enable medium mem for skb recycler"
+	default y if KERNEL_IPQ_MEM_PROFILE=512 && TARGET_ipq95xx
+	default y if KERNEL_IPQ_MEM_PROFILE=512 && TARGET_ipq53xx
+
 config KERNEL_SKB_RECYCLER
 	bool "Generic skb recycling"
-	default y
+	default y if KERNEL_SKB_RECYCLER_LOW_MEM || KERNEL_IPQ_MEM_PROFILE=0
 
 config KERNEL_SKB_RECYCLER_MULTI_CPU
 	bool "Cross-CPU recycling for CPU-locked workloads"
+	depends on KERNEL_SKB_RECYCLER
 	default y
+
+config KERNEL_SKB_RECYCLE_SIZE
+	int "SKB recycler size"
+	depends on KERNEL_SKB_RECYCLER
+	default 1792 if KERNEL_SKB_RECYCLER_LOW_MEM
+	default 2304
+	help
+	SKB recycler default size
 
 config KERNEL_SKB_FIXED_SIZE_2K
 	bool "SKB size fixed at 2K"
