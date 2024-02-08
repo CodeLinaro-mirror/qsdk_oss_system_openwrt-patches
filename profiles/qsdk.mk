@@ -410,6 +410,7 @@ define Profile/QSDK_256
 		$(QCA_ECM_STANDARD) $(NSS_PPE_256) $(NSS_CLIENTS_256MB) $(FAILSAFE) \
 		-lacpd $(CNSS_DIAG) $(CTRL_APP_DUT) $(FTM) $(QMSCT_CLIENT) $(HYFI) $(QCA_EZMESH) kmod-macvlan \
 		$(IGMPSNOOPING_RSTP) $(EMESH_SP) e2fsprogs losetup -kmod-usb-dwc3-qcom-internal kmod-netstandby-eawtp-drv \
+		$(SAL_QOS) \
 		kmod-qca-nss-ecm-wifi-plugin
 endef
 
