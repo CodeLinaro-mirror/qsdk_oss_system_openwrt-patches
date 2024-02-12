@@ -28,20 +28,20 @@ diff -Nur -X patern.txt a/system.h b/system.h
 diff -Nur -X patern.txt a/system-linux.c b/system-linux.c
 --- a/system-linux.c	2023-04-18 10:32:28.274375681 -0700
 +++ b/system-linux.c	2023-04-18 10:53:31.791916921 -0700
-@@ -868,6 +868,13 @@
- 	int ret;
+@@ -938,6 +938,13 @@ int system_bridge_addif(struct device *b
  
- retry:
-+	if (bridge->settings.flags & DEV_OPT_MTU) {
-+		system_update_ipv4_mtu(dev, bridge->settings.mtu);
-+	}
-+	if (bridge->settings.flags & DEV_OPT_MTU6) {
-+		system_update_ipv6_mtu(dev, bridge->settings.mtu6);
-+	}
+ 
+ 	for (tries = 0; tries < 3; tries++) {
++		if (bridge->settings.flags & DEV_OPT_MTU) {
++			system_update_ipv4_mtu(dev, bridge->settings.mtu);
++		}
++		if (bridge->settings.flags & DEV_OPT_MTU6) {
++			system_update_ipv6_mtu(dev, bridge->settings.mtu6);
++		}
 +
- 	ret = 0;
- 	oldbr = system_get_bridge(dev->ifname, dev_buf, sizeof(dev_buf));
- 	if (!oldbr || strcmp(oldbr, bridge->ifname) != 0) {
+ 		ret = 0;
+ 		oldbr = system_get_bridge(dev->ifname, dev_buf, sizeof(dev_buf));
+ 		if (oldbr && !strcmp(oldbr, bridge->ifname))
 @@ -1686,10 +1693,9 @@
  	memset(&ifr, 0, sizeof(ifr));
  	strncpy(ifr.ifr_name, dev->ifname, sizeof(ifr.ifr_name) - 1);
