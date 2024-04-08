@@ -147,7 +147,7 @@ config KERNEL_SKB_RECYCLER_MULTI_CPU
 config KERNEL_SKB_RECYCLE_SIZE
 	int "SKB recycler size"
 	depends on KERNEL_SKB_RECYCLER
-	default 1792 if KERNEL_SKB_RECYCLER_LOW_MEM
+	default 1856 if KERNEL_SKB_RECYCLER_LOW_MEM
 	default 2304
 	help
 	SKB recycler default size
