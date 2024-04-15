@@ -1,12 +1,25 @@
---- netifd-2015-12-16.orig/device.c
-+++ netifd-2015-12-16/device.c
-@@ -424,9 +424,6 @@
+From f7cad377bf376f1598334d50e35f3e030d88d31b Wed Jun 1 10:46:52 2016
+From: Alexei Avshalom Lazar <ailizaro@codeaurora.org>
+Date:   Wed Jun 1 10:46:52 2016 +0300
+
+Subject: [PATCH] netifd: allow setting device presence for wifi interfaces via hotplug messages
+
+    Change-Id: I7ce003d3d1a1274a84ee08dbeb2903f458730476
+    Signed-off-by: Alexei Avshalom Lazar <ailizaro@codeaurora.org>
+    (cherry picked from commit 4ecd6799bc4aa993f9b8ae60d6a1eec85383058b)
+
+---
+Index: netifd-2024.01.04~f01345ec/device.c
+===================================================================
+--- netifd-2024.01.04~f01345ec.orig/device.c
++++ netifd-2024.01.04~f01345ec/device.c
+@@ -802,9 +802,6 @@ device_create_default(const char *name,
  {
  	struct device *dev;
  
 -	if (!external && system_if_force_external(name))
 -		return NULL;
 -
- 	D(DEVICE, "Create simple device '%s'\n", name);
+ 	D(DEVICE, "Create simple device '%s'", name);
  	dev = calloc(1, sizeof(*dev));
- 	dev->external = external;
+ 	if (!dev)
