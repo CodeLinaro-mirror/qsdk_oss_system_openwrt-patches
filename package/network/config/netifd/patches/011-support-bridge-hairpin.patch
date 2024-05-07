@@ -73,7 +73,7 @@ diff -Nur -X patern.txt a/system-linux.c b/system-linux.c
 +{
 +	char mode[4];
 +	snprintf(mode, sizeof(mode), "%d", !!enable);
-+	system_set_dev_sysctl("brport", "hairpin_mode", dev->ifname, mode);
++	system_set_dev_sysfs("brport/hairpin_mode", dev->ifname, mode);
 +}
 +
  int system_if_resolve(struct device *dev)
