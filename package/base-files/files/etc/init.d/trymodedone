@@ -30,7 +30,8 @@ start() {
 
 	case "$board" in
 		qcom,ipq9574-ap-al05 |\
-		qcom,ipq9574-ap-al06)
+		qcom,ipq9574-ap-al06 |\
+		qcom,ipq5332-ap-mi01.2)
 			if [ $is_in_trymode -eq 1 ]; then
 				if [ $age0 -le $age1 ]; then
 					eval $(fw_printenv sw_active0_ok 2>/dev/null)
