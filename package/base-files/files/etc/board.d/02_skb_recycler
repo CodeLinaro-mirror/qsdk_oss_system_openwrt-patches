@@ -45,7 +45,7 @@ skb_recycler_enable=1
 memtotal=$(grep MemTotal /proc/meminfo | awk '{print $2}')
 [ $memtotal -lt 131072 ] && max_skbs=512
 
-[ -e /proc/device-tree/MP_512 ] && max_skbs=512 && max_spare_skbs=128 && skb_recycler_enable=0
+[ -e /proc/device-tree/MP_512 ] && max_skbs=512 && max_spare_skbs=128 && skb_recycler_enable=1
 [ -e /proc/device-tree/MP_256 ] && max_skbs=512 && max_spare_skbs=128 && skb_recycler_enable=0
 
 ucidef_set_skb "max_skbs" $max_skbs
