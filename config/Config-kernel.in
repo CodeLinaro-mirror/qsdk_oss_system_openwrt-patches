@@ -249,3 +249,7 @@ endchoice
 		default "sha384" if KERNEL_MODULE_SIG_SHA384
 		default "sha512" if KERNEL_MODULE_SIG_SHA512
 endif
+
+config KERNEL_CPU_BIG_ENDIAN
+	bool "Enable Big Endian mode"
+	default n
