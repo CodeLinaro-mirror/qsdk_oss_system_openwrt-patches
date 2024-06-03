@@ -21,4 +21,5 @@ boot() {
 	echo "$hostname" > /proc/sys/kernel/hostname
 	# Clean up file cache
 	echo 3 > /proc/sys/vm/drop_caches
+	/etc/init.d/sysctl start
 }
