@@ -26,11 +26,11 @@ Index: nftables-1.0.9/include/linux/netfilter/nf_tables.h
 +	NFT_NAT_SNPT,
 +	NFT_NAT_DNPT
  };
-
+ 
  /**
 @@ -1485,6 +1489,28 @@ enum nft_masq_attributes {
  #define NFTA_MASQ_MAX		(__NFTA_MASQ_MAX - 1)
-
+ 
  /**
 + * enum nft_npt_attributes - nf_tables NPT expression attributes
 + *
@@ -83,7 +83,7 @@ Index: nftables-1.0.9/include/statement.h
 +	uint8_t			dst_pfx_len;
  	uint32_t		type_flags;
  };
-
+ 
 Index: nftables-1.0.9/src/evaluate.c
 ===================================================================
 --- nftables-1.0.9.orig/src/evaluate.c
@@ -111,7 +111,7 @@ Index: nftables-1.0.9/src/evaluate.c
 @@ -3804,7 +3808,9 @@ static int stmt_evaluate_nat_map(struct
  		goto out;
  	}
-
+ 
 -	if (stmt->nat.addr->etype != EXPR_MAP) {
 +	if ((stmt->nat.addr->etype != EXPR_MAP) ||
 +		(stmt->nat.src_pfx->etype != EXPR_MAP) ||
@@ -119,15 +119,7 @@ Index: nftables-1.0.9/src/evaluate.c
  		err = 0;
  		goto out;
  	}
-@@ -3897,6 +3903,7 @@ static int stmt_evaluate_nat(struct eval
- 	if (err < 0)
- 		return err;
-
-+	printf("stmt_evaluate_nat: stmt->nat.addr = %p, stmt->nat.src_pfx = %p, stmt->nat.dst_pfx = %p\n", stmt->nat.addr, stmt->nat.src_pfx, stmt->nat.dst_pfx);
- 	if (stmt->nat.addr != NULL) {
- 		err = stmt_evaluate_l3proto(ctx, stmt, stmt->nat.family);
- 		if (err < 0)
-@@ -3918,6 +3925,18 @@ static int stmt_evaluate_nat(struct eval
+@@ -3918,6 +3924,18 @@ static int stmt_evaluate_nat(struct eval
  		if (err < 0)
  			return err;
  	}
@@ -143,7 +135,7 @@ Index: nftables-1.0.9/src/evaluate.c
 +		if (err < 0)
 +			return err;
 +	}
-
+ 
  	if (stmt->nat.proto != NULL) {
  		err = nat_evaluate_transport(ctx, stmt, &stmt->nat.proto);
 Index: nftables-1.0.9/src/parser_json.c
@@ -176,7 +168,7 @@ Index: nftables-1.0.9/src/parser_json.c
 +	int type, familyval, val;
  	struct stmt *stmt;
  	json_t *tmp;
-
+ 
 @@ -2235,6 +2239,22 @@ static struct stmt *json_parse_nat_stmt(
  			return NULL;
  		}
@@ -220,7 +212,7 @@ Index: nftables-1.0.9/src/parser_json.c
 +		}
 +		stmt->nat.dst_pfx_len = val;
 +	}
-
+ 
  	return stmt;
  }
 @@ -2892,6 +2928,8 @@ static struct stmt *json_parse_stmt(stru
@@ -257,7 +249,7 @@ Index: nftables-1.0.9/src/statement.c
 @@ -733,12 +735,32 @@ static void nat_stmt_print(const struct
  		expr_print(stmt->nat.proto, octx);
  	}
-
+ 
 +	if (stmt->nat.src_pfx) {
 +		nft_print(octx, " ");
 +		expr_print(stmt->nat.src_pfx, octx);
@@ -278,7 +270,7 @@ Index: nftables-1.0.9/src/statement.c
 +
  	print_nf_nat_flags(stmt->nat.flags, octx);
  }
-
+ 
  static void nat_stmt_destroy(struct stmt *stmt)
  {
  	expr_free(stmt->nat.addr);
@@ -286,7 +278,7 @@ Index: nftables-1.0.9/src/statement.c
 +	expr_free(stmt->nat.dst_pfx);
  	expr_free(stmt->nat.proto);
  }
-
+ 
 Index: nftables-1.0.9/src/netlink_linearize.c
 ===================================================================
 --- nftables-1.0.9.orig/src/netlink_linearize.c
@@ -313,11 +305,11 @@ Index: nftables-1.0.9/src/netlink_linearize.c
 +		break;
  	case NFT_NAT_MASQ:
  		nle = alloc_nft_expr("masq");
-
+ 
 @@ -1315,6 +1322,28 @@ static void netlink_gen_nat_stmt(struct
  		}
  	}
-
+ 
 +	if (stmt->nat.src_pfx) {
 +		src_pfx_reg = get_register(ctx, NULL);
 +		registers++;
@@ -350,7 +342,7 @@ Index: nftables-1.0.9/src/netlink_delinearize.c
 @@ -1360,6 +1360,57 @@ out_err:
  	stmt_free(stmt);
  }
-
+ 
 +static void netlink_parse_npt(struct netlink_parse_ctx *ctx, const struct location *loc,
 +				const struct nftnl_expr *nle)
 +{
@@ -432,7 +424,7 @@ Index: nftables-1.0.9/src/scanner.l
 --- nftables-1.0.9.orig/src/scanner.l
 +++ nftables-1.0.9/src/scanner.l
 @@ -462,6 +462,8 @@ addrstring	({macaddr}|{ip4addr}|{ip6addr
-
+ 
  "snat"			{ scanner_push_start_cond(yyscanner, SCANSTATE_STMT_NAT); return SNAT; }
  "dnat"			{ scanner_push_start_cond(yyscanner, SCANSTATE_STMT_NAT); return DNAT; }
 +"snpt"			{ scanner_push_start_cond(yyscanner, SCANSTATE_STMT_NAT); return SNPT; }
@@ -445,7 +437,7 @@ Index: nftables-1.0.9/src/parser_bison.y
 --- nftables-1.0.9.orig/src/parser_bison.y
 +++ nftables-1.0.9/src/parser_bison.y
 @@ -622,6 +622,8 @@ int nft_lex(void *, void *, void *);
-
+ 
  %token SNAT			"snat"
  %token DNAT			"dnat"
 +%token SNPT			"snpt"
@@ -475,7 +467,7 @@ Index: nftables-1.0.9/src/parser_bison.y
 @@ -3666,6 +3669,13 @@ nat_stmt_alloc		:	SNAT	{ $$ = nat_stmt_a
  			|	DNAT	{ $$ = nat_stmt_alloc(&@$, __NFT_NAT_DNAT); }
  			;
-
+ 
 +npt_stmt		:	npt_stmt_alloc	npt_stmt_args
 +			;
 +
@@ -489,7 +481,7 @@ Index: nftables-1.0.9/src/parser_bison.y
 @@ -3971,6 +3981,15 @@ nat_stmt_args		:	stmt_expr
  			}
  			;
-
+ 
 +npt_stmt_args		:	stmt_expr NUM	TO	stmt_expr NUM
 +			{
 +				$<stmt>0->nat.src_pfx = $1;
@@ -518,7 +510,7 @@ Index: nftables-1.0.9/src/json.c
 @@ -1429,6 +1429,22 @@ json_t *nat_stmt_json(const struct stmt
  		json_object_set_new(root, "port",
  				    expr_print_json(stmt->nat.proto, octx));
-
+ 
 +	if (stmt->nat.src_pfx)
 +		json_object_set_new(root, "src_pfx",
 +				    expr_print_json(stmt->nat.src_pfx, octx));
@@ -536,5 +528,5 @@ Index: nftables-1.0.9/src/json.c
 +				    json_integer(stmt->nat.dst_pfx_len));
 +
  	nat_stmt_add_array(root, "flags", array);
-
+ 
  	if (stmt->nat.type_flags) {
