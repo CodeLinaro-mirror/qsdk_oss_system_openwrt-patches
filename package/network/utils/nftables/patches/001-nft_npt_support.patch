@@ -88,15 +88,6 @@ Index: nftables-1.0.9/src/evaluate.c
 ===================================================================
 --- nftables-1.0.9.orig/src/evaluate.c
 +++ nftables-1.0.9/src/evaluate.c
-@@ -3559,7 +3559,7 @@ static int nat_evaluate_family(struct ev
- 			stmt->nat.family = pctx->family;
- 		return 0;
- 	case NFPROTO_INET:
--		if (!stmt->nat.addr) {
-+		if (!stmt->nat.addr || !stmt->nat.src_pfx || !stmt->nat.dst_pfx) {
- 			stmt->nat.family = NFPROTO_INET;
- 			return 0;
- 		}
 @@ -3675,6 +3675,10 @@ static const char *stmt_name(const struc
  			return "snat";
  		case NFT_NAT_DNAT:
@@ -108,18 +99,7 @@ Index: nftables-1.0.9/src/evaluate.c
  		case NFT_NAT_REDIR:
  			return "redirect";
  		case NFT_NAT_MASQ:
-@@ -3804,7 +3808,9 @@ static int stmt_evaluate_nat_map(struct
- 		goto out;
- 	}
- 
--	if (stmt->nat.addr->etype != EXPR_MAP) {
-+	if ((stmt->nat.addr->etype != EXPR_MAP) ||
-+		(stmt->nat.src_pfx->etype != EXPR_MAP) ||
-+		(stmt->nat.dst_pfx->etype != EXPR_MAP)) {
- 		err = 0;
- 		goto out;
- 	}
-@@ -3918,6 +3924,18 @@ static int stmt_evaluate_nat(struct eval
+@@ -3918,6 +3922,18 @@ static int stmt_evaluate_nat(struct eval
  		if (err < 0)
  			return err;
  	}
