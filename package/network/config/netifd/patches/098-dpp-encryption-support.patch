@@ -1,0 +1,48 @@
+From 8ac2b1d3c62ff3199c9051e7b17de206108afd74 Mon Sep 17 00:00:00 2001
+From: Arunpandi Kannan <quic_arunpand@quicinc.com>
+Date: Sun, 16 Jun 2024 13:43:29 +0530
+Subject: [PATCH] netifd-wireless.sh: Add dpp encryption support
+
+Add support for DPP AKM with CCMP as wpa_cipher and
+DPP as key management.
+
+Signed-off-by: Arunpandi Kannan <quic_arunpand@quicinc.com>
+---
+ scripts/netifd-wireless.sh | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/scripts/netifd-wireless.sh b/scripts/netifd-wireless.sh
+index 3da5c01..de92b44 100644
+--- a/scripts/netifd-wireless.sh
++++ b/scripts/netifd-wireless.sh
+@@ -224,7 +224,7 @@ wireless_vif_parse_encryption() {
+ 		*ccmp256) wpa_cipher="CCMP-256";;
+ 		*gcmp | *sae-ext-key) wpa_cipher="GCMP";;
+ 		*gcmp256 | wpa3-192*) wpa_cipher="GCMP-256";;
+-		*aes|*ccmp| psk2 | wpa2 | sae* | owe) wpa_cipher="CCMP";;
++		*aes|*ccmp| psk2 | wpa2 | sae* | owe | dpp) wpa_cipher="CCMP";;
+ 		*tkip | wpa | psk ) wpa_cipher="TKIP";;
+ 	esac
+ 
+@@ -234,7 +234,7 @@ wireless_vif_parse_encryption() {
+ 	# wpa2/tkip+aes     => WPA2 RADIUS, CCMP+TKIP
+ 
+ 	case "$encryption" in
+-		wpa2*|wpa3*|*psk2*|psk3*|*sae*|owe*)
++		wpa2*|wpa3*|*psk2*|psk3*|*sae*|owe*|dpp)
+ 			wpa=2
+ 		;;
+ 		wpa*mixed*|*psk*mixed*)
+@@ -308,6 +308,9 @@ wireless_vif_parse_encryption() {
+ 				;;
+ 			esac
+ 		;;
++		dpp)
++			auth_type=dpp;
++		;;
+ 	esac
+ 
+ 	case "$encryption" in
+-- 
+2.34.1
+
