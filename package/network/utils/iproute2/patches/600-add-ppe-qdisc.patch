@@ -59,7 +59,7 @@ index 000eec1..0f7121a 100644
  
 +/* PPEPRIO section */
 +
-+#define TCA_PPEPRIO_MAX_BANDS 4
++#define TCA_PPEPRIO_MAX_BANDS 8
 +
 +enum {
 +	TCA_PPEPRIO_UNSPEC,
@@ -566,7 +566,7 @@ index 0000000..b9da235
 +
 +static void ppeprio_explain(void)
 +{
-+	fprintf(stderr, "Usage: ... ppeprio [ bands NUMBER (default 2 & [max 4(non-root)]) ] \n");
++	fprintf(stderr, "Usage: ... ppeprio [ bands NUMBER (default 4 & [max 8(non-root)]) ] \n");
 +}
 +
 +static int ppeprio_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nlmsghdr *n, const char *dev)
@@ -903,7 +903,7 @@ index 0000000..b9da235
 +
 +static void ppehtb_explain_class(void)
 +{
-+	fprintf(stderr, "Usage: ... ppehtb priority 0-3 [ quantum BYTES ] [ rate BPS ] [ burst BYTES ] [crate BPS ] [ cburst BYTES ]\n");
++	fprintf(stderr, "Usage: ... ppehtb priority 0-7 [ quantum BYTES ] [ rate BPS ] [ burst BYTES ] [crate BPS ] [ cburst BYTES ]\n");
 +	fprintf(stderr, "                 [ overhead BYTES ] \n");
 +}
 +
@@ -1092,8 +1092,8 @@ index 0000000..b9da235
 +		return -1;
 +	}
 +
-+	if (opt.priority > 3) {
-+		fprintf(stderr, "\"priority\" should be an integer between 0 and 3.\n");
++	if (opt.priority > 7) {
++		fprintf(stderr, "\"priority\" should be an integer between 0 and 7.\n");
 +		return -1;
 +	}
 +

@@ -204,6 +204,17 @@ index 29f721e..9039307 100644
  			if (err) {
  				sys_errmsg("cannot detach mtd%d", args.mtdn);
  				goto out_libubi;
+--- a/tests/fs-tests/integrity/integck.c
++++ b/tests/fs-tests/integrity/integck.c
+@@ -3162,7 +3162,7 @@ static int reattach(void)
+ 		return sys_errmsg("cannot open libubi");
+ 	}
+ 
+-	err = ubi_detach_mtd(libubi, "/dev/ubi_ctrl", args.mtdn);
++	err = ubi_detach_mtd(libubi, "/dev/ubi_ctrl", args.mtdn, 0);
+ 	if (err) {
+ 		sys_errmsg("cannot detach mtd%d", args.mtdn);
+ 		goto out;
 -- 
 2.17.1
 
