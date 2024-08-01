@@ -1,0 +1,109 @@
+From ceee9cb2dd6d00baebf2bab481a3bb20957e6d0c Mon Sep 17 00:00:00 2001
+From: Adil Saeed Musthafa <quic_adilm@quicinc.com>
+Date: Wed, 31 Jul 2024 23:51:32 -0700
+Subject: [PATCH] netifd: For wireless devices do hostapd_cli
+
+For wireless devices do hostapd_cli (enable/disable) instead of
+modifying the IFF_UP netdev flags
+
+Signed-off-by: Adil Saeed Musthafa <quic_adilm@quicinc.com>
+---
+ system-linux.c | 59 +++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 56 insertions(+), 3 deletions(-)
+
+diff --git a/system-linux.c b/system-linux.c
+index 5eec1ee..7918b51 100644
+--- a/system-linux.c
++++ b/system-linux.c
+@@ -1322,6 +1322,33 @@ out:
+ 	nl_cb_put(cb);
+ }
+ 
++static bool is_wireless_dev(struct device *dev)
++{
++        int fd;
++        char filepath[100];
++        FILE *fp;
++        char cmd[500];
++        char phyname_output[100];
++
++
++        snprintf(filepath, sizeof(filepath), "/sys/class/net/%s/phy80211/name", dev->ifname);
++        fd = open(filepath, O_RDONLY);
++        if (fd < 0)
++                return false;
++
++        close(fd);
++        snprintf(cmd, sizeof(cmd), "hostapd_cli -i %s -p /var/run/hostapd-%s status | grep phy | awk -F \"=\" '{print $2}'", dev->ifname, dev->ifname);
++        fp = popen(cmd, "r");
++        if (!fp)
++                return false;
++
++        fscanf(fp, "%s", phyname_output);
++        if (strncmp(phyname_output, dev->ifname, sizeof(phyname_output)) != 0)
++                return false;
++
++        return true;
++}
++
+ /*
+  * Clear bridge (membership) state and bring down device
+  */
+@@ -1329,12 +1356,20 @@ void system_if_clear_state(struct device *dev)
+ {
+ 	static char buf[256];
+ 	char *bridge;
++	bool is_wireless;
++
+ 	device_set_ifindex(dev, system_if_resolve(dev));
+ 
+ 	if (dev->external || !dev->ifindex)
+ 		return;
+ 
+-	system_if_flags(dev->ifname, 0, IFF_UP);
++	is_wireless = is_wireless_dev(dev);
++	if (is_wireless) {
++		char cmd[500];
++		snprintf(cmd, sizeof(cmd), "hostapd_cli -i %s -p /var/run/hostapd-%s disable", dev->ifname, dev->ifname);
++		system(cmd);
++	} else
++		system_if_flags(dev->ifname, 0, IFF_UP);
+ 
+ 	if (system_is_bridge(dev->ifname)) {
+ 		D(SYSTEM, "Delete existing bridge named '%s'\n", dev->ifname);
+@@ -2344,12 +2379,30 @@ void system_if_apply_settings_after_up(struct device *dev, struct device_setting
+ 
+ int system_if_up(struct device *dev)
+ {
+-	return system_if_flags(dev->ifname, IFF_UP, 0);
++	bool is_wireless;
++
++	is_wireless = is_wireless_dev(dev);
++	if (is_wireless) {
++		char cmd[500];
++		snprintf(cmd, sizeof(cmd), "hostapd_cli -i %s -p /var/run/hostapd-%s enable", dev->ifname, dev->ifname);
++		system(cmd);
++		return 0;
++	} else
++		return system_if_flags(dev->ifname, IFF_UP, 0);
+ }
+ 
+ int system_if_down(struct device *dev)
+ {
+-	return system_if_flags(dev->ifname, 0, IFF_UP);
++	bool is_wireless;
++
++	is_wireless = is_wireless_dev(dev);
++	if (is_wireless) {
++		char cmd[500];
++		snprintf(cmd, sizeof(cmd), "hostapd_cli -i %s -p /var/run/hostapd-%s disable", dev->ifname, dev->ifname);
++		system(cmd);
++		return 0;
++	} else
++		return system_if_flags(dev->ifname, 0, IFF_UP);
+ }
+ 
+ struct if_check_data {
+-- 
+2.17.1
+
