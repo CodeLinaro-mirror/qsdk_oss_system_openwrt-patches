@@ -18,8 +18,27 @@
 
 . /lib/uboot-envtools.sh
 . /lib/functions.sh
+. /usr/share/libubox/jshn.sh
 
-board=$(board_name)
+get_board_details() {
+        local JSON_FILE="/etc/board.json"
+        local info_value
+
+        json_load_file "$JSON_FILE"
+
+        case $1 in
+                "model_name")
+                        json_select model
+                        json_get_var info_value name
+                        info_value=${info_value##*/}
+                        ;;
+                *)
+                        json_get_var info_value $1
+                        ;;
+        esac
+
+        echo $info_value
+}
 
 ubootenv_mtdinfo () {
 	UBOOTENV_PART=$(cat /proc/mtd | grep APPSBLENV)
@@ -68,7 +87,15 @@ validate_device_node() {
 
 echo "" > /etc/config/ubootenv
 
-case "$board" in
+board=$(board_name)
+
+envset=$(get_board_details "uboot-envtool")
+
+if [ -z "$envset" ]; then
+	envset=$board
+fi
+
+case "$envset" in
 	qcom,ipq8074-ap-hk01-c1 |\
 	qcom,ipq8074-ap-hk01-c2 |\
 	qcom,ipq8074-ap-hk01-c3 |\
@@ -122,58 +149,7 @@ case "$board" in
 	qcom,ipq6018-ap-cp03-c1 |\
 	qcom,ipq6018-db-cp01 |\
 	qcom,ipq6018-db-cp02 |\
-	qcom,ipq9574-ap-al01-c1 |\
-	qcom,ipq9574-ap-al02-c1 |\
-	qcom,ipq9574-ap-al03-c1 |\
-	qcom,ipq9574-ap-al02-c2 |\
-	qcom,ipq9574-ap-al02-c3 |\
-	qcom,ipq9574-ap-al02-c4 |\
-	qcom,ipq9574-ap-al02-c5 |\
-	qcom,ipq9574-ap-al02-c6 |\
-	qcom,ipq9574-ap-al02-c7 |\
-	qcom,ipq9574-ap-al02-c8 |\
-	qcom,ipq9574-ap-al02-c9 |\
-	qcom,ipq9574-ap-al02-c10 |\
-	qcom,ipq9574-ap-al02-c11 |\
-	qcom,ipq9574-ap-al02-c12 |\
-	qcom,ipq9574-ap-al02-c13 |\
-	qcom,ipq9574-ap-al02-c14 |\
-	qcom,ipq9574-ap-al02-c15 |\
-	qcom,ipq9574-ap-al02-c16 |\
-	qcom,ipq9574-ap-al02-c17 |\
-	qcom,ipq9574-ap-al02-c18 |\
-	qcom,ipq9574-ap-al02-c19 |\
-	qcom,ipq9574-ap-al02-c20 |\
-	qcom,ipq9574-ap-al03-c2 |\
-	qcom,ipq9574-ap-al05 |\
-	qcom,ipq9574-ap-al06 |\
-	qcom,ipq9574-db-al01-c1 |\
-	qcom,ipq9574-db-al01-c2 |\
-	qcom,ipq9574-db-al01-c3 |\
-	qcom,ipq9574-db-al02-c1 |\
-	qcom,ipq9574-db-al02-c2 |\
-	qcom,ipq9574-db-al02-c3 |\
-	qcom,ipq5332-ap-emulation |\
-	qcom,ipq5332-ap-mi01.2 |\
-	qcom,ipq5332-ap-mi01.2-c2 |\
-	qcom,ipq5332-ap-mi01.2-qcn9160-c1 |\
-	qcom,ipq5332-ap-mi01.3 |\
-	qcom,ipq5332-ap-mi01.3-c2 |\
-	qcom,ipq5332-ap-mi01.3-c3 |\
-	qcom,ipq5332-ap-mi01.4 |\
-	qcom,ipq5332-ap-mi01.4-c2 |\
-	qcom,ipq5332-ap-mi01.6 |\
-	qcom,ipq5332-ap-mi01.7 |\
-	qcom,ipq5332-ap-mi01.9 |\
-	qcom,ipq5332-ap-mi01.12 |\
-	qcom,ipq5332-ap-mi01.13 |\
-	qcom,ipq5332-ap-mi01.14 |\
-	qcom,ipq5332-ap-mi04.1 |\
-	qcom,ipq5332-ap-mi04.1-c2 |\
-	qcom,ipq5332-ap-mi04.3 |\
-	qcom,ipq5332-db-mi01.1 |\
-	qcom,ipq5332-db-mi02.1 |\
-	qcom,ipq5332-db-mi03.1)
+	true)
 		ubootenv_add_uci_config $(ubootenv_mtdinfo)
 		;;
 esac
