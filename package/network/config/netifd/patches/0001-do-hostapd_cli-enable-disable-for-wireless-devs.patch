@@ -12,10 +12,10 @@ Signed-off-by: Adil Saeed Musthafa <quic_adilm@quicinc.com>
  1 file changed, 56 insertions(+), 3 deletions(-)
 
 diff --git a/system-linux.c b/system-linux.c
-index 5eec1ee..7918b51 100644
+index 4463a2a..2622777 100644
 --- a/system-linux.c
 +++ b/system-linux.c
-@@ -1322,6 +1322,33 @@ out:
+@@ -1333,6 +1333,33 @@ out:
  	nl_cb_put(cb);
  }
  
@@ -34,7 +34,7 @@ index 5eec1ee..7918b51 100644
 +                return false;
 +
 +        close(fd);
-+        snprintf(cmd, sizeof(cmd), "hostapd_cli -i %s -p /var/run/hostapd-%s status | grep phy | awk -F \"=\" '{print $2}'", dev->ifname, dev->ifname);
++        snprintf(cmd, sizeof(cmd), "hostapd_cli -i %s -p /var/run/hostapd-%s status | egrep \"bss\\[0\\]\" | awk -F \"=\" '{print $2}'", dev->ifname, dev->ifname);
 +        fp = popen(cmd, "r");
 +        if (!fp)
 +                return false;
@@ -49,7 +49,7 @@ index 5eec1ee..7918b51 100644
  /*
   * Clear bridge (membership) state and bring down device
   */
-@@ -1329,12 +1356,20 @@ void system_if_clear_state(struct device *dev)
+@@ -1340,12 +1367,20 @@ void system_if_clear_state(struct device *dev)
  {
  	static char buf[256];
  	char *bridge;
@@ -70,8 +70,8 @@ index 5eec1ee..7918b51 100644
 +		system_if_flags(dev->ifname, 0, IFF_UP);
  
  	if (system_is_bridge(dev->ifname)) {
- 		D(SYSTEM, "Delete existing bridge named '%s'\n", dev->ifname);
-@@ -2344,12 +2379,30 @@ void system_if_apply_settings_after_up(struct device *dev, struct device_setting
+ 		D(SYSTEM, "Delete existing bridge named '%s'", dev->ifname);
+@@ -2355,12 +2390,30 @@ void system_if_apply_settings_after_up(struct device *dev, struct device_setting
  
  int system_if_up(struct device *dev)
  {
