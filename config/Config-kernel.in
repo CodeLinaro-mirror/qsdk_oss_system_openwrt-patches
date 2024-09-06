@@ -253,3 +253,7 @@ endif
 config KERNEL_CPU_BIG_ENDIAN
 	bool "Enable Big Endian mode"
 	default n
+
+config KERNEL_ATHMEMDEBUG
+	bool "Enable memory debug support for ATH"
+	default n
