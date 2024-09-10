@@ -31,16 +31,3 @@ Index: fstools-2024.01.22~08cd7083/libfstools/common.h
  
  int read_uint_from_file(char *dirname, char *filename, unsigned int *i);
  char *read_string_from_file(const char *dirname, const char *filename, char *buf, size_t bufsz);
-Index: fstools-2024.01.22~08cd7083/libfstools/rootdisk.c
-===================================================================
---- fstools-2024.01.22~08cd7083.orig/libfstools/rootdisk.c
-+++ fstools-2024.01.22~08cd7083/libfstools/rootdisk.c
-@@ -16,7 +16,7 @@
- #include <linux/loop.h>
- 
- #define ROOTDEV_OVERLAY_ALIGN	(64ULL * 1024ULL)
--#define F2FS_MINSIZE		(100ULL * 1024ULL * 1024ULL)
-+#define F2FS_MINSIZE		(150ULL * 1024ULL * 1024ULL)
- 
- struct squashfs_super_block {
- 	uint32_t s_magic;
