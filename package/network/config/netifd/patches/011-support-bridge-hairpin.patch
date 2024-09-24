@@ -65,15 +65,13 @@ diff -Nur -X patern.txt a/system.h b/system.h
 diff -Nur -X patern.txt a/system-linux.c b/system-linux.c
 --- a/system-linux.c	2022-08-25 12:13:35.000000000 -0700
 +++ b/system-linux.c	2023-04-18 10:32:28.274375681 -0700
-@@ -1044,6 +1044,13 @@
+@@ -1044,6 +1044,11 @@
  	return 0;
  }
  
 +void system_bridge_set_hairpin(struct device *dev, int enable)
 +{
-+	char mode[4];
-+	snprintf(mode, sizeof(mode), "%d", !!enable);
-+	system_set_dev_sysctl("brport", "hairpin_mode", dev->ifname, mode);
++	system_bridge_set_hairpin_mode(dev, enable ? "1" : "0");
 +}
 +
  int system_if_resolve(struct device *dev)
