@@ -1,0 +1,44 @@
+#!/bin/sh /etc/rc.common
+#
+#Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+#SPDX-License-Identifier: ISC
+
+START=08
+STOP=15
+
+#add all services list in etc/services_list file to disable at minimal_boot
+#example:
+#$cat services_list
+#qcawifi-config-cmd
+#qcawifi-legacy
+
+services_list="$(tr '\n' ' ' < etc/services_list)"
+
+disable_minimal_modules_list() {
+        #disbale bootup init service
+        for service in $services_list;
+        do
+                /etc/init.d/$service disable
+        done
+}
+
+enable_minimal_modules_list() {
+        #enable bootup init service
+        for service in $services_list;
+        do
+                /etc/init.d/$service enable
+        done
+}
+
+boot() {
+        is_minimal=`cat /sys/kernel/license_manager/licensed_features | grep "SoC HW Features" |wc -l`
+
+	if [ $is_minimal = 0 ]; then
+		disable_minimal_modules_list
+        fi
+}
+
+stop() {
+        enable_minimal_modules_list
+}
+
