@@ -60,13 +60,14 @@ start() {
 			return 1;
 			;;
 		*)
+			echo 0 > /sys/devices/platform/firmware:scm/hlos_done
 			if [ -f "$trymode_inprogress" ]; then
 				if [ $is_in_trymode -eq 1 ]; then
 					echo "Bootconfig: updating age" > /dev/console
 					age_do_upgrade
+					echo "Bootconfig: Age is Updated" > /dev/console
 				fi
 			fi
-			echo "Bootconfig: Age is Updated" > /dev/console
 			;;
 	esac
 }
