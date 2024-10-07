@@ -26,7 +26,7 @@ Signed-off-by: Karthik M <quic_karm@quicinc.com>
  		*tkip+aes|*tkip+ccmp|*aes+tkip|*ccmp+tkip) wpa_cipher="CCMP TKIP";;
  		*ccmp256) wpa_cipher="CCMP-256";;
 -		sae-ext-key) wpa_cipher="GCMP";;
-+		*gcmp | *sae-ext-key) wpa_cipher="GCMP";;
++		*gcmp | *sae-ext-key) wpa_cipher="GCMP CCMP GCMP-256";;
 +		*gcmp256 | wpa3-192*) wpa_cipher="GCMP-256";;
  		*aes|*ccmp| psk2 | wpa2 | sae* | owe) wpa_cipher="CCMP";;
  		*tkip | wpa | psk ) wpa_cipher="TKIP";;
