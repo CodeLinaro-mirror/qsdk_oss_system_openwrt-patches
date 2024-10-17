@@ -1,7 +1,7 @@
-diff -Nur -X patern.txt a/bridge.c b/bridge.c
---- a/bridge.c	2022-08-25 12:13:35.000000000 -0700
-+++ b/bridge.c	2023-04-14 20:53:37.065866513 -0700
-@@ -35,6 +35,7 @@ enum {
+diff -Nur a/bridge.c b/bridge.c
+--- a/bridge.c	2024-10-17 14:31:07.254053339 -0700
++++ b/bridge.c	2024-10-17 14:36:07.641574398 -0700
+@@ -35,6 +35,7 @@
  	BRIDGE_ATTR_BRIDGE_EMPTY,
  	BRIDGE_ATTR_MULTICAST_QUERIER,
  	BRIDGE_ATTR_HASH_MAX,
@@ -9,7 +9,7 @@ diff -Nur -X patern.txt a/bridge.c b/bridge.c
  	BRIDGE_ATTR_ROBUSTNESS,
  	BRIDGE_ATTR_QUERY_INTERVAL,
  	BRIDGE_ATTR_QUERY_RESPONSE_INTERVAL,
-@@ -58,6 +59,7 @@ static const struct blobmsg_policy bridg
+@@ -58,6 +59,7 @@
  	[BRIDGE_ATTR_BRIDGE_EMPTY] = { "bridge_empty", BLOBMSG_TYPE_BOOL },
  	[BRIDGE_ATTR_MULTICAST_QUERIER] = { "multicast_querier", BLOBMSG_TYPE_BOOL },
  	[BRIDGE_ATTR_HASH_MAX] = { "hash_max", BLOBMSG_TYPE_INT32 },
@@ -17,36 +17,41 @@ diff -Nur -X patern.txt a/bridge.c b/bridge.c
  	[BRIDGE_ATTR_ROBUSTNESS] = { "robustness", BLOBMSG_TYPE_INT32 },
  	[BRIDGE_ATTR_QUERY_INTERVAL] = { "query_interval", BLOBMSG_TYPE_INT32 },
  	[BRIDGE_ATTR_QUERY_RESPONSE_INTERVAL] = { "query_response_interval", BLOBMSG_TYPE_INT32 },
-@@ -632,6 +634,7 @@ bridge_enable_member(struct bridge_membe
+@@ -635,6 +637,10 @@
  	}
  
  	device_set_present(&bst->dev, true);
-+	system_bridge_set_hairpin(bm->dev.dev, bst->config.hairpin);
++	if (bst->config.flags & BRIDGE_OPT_HAIRPIN_MODE) {
++		system_bridge_set_hairpin(bm->dev.dev, bst->config.hairpin);
++	}
++
  	if (!dev->settings.auth || dev->auth_status)
  		device_broadcast_event(&bst->dev, DEV_EVENT_TOPO_CHANGE);
  
-@@ -1178,6 +1181,7 @@ bridge_apply_settings(struct bridge_stat
- 	cfg->bridge_empty = false;
- 	cfg->priority = 0x7FFF;
- 	cfg->vlan_filtering = false;
-+	cfg->hairpin = false;
- 
- 	cfg->forward_delay = 8;
- 	cfg->max_age = 10;
-@@ -1241,6 +1245,9 @@ bridge_apply_settings(struct bridge_stat
+@@ -1244,6 +1250,11 @@
  	if ((cur = tb[BRIDGE_ATTR_BRIDGE_EMPTY]))
  		cfg->bridge_empty = blobmsg_get_bool(cur);
  
-+	if ((cur = tb[BRIDGE_ATTR_HAIRPIN]))
++	if ((cur = tb[BRIDGE_ATTR_HAIRPIN])) {
 +		cfg->hairpin = blobmsg_get_bool(cur);
++		cfg->flags |= BRIDGE_OPT_HAIRPIN_MODE;
++	}
 +
  	if ((cur = tb[BRIDGE_ATTR_VLAN_FILTERING]))
  		cfg->vlan_filtering = blobmsg_get_bool(cur);
  }
-diff -Nur -X patern.txt a/system.h b/system.h
---- a/system.h	2022-08-25 12:13:35.000000000 -0700
-+++ b/system.h	2023-04-14 20:54:41.769311010 -0700
-@@ -206,6 +206,7 @@
+diff -Nur a/system.h b/system.h
+--- a/system.h	2024-10-17 14:31:07.258053386 -0700
++++ b/system.h	2024-10-17 14:31:40.422442046 -0700
+@@ -115,6 +115,7 @@
+ 	BRIDGE_OPT_QUERY_INTERVAL	    = (1 << 2),
+ 	BRIDGE_OPT_QUERY_RESPONSE_INTERVAL  = (1 << 3),
+ 	BRIDGE_OPT_LAST_MEMBER_INTERVAL	    = (1 << 4),
++	BRIDGE_OPT_HAIRPIN_MODE		    = (1 << 5),
+ };
+ 
+ struct bridge_config {
+@@ -138,6 +139,7 @@
  	int hello_time;
  	int max_age;
  	int hash_max;
@@ -54,7 +59,7 @@ diff -Nur -X patern.txt a/system.h b/system.h
  
  	bool vlan_filtering;
  };
-@@ -315,6 +316,7 @@
+@@ -247,6 +249,7 @@
  int system_bridge_delbr(struct device *bridge);
  int system_bridge_addif(struct device *bridge, struct device *dev);
  int system_bridge_delif(struct device *bridge, struct device *dev);
@@ -62,10 +67,10 @@ diff -Nur -X patern.txt a/system.h b/system.h
  int system_bridge_vlan(const char *iface, uint16_t vid, int16_t vid_end, bool add, unsigned int vflags);
  int system_bridge_vlan_check(struct device *dev, char *ifname);
  void system_bridge_set_stp_state(struct device *dev, bool val);
-diff -Nur -X patern.txt a/system-linux.c b/system-linux.c
---- a/system-linux.c	2022-08-25 12:13:35.000000000 -0700
-+++ b/system-linux.c	2023-04-18 10:32:28.274375681 -0700
-@@ -1044,6 +1044,11 @@
+diff -Nur a/system-linux.c b/system-linux.c
+--- a/system-linux.c	2024-10-17 14:31:07.258053386 -0700
++++ b/system-linux.c	2024-10-17 14:31:40.422442046 -0700
+@@ -1172,6 +1172,11 @@
  	return 0;
  }
  
