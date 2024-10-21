@@ -134,8 +134,10 @@ config KERNEL_SKB_RECYCLER_LOW_MEM
         bool "Enable medium mem for skb recycler"
 	default y if KERNEL_IPQ_MEM_PROFILE=512 && TARGET_ipq95xx
 	default y if KERNEL_IPQ_MEM_PROFILE=512 && TARGET_ipq53xx
+	default y if KERNEL_IPQ_MEM_PROFILE=512 && TARGET_ipq54xx
 	default y if KERNEL_IPQ_MEM_PROFILE=256 && TARGET_ipq95xx
         default y if KERNEL_IPQ_MEM_PROFILE=256 && TARGET_ipq53xx
+	default y if KERNEL_IPQ_MEM_PROFILE=256 && TARGET_ipq54xx
 
 config KERNEL_SKB_RECYCLER
 	bool "Generic skb recycling"
