@@ -29,3 +29,11 @@ config PKG_MAP_SYMBOL
 	  information that can help you understand and optimize memory. The map file
 	  provides symbol table for the whole source code. You can disable this per
 	  package by adding PKG_MAP_SYMBOL:=0 in the package Makefile.
+
+config ENABLE_UBI_CORE
+	bool
+	prompt "Enable UBI core found on IPQ targets"
+	default n
+	help
+	  This enables support for picking the correct KENREL_LOADADDR when UBI
+	  core is enabled on IPQ targets.
