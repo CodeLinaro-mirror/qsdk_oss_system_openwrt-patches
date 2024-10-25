@@ -173,3 +173,22 @@ config KERNEL_NET_IPGRE_BROADCAST
 config KERNEL_DEBUG_MEM_USAGE
 	bool "Kernel Memory Tracer"
 	default n
+
+config KERNEL_PSTORE
+	bool "Persistent store support"
+	default n
+
+config KERNEL_PSTORE_CONSOLE
+	bool "Log kernel console messages"
+	depends on KERNEL_PSTORE
+	default n
+
+config KERNEL_PSTORE_PMSG
+	bool "Log user space messages"
+	depends on KERNEL_PSTORE
+	default n
+
+config KERNEL_PSTORE_RAM
+	bool "Log panic/oops to a RAM buffer"
+	depends on KERNEL_PSTORE
+	default n
