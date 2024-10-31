@@ -1,0 +1,119 @@
+From a50fbd52680fa435afe15f44ed87562e7d66ae3e Mon Sep 17 00:00:00 2001
+From: qiangqiang cheng <quic_qiangqia@quicinc.com>
+Date: Mon, 18 Nov 2024 17:39:42 +0800
+Subject: [PATCH] tcpdump: update tcpdump to support qca dsa tag
+
+Change-Id: I720c216f350bcb1566f4eac94c01448b583234ca
+Signed-off-by: qiangqiang cheng <quic_qiangqia@quicinc.com>
+---
+ Makefile.in     |  1 +
+ netdissect.h    |  2 ++
+ print-qca-dsa.c | 53 +++++++++++++++++++++++++++++++++++++++++++++++++
+ print.c         |  6 ++++++
+ 4 files changed, 62 insertions(+)
+ create mode 100644 print-qca-dsa.c
+
+diff --git a/Makefile.in b/Makefile.in
+index 7a41fc422..f9422c587 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -205,6 +205,7 @@ LIBNETDISSECT_SRC=\
+ 	print-dhcp6.c \
+ 	print-domain.c \
+ 	print-dsa.c \
++	print-qca-dsa.c \
+ 	print-dtp.c \
+ 	print-dvmrp.c \
+ 	print-eap.c \
+diff --git a/netdissect.h b/netdissect.h
+index 36efe1856..553a293fc 100644
+--- a/netdissect.h
++++ b/netdissect.h
+@@ -525,6 +525,8 @@ extern void chdlc_if_print IF_PRINTER_ARGS;
+ extern void cip_if_print IF_PRINTER_ARGS;
+ extern void dsa_if_print IF_PRINTER_ARGS;
+ extern void edsa_if_print IF_PRINTER_ARGS;
++extern void dsa_qca_4b_if_print IF_PRINTER_ARGS;
++extern void dsa_qca_if_print IF_PRINTER_ARGS;
+ extern void enc_if_print IF_PRINTER_ARGS;
+ extern void ether_if_print IF_PRINTER_ARGS;
+ extern void fddi_if_print IF_PRINTER_ARGS;
+diff --git a/print-qca-dsa.c b/print-qca-dsa.c
+new file mode 100644
+index 000000000..135844425
+--- /dev/null
++++ b/print-qca-dsa.c
+@@ -0,0 +1,53 @@
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
++#include "netdissect-stdinc.h"
++
++#include "netdissect.h"
++#include "ethertype.h"
++#include "addrtoname.h"
++#include "extract.h"
++
++#define DSA_QCA4B_LEN 4
++#define DSA_QCA_LEN   2
++
++static void
++qca_tag_common_print(netdissect_options *ndo, const u_char *p)
++{
++	if (strcmp(ndo->ndo_protocol, "qca_4b") == 0)
++		ND_PRINT("(%#x%x%x%x), ", GET_U_1(p), GET_U_1(p + 1), 
++			GET_U_1(p + 2), GET_U_1(p + 3));
++	else
++		ND_PRINT("(%#x%x), ", GET_U_1(p), GET_U_1(p + 1));
++}
++
++static void
++qca_dsa_tag_print(netdissect_options *ndo, const u_char *bp)
++{
++	ND_PRINT("QcaDSA Tag");
++	qca_tag_common_print(ndo, bp);
++}
++
++void
++dsa_qca_4b_if_print(netdissect_options *ndo, const struct pcap_pkthdr *h, const u_char *p)
++{
++	u_int caplen = h->caplen;
++	u_int length = h->len;
++
++	ndo->ndo_protocol = "qca_4b";
++	ndo->ndo_ll_hdr_len +=
++		ether_switch_tag_print(ndo, p, length, caplen, qca_dsa_tag_print, DSA_QCA4B_LEN);
++}
++
++void
++dsa_qca_if_print(netdissect_options *ndo, const struct pcap_pkthdr *h, const u_char *p)
++{
++	u_int caplen = h->caplen;
++	u_int length = h->len;
++
++	ndo->ndo_protocol = "qca";
++	ndo->ndo_ll_hdr_len +=
++		ether_switch_tag_print(ndo, p, length, caplen, qca_dsa_tag_print, DSA_QCA_LEN);
++}
++
+diff --git a/print.c b/print.c
+index e6532ccc1..f1fdfdd9f 100644
+--- a/print.c
++++ b/print.c
+@@ -254,6 +254,12 @@ static const struct printer printers[] = {
+ #ifdef DLT_VSOCK
+ 	{ vsock_if_print,	DLT_VSOCK },
+ #endif
++#endif
++#ifdef DLT_DSA_TAG_QCA_4B
++	{ dsa_qca_4b_if_print,	DLT_DSA_TAG_QCA_4B },
++#endif
++#ifdef DLT_DSA_TAG_QCA
++	{ dsa_qca_if_print,	DLT_DSA_TAG_QCA },
+ #endif
+ 	{ NULL,                 0 },
+ };
+-- 
+2.34.1
+
