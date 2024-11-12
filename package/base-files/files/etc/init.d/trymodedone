@@ -23,10 +23,23 @@ START=99
 
 start() {
 	local trymode_inprogress="/proc/upgrade_info/trymode_inprogress"
+	local trymode_progress_ipq54xx="/sys/devices/platform/firmware:scm/trymode_inprogress"
 	local board=$(board_name)
 	local is_in_trymode=$(cat /proc/upgrade_info/trymode_inprogress)
+	local ipq54xx_trymode=$(cat /sys/devices/platform/firmware:scm/trymode_inprogress)
 	local age0=$(cat /proc/boot_info/bootconfig0/age)
 	local age1=$(cat /proc/boot_info/bootconfig1/age)
+
+	set_env_vars() {
+		local active0=$1
+		local active1=$2
+
+		eval $(fw_printenv sw_active0_ok 2>/dev/null)
+		[ "$sw_active0_ok" != "$active0" ] && fw_setenv sw_active0_ok $active0
+
+		eval $(fw_printenv sw_active1_ok 2>/dev/null)
+		[ "$sw_active1_ok" != "$active1" ] && fw_setenv sw_active1_ok $active1
+	}
 
 	case "$board" in
 		qcom,ipq9574-ap-al05 |\
@@ -59,13 +72,56 @@ start() {
 			fi
 			return 1;
 			;;
+		qcom,ipq5424-rdp485*)
+			extract_bootconfig "0:BOOTCONFIG"
+			dumpimage -b 4
+			if [ ! -e /tmp/bootconfig_members.txt ]; then
+				echo " Boot info is not available "
+			fi
+			boot_set=$(grep "Boot-set" /tmp/bootconfig_members.txt | awk -F: '{print $2}')
+			image_set_status_A=$(grep "Image-set-status-A" /tmp/bootconfig_members.txt | awk -F: '{print $2}')
+			image_set_status_B=$(grep "Image-set-status-B" /tmp/bootconfig_members.txt | awk -F: '{print $2}')
+
+			if [ $ipq54xx_trymode -eq 1 ]; then
+				if [[ $boot_set -eq 0 && $image_set_status_A -ne 0 ]]; then
+					set_env_vars 1 0
+				elif [[ $boot_set -eq 0 && $image_set_status_A -eq 0 ]]; then
+					set_env_vars 0 1
+				elif [[ $boot_set -eq 1 && $image_set_status_B -ne 0 ]]; then
+					set_env_vars 1 0
+				elif [[ $boot_set -eq 1 && $image_set_status_B -eq 0 ]]; then
+					set_env_vars 0 1
+				fi
+			else
+				if [[ $boot_set -eq 0 && $image_set_status_A -ne 0 ]]; then
+					set_env_vars 0 1
+				elif [[ $boot_set -eq 0 && $image_set_status_A -eq 0 ]]; then
+					set_env_vars 1 0
+				elif [[ $boot_set -eq 1 && $image_set_status_B -ne 0 ]]; then
+					set_env_vars 0 1
+				elif [[ $boot_set -eq 1 && $image_set_status_B -eq 0 ]]; then
+					set_env_vars 1 0
+				fi
+			fi
+			return 1;
+			;;
 		*)
-			echo 0 > /sys/devices/platform/firmware:scm/hlos_done
-			if [ -f "$trymode_inprogress" ]; then
-				if [ $is_in_trymode -eq 1 ]; then
-					echo "Bootconfig: updating age" > /dev/console
-					age_do_upgrade
-					echo "Bootconfig: Age is Updated" > /dev/console
+			if [[ "$board" == *"ipq5424"* ]]; then
+				echo 0 > /sys/devices/platform/firmware:scm/hlos_done
+				if [ -f "$trymode_progress_ipq54xx" ]; then
+					if [ $ipq54xx_trymode -eq 1 ]; then
+						echo "Updating boot-info" > /dev/console
+						trymode_boot_update
+						echo "Boot-info updated" > /dev/console
+					fi
+				fi
+			else
+				if [ -f "$trymode_inprogress" ]; then
+					if [ $is_in_trymode -eq 1 ]; then
+						echo "Bootconfig: updating age" > /dev/console
+						age_do_upgrade
+						echo "Bootconfig: Age is Updated" > /dev/console
+					fi
 				fi
 			fi
 			;;
