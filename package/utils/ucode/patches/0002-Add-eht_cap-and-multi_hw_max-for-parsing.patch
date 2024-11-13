@@ -1,0 +1,106 @@
+From 234f0d67339844cf692aea4b8225321cbc122117 Mon Sep 17 00:00:00 2001
+From: Gunaal R <quic_gunar@quicinc.com>
+Date: Tue, 1 Oct 2024 12:47:04 +0530
+Subject: [PATCH] QSDK: CP: ucode: Add eht and multi hardware parsing.
+
+"6G": {
+"he": true,
+"eht": true,
+"max_width": 320,
+"modes": [
+	"NOHT",
+        "HE20",
+        "EHT20",
+        "HE40",
+        "EHT40",
+        "HE80",
+        "EHT80",
+        "HE160",
+        "EHT160",
+	"EHT320"
+
+]
+}
+
+"multi_radio": {
+        "radio0": {
+                "idx": 0,
+                "first_freq": 2412,
+                "last_freq": 2484
+        },
+        "radio1": {
+                "idx": 1,
+                "first_freq": 5180,
+                "last_freq": 5885
+        },
+        "radio2": {
+                "idx": 2,
+                "first_freq": 5935,
+                "last_freq": 7115
+        }
+}
+
+Patch-dependency: None
+Patch-work: None
+
+Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
+---
+ lib/nl80211.c | 24 ++++++++++++++++++++++--
+ 1 file changed, 22 insertions(+), 2 deletions(-)
+
+--- a/lib/nl80211.c
++++ b/lib/nl80211.c
+@@ -563,7 +563,7 @@ static const uc_nl_nested_spec_t nl80211
+ 
+ static const uc_nl_nested_spec_t nl80211_wiphy_bands_iftype_data_nla = {
+ 	.headsize = 0,
+-	.nattrs = 7,
++	.nattrs = 9,
+ 	.attrs = {
+ 		{ NL80211_BAND_IFTYPE_ATTR_IFTYPES, "iftypes", DT_NESTED, 0, &nl80211_ifcomb_limit_types_nla },
+ 		{ NL80211_BAND_IFTYPE_ATTR_HE_CAP_MAC, "he_cap_mac", DT_U8, DF_ARRAY, NULL },
+@@ -572,6 +572,8 @@ static const uc_nl_nested_spec_t nl80211
+ 		{ NL80211_BAND_IFTYPE_ATTR_HE_CAP_PPE, "he_cap_ppe", DT_U8, DF_ARRAY, NULL },
+ 		{ NL80211_BAND_IFTYPE_ATTR_HE_6GHZ_CAPA, "he_6ghz_capa", DT_U16, 0, NULL },
+ 		{ NL80211_BAND_IFTYPE_ATTR_VENDOR_ELEMS, "vendor_elems", DT_STRING, DF_BINARY, NULL },
++		{ NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MAC, "eht_cap_mac", DT_U32, DF_ARRAY, NULL },
++		{ NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PHY, "eht_cap_phy", DT_U32, DF_ARRAY, NULL },
+ 	}
+ };
+ 
+@@ -827,9 +829,26 @@ static const uc_nl_nested_spec_t nl80211
+ 	}
+ };
+ 
++static const uc_nl_nested_spec_t nl80211_multi_hw_mac_chan_list_attr_freq = {
++	.headsize = 0,
++	.nattrs = 1,
++	.attrs = {
++		{ NL80211_MULTI_HW_MAC_CHAN_LIST_ATTR_FREQ, "freq", DT_U32, 0, NULL },
++	}
++};
++
++static const uc_nl_nested_spec_t nl80211_attr_multi_hw_macs = {
++	.headsize = 0,
++	.nattrs = 2,
++	.attrs = {
++		{ NL80211_MULTI_HW_MAC_ATTR_IDX, "attr_idx", DT_U8, 0, NULL },
++		{ NL80211_MULTI_HW_MAC_ATTR_CHAN_LIST, "chan_list", DT_NESTED, DF_MULTIPLE|DF_AUTOIDX, &nl80211_multi_hw_mac_chan_list_attr_freq },
++	}
++};
++
+ static const uc_nl_nested_spec_t nl80211_msg = {
+ 	.headsize = 0,
+-	.nattrs = 128,
++	.nattrs = 129,
+ 	.attrs = {
+ 		{ NL80211_ATTR_4ADDR, "4addr", DT_U8, 0, NULL },
+ 		{ NL80211_ATTR_AIRTIME_WEIGHT, "airtime_weight", DT_U16, 0, NULL },
+@@ -959,6 +978,7 @@ static const uc_nl_nested_spec_t nl80211
+ 		{ NL80211_ATTR_MAX_AP_ASSOC_STA, "max_ap_assoc", DT_U16, 0, NULL },
+ 		{ NL80211_ATTR_SURVEY_INFO, "survey_info", DT_NESTED, 0, &nl80211_survey_info_nla },
+ 		{ NL80211_ATTR_WIPHY_RADIOS, "radios", DT_NESTED, DF_MULTIPLE|DF_AUTOIDX, &nl80211_wiphy_radio_nla },
++		{ NL80211_ATTR_MULTI_HW_MACS, "multi_hw_macs", DT_NESTED, DF_MULTIPLE|DF_AUTOIDX, &nl80211_attr_multi_hw_macs },
+ 	}
+ };
+ 
