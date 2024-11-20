@@ -1,10 +1,13 @@
 # Recipe extension for syslog-ng
 
 define syslog-ng_append
-    DEPENDS+=+PACKAGE_logstreamer:librdkafka
+    DEPENDS+=+PACKAGE_logstreamer:librdkafka  +PACKAGE_logstreamer_open:librdkafka
 endef
 
 ifdef CONFIG_PACKAGE_logstreamer
+	CONFIGURE_ARGS += \
+			  --enable-kafka=yes
+else ifdef CONFIG_PACKAGE_logstreamer_open
 	CONFIGURE_ARGS += \
 			  --enable-kafka=yes
 endif
