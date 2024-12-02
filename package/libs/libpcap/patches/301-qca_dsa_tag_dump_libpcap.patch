@@ -1,0 +1,68 @@
+From bcdaf6df089fb0a2038c7af7f5ba95758edfdf96 Mon Sep 17 00:00:00 2001
+From: qiangqiang cheng <quic_qiangqia@quicinc.com>
+Date: Mon, 18 Nov 2024 17:19:59 +0800
+Subject: [PATCH] tcpdump: update tcpdump to support qca dsa tag
+
+Change-Id: I7344809cd1323cdac27f4fc5c78b22c6538a1f11
+Signed-off-by: qiangqiang cheng <quic_qiangqia@quicinc.com>
+---
+ pcap-common.c | 5 ++++-
+ pcap-linux.c  | 3 +++
+ pcap/dlt.h    | 5 ++++-
+ 3 files changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/pcap-common.c b/pcap-common.c
+index 26042d959..2411c301c 100644
+--- a/pcap-common.c
++++ b/pcap-common.c
+@@ -1207,7 +1207,10 @@
+  */
+ #define LINKTYPE_ATSC_ALP	289
+ 
+-#define LINKTYPE_HIGH_MATCHING_MAX	289		/* highest value in the "matching" range */
++#define LINKTYPE_DSA_TAG_QCA		290
++#define LINKTYPE_DSA_TAG_QCA_4B		291
++
++#define LINKTYPE_HIGH_MATCHING_MAX	291		/* highest value in the "matching" range */
+ 
+ /*
+  * The DLT_ and LINKTYPE_ values in the "matching" range should be the
+diff --git a/pcap-linux.c b/pcap-linux.c
+index e0fe1d3e0..ba84e6129 100644
+--- a/pcap-linux.c
++++ b/pcap-linux.c
+@@ -5281,6 +5281,9 @@ static struct dsa_proto {
+ 	{ "brcm-prepend", DLT_DSA_TAG_BRCM_PREPEND },
+ 	{ "dsa", DLT_DSA_TAG_DSA },
+ 	{ "edsa", DLT_DSA_TAG_EDSA },
++	{ "qca_4b", DLT_DSA_TAG_QCA_4B },
++	{ "qca_8021q", DLT_EN10MB },
++	{ "qca", DLT_DSA_TAG_QCA },
+ };
+ 
+ static int
+diff --git a/pcap/dlt.h b/pcap/dlt.h
+index 7f5f5aa4a..2373217e7 100644
+--- a/pcap/dlt.h
++++ b/pcap/dlt.h
+@@ -1578,6 +1578,9 @@
+  */
+ #define DLT_ATSC_ALP		289
+ 
++#define DLT_DSA_TAG_QCA			290
++#define DLT_DSA_TAG_QCA_4B		291
++
+ /*
+  * In case the code that includes this file (directly or indirectly)
+  * has also included OS files that happen to define DLT_HIGH_MATCHING_MAX,
+@@ -1588,6 +1591,6 @@
+ #ifdef DLT_HIGH_MATCHING_MAX
+ #undef DLT_HIGH_MATCHING_MAX
+ #endif
+-#define DLT_HIGH_MATCHING_MAX	289	/* highest value in the "matching" range */
++#define DLT_HIGH_MATCHING_MAX	291	/* highest value in the "matching" range */
+ 
+ #endif /* !defined(lib_pcap_dlt_h) */
+-- 
+2.34.1
+
