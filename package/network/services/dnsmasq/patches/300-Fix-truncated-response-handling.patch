@@ -1,0 +1,39 @@
+Author: Rahul Thakur <rahul.thakur@iopsys.eu>
+Date:   Mon Dec 30 2:37 2024
+
+dnsmasq: fix truncated reponse handling
+this seems to be a regression in dnsmasq version 2.90.
+
+if a dns reponse with TC bit set is received, then it should be
+forwarded as is instead of dropping its answers.
+
+this commit fixes the above described behaviour.
+
+test details:
+this was caught in CDrouter run of suite dns-rfc5625.tcl
+details of this suite are available at:
+https://support.qacafe.com/cdrouter/test-summary/cdrouter-test-summary/#dns-rfc5625tcl
+
+post this commit the test dns_rfc5625_13 passes since the response
+is a valid one.
+
+Change-Id: Ifca92f88f155842d4c22108b1cb4c605300af6c9
+Signed-off-by: Rahul Thakur <rahul.thakur@iopsys.eu>
+Signed-off-by: Akansha Verma <quic_akanverm@quicinc.com>
+
+--- a/src/forward.c
++++ b/src/forward.c
+@@ -782,13 +782,6 @@
+ 	server->flags |= SERV_WARNED_RECURSIVE;
+     }
+
+-  if (header->hb3 & HB3_TC)
+-    {
+-      log_query(F_UPSTREAM, NULL, NULL, "truncated", 0);
+-      header->ancount = htons(0);
+-      header->nscount = htons(0);
+-      header->arcount = htons(0);
+-    }
+
+   if  (!(header->hb3 & HB3_TC) && (!bogusanswer || (header->hb4 & HB4_CD)))
+     {
