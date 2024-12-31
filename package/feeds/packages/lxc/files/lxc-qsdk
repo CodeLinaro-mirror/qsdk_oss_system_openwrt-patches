@@ -55,4 +55,4 @@ rootfs=$path/rootfs
 mkdir -p $rootfs && cd $rootfs && tar -xzf $(uci_get lxc-auto.@common[0].image)
 grep -q "^lxc.rootfs.path" $path/config 2>/dev/null || echo "lxc.rootfs.path = $rootfs" >> $path/config
 grep -q "^lxc.signal.halt" $path/config 2>/dev/null || echo "lxc.signal.halt= SIGUSR1"  >> $path/config
-grep -q "^lxc.include" $path/config 2>/dev/null || echo "lxc.include =/usr/share/lxc/config/openwrt.common.conf" >> $path/config
+grep -q "^lxc.include" $path/config 2>/dev/null || echo "lxc.include =/usr/share/lxc/config/common.conf" >> $path/config
