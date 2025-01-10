@@ -196,3 +196,10 @@ config KERNEL_PSTORE_RAM
 config KERNEL_ATHMEMDEBUG
 	bool "Enable memory debug support for ATH"
 	default n
+
+config KERNEL_QCA_MINIDUMP_DEBUG
+	bool "Compile the minidump driver with debug enabled"
+	default n
+	help
+	  Enable this option to be debugging and diagnosing issues on Minidump
+	  driver.
