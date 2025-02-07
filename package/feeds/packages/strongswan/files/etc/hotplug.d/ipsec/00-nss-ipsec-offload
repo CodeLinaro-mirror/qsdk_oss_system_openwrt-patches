@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+# Copyright (c) 2024-2025, Qualcomm Innovation Center, Inc. All rights reserved.
 #
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -22,11 +22,5 @@
 
 [ ! -d /sys/module/ecm ] && exit 0
 
-case $PLUTO_VERB in
-up-client)
-	echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all
-	;;
-down-client)
-	echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all
-	;;
-esac
+#defunct the ecm rules for CHILD_SA updown events
+echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all
