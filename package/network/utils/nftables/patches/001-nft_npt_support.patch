@@ -9,10 +9,10 @@ Date:   Fri Jul 5 17:21:37 2024 +0530
     Change-Id: I95fa95895f2252f25cd6e47a174fb77edecd2145
     Signed-off-by: Suhas N Bhargav <quic_sbhargav@quicinc.com>
 ---
-Index: nftables-1.0.9/include/linux/netfilter/nf_tables.h
+Index: nftables-1.1.1/include/linux/netfilter/nf_tables.h
 ===================================================================
---- nftables-1.0.9.orig/include/linux/netfilter/nf_tables.h
-+++ nftables-1.0.9/include/linux/netfilter/nf_tables.h
+--- nftables-1.1.1.orig/include/linux/netfilter/nf_tables.h
++++ nftables-1.1.1/include/linux/netfilter/nf_tables.h
 @@ -1422,10 +1422,14 @@ enum nft_reject_attributes {
   *
   * @NFT_NAT_SNAT: source NAT
@@ -57,10 +57,10 @@ Index: nftables-1.0.9/include/linux/netfilter/nf_tables.h
   * enum nft_redir_attributes - nf_tables redirect expression netlink attributes
   *
   * @NFTA_REDIR_REG_PROTO_MIN: source register of proto range start (NLA_U32: nft_registers)
-Index: nftables-1.0.9/include/statement.h
+Index: nftables-1.1.1/include/statement.h
 ===================================================================
---- nftables-1.0.9.orig/include/statement.h
-+++ nftables-1.0.9/include/statement.h
+--- nftables-1.1.1.orig/include/statement.h
++++ nftables-1.1.1/include/statement.h
 @@ -128,6 +128,8 @@ extern struct stmt *reject_stmt_alloc(co
  enum nft_nat_etypes {
  	__NFT_NAT_SNAT = NFT_NAT_SNAT,
@@ -84,11 +84,11 @@ Index: nftables-1.0.9/include/statement.h
  	uint32_t		type_flags;
  };
  
-Index: nftables-1.0.9/src/evaluate.c
+Index: nftables-1.1.1/src/evaluate.c
 ===================================================================
---- nftables-1.0.9.orig/src/evaluate.c
-+++ nftables-1.0.9/src/evaluate.c
-@@ -3675,6 +3675,10 @@ static const char *stmt_name(const struc
+--- nftables-1.1.1.orig/src/evaluate.c
++++ nftables-1.1.1/src/evaluate.c
+@@ -83,6 +83,10 @@ static const char *stmt_name(const struc
  			return "snat";
  		case NFT_NAT_DNAT:
  			return "dnat";
@@ -99,7 +99,7 @@ Index: nftables-1.0.9/src/evaluate.c
  		case NFT_NAT_REDIR:
  			return "redirect";
  		case NFT_NAT_MASQ:
-@@ -3918,6 +3922,18 @@ static int stmt_evaluate_nat(struct eval
+@@ -4186,6 +4190,18 @@ static int stmt_evaluate_nat(struct eval
  		if (err < 0)
  			return err;
  	}
@@ -118,11 +118,11 @@ Index: nftables-1.0.9/src/evaluate.c
  
  	if (stmt->nat.proto != NULL) {
  		err = nat_evaluate_transport(ctx, stmt, &stmt->nat.proto);
-Index: nftables-1.0.9/src/parser_json.c
+Index: nftables-1.1.1/src/parser_json.c
 ===================================================================
---- nftables-1.0.9.orig/src/parser_json.c
-+++ nftables-1.0.9/src/parser_json.c
-@@ -249,6 +249,8 @@ static bool is_keyword(const char *keywo
+--- nftables-1.1.1.orig/src/parser_json.c
++++ nftables-1.1.1/src/parser_json.c
+@@ -252,6 +252,8 @@ static bool is_keyword(const char *keywo
  		"arp",
  		"dnat",
  		"snat",
@@ -131,7 +131,7 @@ Index: nftables-1.0.9/src/parser_json.c
  		"ecn",
  		"reset",
  		"original",
-@@ -2195,6 +2197,8 @@ static int nat_type_parse(const char *ty
+@@ -2226,6 +2228,8 @@ static int nat_type_parse(const char *ty
  	const char * const nat_etypes[] = {
  		[NFT_NAT_SNAT]	= "snat",
  		[NFT_NAT_DNAT]	= "dnat",
@@ -140,7 +140,7 @@ Index: nftables-1.0.9/src/parser_json.c
  		[NFT_NAT_MASQ]	= "masquerade",
  		[NFT_NAT_REDIR]	= "redirect",
  	};
-@@ -2210,7 +2214,7 @@ static int nat_type_parse(const char *ty
+@@ -2241,7 +2245,7 @@ static int nat_type_parse(const char *ty
  static struct stmt *json_parse_nat_stmt(struct json_ctx *ctx,
  					const char *key, json_t *value)
  {
@@ -149,7 +149,7 @@ Index: nftables-1.0.9/src/parser_json.c
  	struct stmt *stmt;
  	json_t *tmp;
  
-@@ -2235,6 +2239,22 @@ static struct stmt *json_parse_nat_stmt(
+@@ -2266,6 +2270,22 @@ static struct stmt *json_parse_nat_stmt(
  			return NULL;
  		}
  	}
@@ -172,7 +172,7 @@ Index: nftables-1.0.9/src/parser_json.c
  	if (!json_unpack(value, "{s:o}", "port", &tmp)) {
  		stmt->nat.proto = json_parse_stmt_expr(ctx, tmp);
  		if (!stmt->nat.proto) {
-@@ -2261,6 +2281,22 @@ static struct stmt *json_parse_nat_stmt(
+@@ -2292,6 +2312,22 @@ static struct stmt *json_parse_nat_stmt(
  		}
  		stmt->nat.type_flags = flags;
  	}
@@ -195,7 +195,7 @@ Index: nftables-1.0.9/src/parser_json.c
  
  	return stmt;
  }
-@@ -2892,6 +2928,8 @@ static struct stmt *json_parse_stmt(stru
+@@ -2927,6 +2963,8 @@ static struct stmt *json_parse_stmt(stru
  		{ "dup", json_parse_dup_stmt },
  		{ "snat", json_parse_nat_stmt },
  		{ "dnat", json_parse_nat_stmt },
@@ -204,11 +204,11 @@ Index: nftables-1.0.9/src/parser_json.c
  		{ "masquerade", json_parse_nat_stmt },
  		{ "redirect", json_parse_nat_stmt },
  		{ "reject", json_parse_reject_stmt },
-Index: nftables-1.0.9/src/statement.c
+Index: nftables-1.1.1/src/statement.c
 ===================================================================
---- nftables-1.0.9.orig/src/statement.c
-+++ nftables-1.0.9/src/statement.c
-@@ -677,6 +677,8 @@ const char *nat_etype2str(enum nft_nat_e
+--- nftables-1.1.1.orig/src/statement.c
++++ nftables-1.1.1/src/statement.c
+@@ -673,6 +673,8 @@ const char *nat_etype2str(enum nft_nat_e
  	static const char * const nat_types[] = {
  		[NFT_NAT_SNAT]	= "snat",
  		[NFT_NAT_DNAT]	= "dnat",
@@ -217,7 +217,7 @@ Index: nftables-1.0.9/src/statement.c
  		[NFT_NAT_MASQ]	= "masquerade",
  		[NFT_NAT_REDIR]	= "redirect",
  	};
-@@ -687,7 +689,7 @@ const char *nat_etype2str(enum nft_nat_e
+@@ -683,7 +685,7 @@ const char *nat_etype2str(enum nft_nat_e
  static void nat_stmt_print(const struct stmt *stmt, struct output_ctx *octx)
  {
  	nft_print(octx, "%s", nat_etype2str(stmt->nat.type));
@@ -226,7 +226,7 @@ Index: nftables-1.0.9/src/statement.c
  		switch (stmt->nat.family) {
  		case NFPROTO_IPV4:
  			nft_print(octx, " ip");
-@@ -733,12 +735,32 @@ static void nat_stmt_print(const struct
+@@ -729,12 +731,32 @@ static void nat_stmt_print(const struct
  		expr_print(stmt->nat.proto, octx);
  	}
  
@@ -259,11 +259,11 @@ Index: nftables-1.0.9/src/statement.c
  	expr_free(stmt->nat.proto);
  }
  
-Index: nftables-1.0.9/src/netlink_linearize.c
+Index: nftables-1.1.1/src/netlink_linearize.c
 ===================================================================
---- nftables-1.0.9.orig/src/netlink_linearize.c
-+++ nftables-1.0.9/src/netlink_linearize.c
-@@ -1195,7 +1195,7 @@ static void netlink_gen_nat_stmt(struct
+--- nftables-1.1.1.orig/src/netlink_linearize.c
++++ nftables-1.1.1/src/netlink_linearize.c
+@@ -1199,7 +1199,7 @@ static void netlink_gen_nat_stmt(struct
  				 const struct stmt *stmt)
  {
  	struct nftnl_expr *nle;
@@ -272,7 +272,7 @@ Index: nftables-1.0.9/src/netlink_linearize.c
  	enum nft_registers pmin_reg, pmax_reg;
  	uint8_t family = 0;
  	int registers = 0;
-@@ -1215,6 +1215,13 @@ static void netlink_gen_nat_stmt(struct
+@@ -1219,6 +1219,13 @@ static void netlink_gen_nat_stmt(struct
  		nftnl_reg_pmin = NFTNL_EXPR_NAT_REG_PROTO_MIN;
  		nftnl_reg_pmax = NFTNL_EXPR_NAT_REG_PROTO_MAX;
  		break;
@@ -286,7 +286,7 @@ Index: nftables-1.0.9/src/netlink_linearize.c
  	case NFT_NAT_MASQ:
  		nle = alloc_nft_expr("masq");
  
-@@ -1315,6 +1322,28 @@ static void netlink_gen_nat_stmt(struct
+@@ -1319,6 +1326,28 @@ static void netlink_gen_nat_stmt(struct
  		}
  	}
  
@@ -315,11 +315,11 @@ Index: nftables-1.0.9/src/netlink_linearize.c
  	while (registers > 0) {
  		release_register(ctx, NULL);
  		registers--;
-Index: nftables-1.0.9/src/netlink_delinearize.c
+Index: nftables-1.1.1/src/netlink_delinearize.c
 ===================================================================
---- nftables-1.0.9.orig/src/netlink_delinearize.c
-+++ nftables-1.0.9/src/netlink_delinearize.c
-@@ -1360,6 +1360,57 @@ out_err:
+--- nftables-1.1.1.orig/src/netlink_delinearize.c
++++ nftables-1.1.1/src/netlink_delinearize.c
+@@ -1356,6 +1356,57 @@ out_err:
  	stmt_free(stmt);
  }
  
@@ -377,7 +377,7 @@ Index: nftables-1.0.9/src/netlink_delinearize.c
  static void netlink_parse_synproxy(struct netlink_parse_ctx *ctx,
  				   const struct location *loc,
  				   const struct nftnl_expr *nle)
-@@ -1898,6 +1949,7 @@ static const struct expr_handler netlink
+@@ -1894,6 +1945,7 @@ static const struct expr_handler netlink
  	{ .name = "range",	.parse = netlink_parse_range },
  	{ .name = "reject",	.parse = netlink_parse_reject },
  	{ .name = "nat",	.parse = netlink_parse_nat },
@@ -385,10 +385,10 @@ Index: nftables-1.0.9/src/netlink_delinearize.c
  	{ .name = "tproxy",	.parse = netlink_parse_tproxy },
  	{ .name = "notrack",	.parse = netlink_parse_notrack },
  	{ .name = "masq",	.parse = netlink_parse_masq },
-Index: nftables-1.0.9/src/optimize.c
+Index: nftables-1.1.1/src/optimize.c
 ===================================================================
---- nftables-1.0.9.orig/src/optimize.c
-+++ nftables-1.0.9/src/optimize.c
+--- nftables-1.1.1.orig/src/optimize.c
++++ nftables-1.1.1/src/optimize.c
 @@ -259,6 +259,9 @@ static bool __stmt_type_eq(const struct
  			     stmt_b->nat.proto->etype != EXPR_RANGE))
  				return false;
@@ -399,11 +399,11 @@ Index: nftables-1.0.9/src/optimize.c
  		case NFT_NAT_MASQ:
  			break;
  		case NFT_NAT_REDIR:
-Index: nftables-1.0.9/src/scanner.l
+Index: nftables-1.1.1/src/scanner.l
 ===================================================================
---- nftables-1.0.9.orig/src/scanner.l
-+++ nftables-1.0.9/src/scanner.l
-@@ -462,6 +462,8 @@ addrstring	({macaddr}|{ip4addr}|{ip6addr
+--- nftables-1.1.1.orig/src/scanner.l
++++ nftables-1.1.1/src/scanner.l
+@@ -461,6 +461,8 @@ addrstring	({macaddr}|{ip4addr}|{ip6addr
  
  "snat"			{ scanner_push_start_cond(yyscanner, SCANSTATE_STMT_NAT); return SNAT; }
  "dnat"			{ scanner_push_start_cond(yyscanner, SCANSTATE_STMT_NAT); return DNAT; }
@@ -412,11 +412,11 @@ Index: nftables-1.0.9/src/scanner.l
  "masquerade"		{ scanner_push_start_cond(yyscanner, SCANSTATE_STMT_NAT); return MASQUERADE; }
  "redirect"		{ scanner_push_start_cond(yyscanner, SCANSTATE_STMT_NAT); return REDIRECT; }
  "random"		{ return RANDOM; }
-Index: nftables-1.0.9/src/parser_bison.y
+Index: nftables-1.1.1/src/parser_bison.y
 ===================================================================
---- nftables-1.0.9.orig/src/parser_bison.y
-+++ nftables-1.0.9/src/parser_bison.y
-@@ -622,6 +622,8 @@ int nft_lex(void *, void *, void *);
+--- nftables-1.1.1.orig/src/parser_bison.y
++++ nftables-1.1.1/src/parser_bison.y
+@@ -642,6 +642,8 @@ int nft_lex(void *, void *, void *);
  
  %token SNAT			"snat"
  %token DNAT			"dnat"
@@ -425,7 +425,7 @@ Index: nftables-1.0.9/src/parser_bison.y
  %token MASQUERADE		"masquerade"
  %token REDIRECT			"redirect"
  %token RANDOM			"random"
-@@ -757,8 +759,8 @@ int nft_lex(void *, void *, void *);
+@@ -784,8 +786,8 @@ int nft_lex(void *, void *, void *);
  %type <val>			limit_burst_pkts limit_burst_bytes limit_mode limit_bytes time_unit quota_mode
  %type <stmt>			reject_stmt reject_stmt_alloc
  %destructor { stmt_free($$); }	reject_stmt reject_stmt_alloc
@@ -436,7 +436,7 @@ Index: nftables-1.0.9/src/parser_bison.y
  %type <val>			nf_nat_flags nf_nat_flag offset_opt
  %type <stmt>			tproxy_stmt
  %destructor { stmt_free($$); }	tproxy_stmt
-@@ -3066,6 +3068,7 @@ stmt			:	verdict_stmt
+@@ -3212,6 +3214,7 @@ stmt			:	verdict_stmt
  			|	log_stmt	close_scope_log
  			|	reject_stmt	close_scope_reject
  			|	nat_stmt	close_scope_nat
@@ -444,7 +444,7 @@ Index: nftables-1.0.9/src/parser_bison.y
  			|	tproxy_stmt	close_scope_tproxy
  			|	queue_stmt
  			|	ct_stmt
-@@ -3666,6 +3669,13 @@ nat_stmt_alloc		:	SNAT	{ $$ = nat_stmt_a
+@@ -3689,6 +3692,13 @@ nat_stmt_alloc		:	SNAT	{ $$ = nat_stmt_a
  			|	DNAT	{ $$ = nat_stmt_alloc(&@$, __NFT_NAT_DNAT); }
  			;
  
@@ -458,7 +458,7 @@ Index: nftables-1.0.9/src/parser_bison.y
  tproxy_stmt		:	TPROXY TO stmt_expr
  			{
  				$$ = tproxy_stmt_alloc(&@$);
-@@ -3971,6 +3981,15 @@ nat_stmt_args		:	stmt_expr
+@@ -3988,6 +3998,15 @@ nat_stmt_args		:	stmt_expr
  			}
  			;
  
@@ -474,7 +474,7 @@ Index: nftables-1.0.9/src/parser_bison.y
  masq_stmt		:	masq_stmt_alloc		masq_stmt_args
  			|	masq_stmt_alloc
  			;
-@@ -5041,6 +5060,8 @@ keyword_expr		:	ETHER   close_scope_eth
+@@ -5061,6 +5080,8 @@ keyword_expr		:	ETHER   close_scope_eth
  			|	ARP	close_scope_arp { $$ = symbol_value(&@$, "arp"); }
  			|	DNAT	close_scope_nat	{ $$ = symbol_value(&@$, "dnat"); }
  			|	SNAT	close_scope_nat	{ $$ = symbol_value(&@$, "snat"); }
@@ -483,11 +483,11 @@ Index: nftables-1.0.9/src/parser_bison.y
  			|	ECN			{ $$ = symbol_value(&@$, "ecn"); }
  			|	RESET	close_scope_reset	{ $$ = symbol_value(&@$, "reset"); }
  			|	DESTROY	close_scope_destroy	{ $$ = symbol_value(&@$, "destroy"); }
-Index: nftables-1.0.9/src/json.c
+Index: nftables-1.1.1/src/json.c
 ===================================================================
---- nftables-1.0.9.orig/src/json.c
-+++ nftables-1.0.9/src/json.c
-@@ -1429,6 +1429,22 @@ json_t *nat_stmt_json(const struct stmt
+--- nftables-1.1.1.orig/src/json.c
++++ nftables-1.1.1/src/json.c
+@@ -1453,6 +1453,22 @@ json_t *nat_stmt_json(const struct stmt
  		json_object_set_new(root, "port",
  				    expr_print_json(stmt->nat.proto, octx));
  

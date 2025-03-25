@@ -9,13 +9,13 @@ Date:   Fri Jul 5 17:32:51 2024 +0530
     Change-Id: I14eff180071fe696b19c2bcd1fa62455d0e543f2
     Signed-off-by: Suhas N Bhargav <quic_sbhargav@quicinc.com>
 ---
-Index: libnftnl-1.2.6/include/libnftnl/expr.h
+Index: libnftnl-1.2.8/include/libnftnl/expr.h
 ===================================================================
---- libnftnl-1.2.6.orig/include/libnftnl/expr.h
-+++ libnftnl-1.2.6/include/libnftnl/expr.h
-@@ -153,6 +153,15 @@ enum {
+--- libnftnl-1.2.8.orig/include/libnftnl/expr.h
++++ libnftnl-1.2.8/include/libnftnl/expr.h
+@@ -168,6 +168,16 @@ enum {
  };
-
+ 
  enum {
 +        NFTNL_EXPR_NPT_TYPE		= NFTNL_EXPR_BASE,
 +        NFTNL_EXPR_NPT_FAMILY,
@@ -23,16 +23,17 @@ Index: libnftnl-1.2.6/include/libnftnl/expr.h
 +        NFTNL_EXPR_NPT_REG_DST_PFX,
 +        NFTNL_EXPR_NPT_SRC_PFXLEN,
 +        NFTNL_EXPR_NPT_DST_PFXLEN,
++	 __NFTNL_EXPR_NPT_MAX
 +};
 +
 +enum {
  	NFTNL_EXPR_TPROXY_FAMILY	= NFTNL_EXPR_BASE,
  	NFTNL_EXPR_TPROXY_REG_ADDR,
  	NFTNL_EXPR_TPROXY_REG_PORT,
-Index: libnftnl-1.2.6/include/linux/netfilter/nf_tables.h
+Index: libnftnl-1.2.8/include/linux/netfilter/nf_tables.h
 ===================================================================
---- libnftnl-1.2.6.orig/include/linux/netfilter/nf_tables.h
-+++ libnftnl-1.2.6/include/linux/netfilter/nf_tables.h
+--- libnftnl-1.2.8.orig/include/linux/netfilter/nf_tables.h
++++ libnftnl-1.2.8/include/linux/netfilter/nf_tables.h
 @@ -1401,10 +1401,14 @@ enum nft_reject_attributes {
   *
   * @NFT_NAT_SNAT: source NAT
@@ -46,11 +47,11 @@ Index: libnftnl-1.2.6/include/linux/netfilter/nf_tables.h
 +	NFT_NAT_SNPT,
 +	NFT_NAT_DNPT
  };
-
+ 
  /**
 @@ -1464,6 +1468,28 @@ enum nft_masq_attributes {
  #define NFTA_MASQ_MAX		(__NFTA_MASQ_MAX - 1)
-
+ 
  /**
 + * enum nft_npt_attributes - nf_tables NPT expression attributes
 + *
@@ -77,10 +78,10 @@ Index: libnftnl-1.2.6/include/linux/netfilter/nf_tables.h
   * enum nft_redir_attributes - nf_tables redirect expression netlink attributes
   *
   * @NFTA_REDIR_REG_PROTO_MIN: source register of proto range start (NLA_U32: nft_registers)
-Index: libnftnl-1.2.6/src/expr/npt.c
+Index: libnftnl-1.2.8/src/expr/npt.c
 ===================================================================
 --- /dev/null
-+++ libnftnl-1.2.6/src/expr/npt.c
++++ libnftnl-1.2.8/src/expr/npt.c
 @@ -0,0 +1,234 @@
 +/*
 + * SPDX-License-Identifier: GPL-2.0-only
@@ -309,17 +310,17 @@ Index: libnftnl-1.2.6/src/expr/npt.c
 +struct expr_ops expr_ops_npt = {
 +	.name		= "npt",
 +	.alloc_len	= sizeof(struct nftnl_expr_npt),
-+	.max_attr	= NFTA_NPT_MAX,
++	.nftnl_max_attr	= __NFTNL_EXPR_NPT_MAX - 1,
 +	.set		= nftnl_expr_npt_set,
 +	.get		= nftnl_expr_npt_get,
 +	.parse		= nftnl_expr_npt_parse,
 +	.build		= nftnl_expr_npt_build,
 +	.output		= nftnl_expr_npt_snprintf,
 +};
-Index: libnftnl-1.2.6/src/Makefile.am
+Index: libnftnl-1.2.8/src/Makefile.am
 ===================================================================
---- libnftnl-1.2.6.orig/src/Makefile.am
-+++ libnftnl-1.2.6/src/Makefile.am
+--- libnftnl-1.2.8.orig/src/Makefile.am
++++ libnftnl-1.2.8/src/Makefile.am
 @@ -45,6 +45,7 @@ libnftnl_la_SOURCES = utils.c		\
  		      expr/meta.c	\
  		      expr/numgen.c	\
@@ -328,10 +329,10 @@ Index: libnftnl-1.2.6/src/Makefile.am
  		      expr/tproxy.c	\
  		      expr/objref.c	\
  		      expr/payload.c	\
-Index: libnftnl-1.2.6/src/Makefile.in
+Index: libnftnl-1.2.8/src/Makefile.in
 ===================================================================
---- libnftnl-1.2.6.orig/src/Makefile.in
-+++ libnftnl-1.2.6/src/Makefile.in
+--- libnftnl-1.2.8.orig/src/Makefile.in
++++ libnftnl-1.2.8/src/Makefile.in
 @@ -141,7 +141,7 @@ am_libnftnl_la_OBJECTS = utils.lo batch.
  	expr/dup.lo expr/exthdr.lo expr/flow_offload.lo expr/fib.lo \
  	expr/fwd.lo expr/last.lo expr/limit.lo expr/log.lo \
@@ -350,7 +351,7 @@ Index: libnftnl-1.2.6/src/Makefile.in
  	expr/$(DEPDIR)/numgen.Plo expr/$(DEPDIR)/objref.Plo \
  	expr/$(DEPDIR)/osf.Plo expr/$(DEPDIR)/payload.Plo \
  	expr/$(DEPDIR)/queue.Plo expr/$(DEPDIR)/quota.Plo \
-@@ -446,6 +446,7 @@ libnftnl_la_SOURCES = utils.c		\
+@@ -447,6 +447,7 @@ libnftnl_la_SOURCES = utils.c		\
  		      expr/meta.c	\
  		      expr/numgen.c	\
  		      expr/nat.c	\
@@ -358,7 +359,7 @@ Index: libnftnl-1.2.6/src/Makefile.in
  		      expr/tproxy.c	\
  		      expr/objref.c	\
  		      expr/payload.c	\
-@@ -573,6 +574,7 @@ expr/match.lo: expr/$(am__dirstamp) expr
+@@ -574,6 +575,7 @@ expr/match.lo: expr/$(am__dirstamp) expr
  expr/meta.lo: expr/$(am__dirstamp) expr/$(DEPDIR)/$(am__dirstamp)
  expr/numgen.lo: expr/$(am__dirstamp) expr/$(DEPDIR)/$(am__dirstamp)
  expr/nat.lo: expr/$(am__dirstamp) expr/$(DEPDIR)/$(am__dirstamp)
@@ -366,7 +367,7 @@ Index: libnftnl-1.2.6/src/Makefile.in
  expr/tproxy.lo: expr/$(am__dirstamp) expr/$(DEPDIR)/$(am__dirstamp)
  expr/objref.lo: expr/$(am__dirstamp) expr/$(DEPDIR)/$(am__dirstamp)
  expr/payload.lo: expr/$(am__dirstamp) expr/$(DEPDIR)/$(am__dirstamp)
-@@ -658,6 +660,7 @@ distclean-compile:
+@@ -659,6 +661,7 @@ distclean-compile:
  @AMDEP_TRUE@@am__include@ @am__quote@expr/$(DEPDIR)/match.Plo@am__quote@ # am--include-marker
  @AMDEP_TRUE@@am__include@ @am__quote@expr/$(DEPDIR)/meta.Plo@am__quote@ # am--include-marker
  @AMDEP_TRUE@@am__include@ @am__quote@expr/$(DEPDIR)/nat.Plo@am__quote@ # am--include-marker
@@ -390,10 +391,10 @@ Index: libnftnl-1.2.6/src/Makefile.in
  	-rm -f expr/$(DEPDIR)/numgen.Plo
  	-rm -f expr/$(DEPDIR)/objref.Plo
  	-rm -f expr/$(DEPDIR)/osf.Plo
-Index: libnftnl-1.2.6/src/expr_ops.c
+Index: libnftnl-1.2.8/src/expr_ops.c
 ===================================================================
---- libnftnl-1.2.6.orig/src/expr_ops.c
-+++ libnftnl-1.2.6/src/expr_ops.c
+--- libnftnl-1.2.8.orig/src/expr_ops.c
++++ libnftnl-1.2.8/src/expr_ops.c
 @@ -24,6 +24,7 @@ extern struct expr_ops expr_ops_match;
  extern struct expr_ops expr_ops_meta;
  extern struct expr_ops expr_ops_ng;
