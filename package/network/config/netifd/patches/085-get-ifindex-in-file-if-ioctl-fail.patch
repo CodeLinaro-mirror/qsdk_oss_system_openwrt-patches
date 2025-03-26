@@ -1,7 +1,6 @@
-diff -Nur -X patern.txt a/system-linux.c b/system-linux.c
---- a/system-linux.c	2023-04-18 11:25:39.659965575 -0700
-+++ b/system-linux.c	2023-04-18 11:28:34.378519249 -0700
-@@ -841,6 +841,33 @@
+--- a/system-linux.c
++++ b/system-linux.c
+@@ -929,6 +929,33 @@ static char *system_get_bridge(const cha
  	return path + 1;
  }
  
@@ -35,12 +34,12 @@ diff -Nur -X patern.txt a/system-linux.c b/system-linux.c
  static void
  system_bridge_set_wireless(struct device *bridge, struct device *dev)
  {
-@@ -1067,7 +1094,7 @@
- 	if (!ioctl(sock_ioctl, SIOCGIFINDEX, &ifr))
- 		return ifr.ifr_ifindex;
- 	else
+@@ -1165,7 +1192,7 @@ int system_if_resolve(struct device *dev
+ 	struct ifreq ifr;
+ 
+ 	if (system_device_ifreq(&ifr, dev->ifname, SIOCGIFINDEX))
 -		return 0;
 +		return system_get_ifindex(dev->ifname);
- }
  
- static int system_if_flags(const char *ifname, unsigned add, unsigned rem)
+ 	return ifr.ifr_ifindex;
+ }
