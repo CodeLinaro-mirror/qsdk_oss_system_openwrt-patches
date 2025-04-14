@@ -12,20 +12,18 @@ Test: Recompile (integration tests will also run)
 Signed-off-by: ratchaya <quic_ratchaya@quicinc.com>
 Change-Id: I907306088b026544c269106c58497bb0dfa86abb
 ---
-Index: libnl-tiny-2023-07-27-bc92a280/attr.c
-===================================================================
---- libnl-tiny-2023-07-27-bc92a280.orig/attr.c
-+++ libnl-tiny-2023-07-27-bc92a280/attr.c
+--- a/attr.c
++++ b/attr.c
 @@ -620,6 +620,9 @@ struct nlattr *nla_reserve(struct nl_msg
  	struct nlattr *nla;
- 	int tlen;
- 	
+ 	size_t tlen;
+ 
 +	if (attrlen < 0)
 +		return NULL;
 +
  	tlen = NLMSG_ALIGN(msg->nm_nlh->nlmsg_len) + nla_total_size(attrlen);
  
- 	if ((tlen + msg->nm_nlh->nlmsg_len) > msg->nm_size)
+ 	if (tlen > msg->nm_size || tlen > UINT32_MAX)
 @@ -658,6 +661,9 @@ int nla_put(struct nl_msg *msg, int attr
  {
  	struct nlattr *nla;
