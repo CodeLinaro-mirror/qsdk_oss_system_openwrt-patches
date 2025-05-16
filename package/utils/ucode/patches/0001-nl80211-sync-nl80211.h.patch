@@ -153,9 +153,9 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
   * @NL80211_ATTR_FTM_RESPONDER: nested attribute which user-space can include
   *	in %NL80211_CMD_START_AP or %NL80211_CMD_SET_BEACON for fine timing
   *	measurement (FTM) responder functionality and containing parameters as
-@@ -2868,6 +2929,79 @@ enum nl80211_commands {
-  *	nested item, it contains attributes defined in
-  *	&enum nl80211_if_combination_attrs.
+@@ -2871,6 +2932,79 @@ enum nl80211_commands {
+  * @NL80211_ATTR_VIF_RADIO_MASK: Bitmask of allowed radios (u32).
+  *	A value of 0 means all radios.
   *
 + * @NL80211_ATTR_VIF_RADIO_MASK: Bitmask of allowed radios (u32).
 + * 	A value of 0 means all radios.
@@ -233,12 +233,10 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
   * @NUM_NL80211_ATTR: total number of nl80211_attrs available
   * @NL80211_ATTR_MAX: highest attribute number currently defined
   * @__NL80211_ATTR_AFTER_LAST: internal use
-@@ -3416,6 +3550,45 @@ enum nl80211_attrs {
- 	NL80211_ATTR_WIPHY_RADIOS,
- 	NL80211_ATTR_WIPHY_INTERFACE_COMBINATIONS,
+@@ -3421,6 +3555,43 @@ enum nl80211_attrs {
  
-+	NL80211_ATTR_VIF_RADIO_MASK,
-+
+ 	NL80211_ATTR_VIF_RADIO_MASK,
+ 
 +	NL80211_ATTR_SUPPORTED_SELECTORS,
 +
 +	NL80211_ATTR_MLO_RECONF_REM_LINKS,
@@ -279,7 +277,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
  	/* add attributes here, update the policy in nl80211.c */
  
  	__NL80211_ATTR_AFTER_LAST,
-@@ -3460,6 +3633,7 @@ enum nl80211_attrs {
+@@ -3465,6 +3636,7 @@ enum nl80211_attrs {
  #define NL80211_WIPHY_NAME_MAXLEN		64
  
  #define NL80211_MAX_SUPP_RATES			32
@@ -287,7 +285,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
  #define NL80211_MAX_SUPP_HT_RATES		77
  #define NL80211_MAX_SUPP_REG_RULES		128
  #define NL80211_TKIP_DATA_OFFSET_ENCR_KEY	0
-@@ -3476,8 +3650,9 @@ enum nl80211_attrs {
+@@ -3481,8 +3653,9 @@ enum nl80211_attrs {
   * present in %NL80211_CMD_GET_WIPHY response.
   */
  #define NL80211_MAX_NR_AKM_SUITES		2
@@ -298,7 +296,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
  
  #define NL80211_MIN_REMAIN_ON_CHANNEL_TIME	10
  
-@@ -3557,6 +3732,7 @@ enum nl80211_iftype {
+@@ -3562,6 +3735,7 @@ enum nl80211_iftype {
   *	that support %NL80211_FEATURE_FULL_AP_CLIENT_STATE to transition a
   *	previously added station into associated state
   * @NL80211_STA_FLAG_SPP_AMSDU: station supports SPP A-MSDUs
@@ -306,7 +304,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
   * @NL80211_STA_FLAG_MAX: highest station flag number currently defined
   * @__NL80211_STA_FLAG_AFTER_LAST: internal use
   */
-@@ -3570,6 +3746,7 @@ enum nl80211_sta_flags {
+@@ -3575,6 +3749,7 @@ enum nl80211_sta_flags {
  	NL80211_STA_FLAG_TDLS_PEER,
  	NL80211_STA_FLAG_ASSOCIATED,
  	NL80211_STA_FLAG_SPP_AMSDU,
@@ -314,7 +312,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
  
  	/* keep last */
  	__NL80211_STA_FLAG_AFTER_LAST,
-@@ -3661,6 +3838,18 @@ enum nl80211_eht_gi {
+@@ -3666,6 +3841,18 @@ enum nl80211_eht_gi {
  };
  
  /**
@@ -333,7 +331,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
   * enum nl80211_eht_ru_alloc - EHT RU allocation values
   * @NL80211_RATE_INFO_EHT_RU_ALLOC_26: 26-tone RU allocation
   * @NL80211_RATE_INFO_EHT_RU_ALLOC_52: 52-tone RU allocation
-@@ -3900,6 +4089,8 @@ enum nl80211_sta_bss_param {
+@@ -3905,6 +4092,8 @@ enum nl80211_sta_bss_param {
   *	of STA's association
   * @NL80211_STA_INFO_CONNECTED_TO_AS: set to true if STA has a path to a
   *	authentication server (u8, 0 or 1)
@@ -342,7 +340,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
   * @__NL80211_STA_INFO_AFTER_LAST: internal
   * @NL80211_STA_INFO_MAX: highest possible station info attribute
   */
-@@ -3948,6 +4139,7 @@ enum nl80211_sta_info {
+@@ -3953,6 +4142,7 @@ enum nl80211_sta_info {
  	NL80211_STA_INFO_AIRTIME_LINK_METRIC,
  	NL80211_STA_INFO_ASSOC_AT_BOOTTIME,
  	NL80211_STA_INFO_CONNECTED_TO_AS,
@@ -350,7 +348,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
  
  	/* keep last */
  	__NL80211_STA_INFO_AFTER_LAST,
-@@ -4186,6 +4378,28 @@ enum nl80211_band_attr {
+@@ -4191,6 +4381,28 @@ enum nl80211_band_attr {
  
  #define NL80211_BAND_ATTR_HT_CAPA NL80211_BAND_ATTR_HT_CAPA
  
@@ -379,7 +377,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
  /**
   * enum nl80211_wmm_rule - regulatory wmm rule
   *
-@@ -4444,6 +4658,7 @@ enum nl80211_reg_type {
+@@ -4449,6 +4661,7 @@ enum nl80211_reg_type {
   *	If not present or 0 default CAC time will be used.
   * @NL80211_ATTR_POWER_RULE_PSD: power spectral density (in dBm).
   *	This could be negative.
@@ -387,7 +385,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
   * @NL80211_REG_RULE_ATTR_MAX: highest regulatory rule attribute number
   *	currently defined
   * @__NL80211_REG_RULE_ATTR_AFTER_LAST: internal use
-@@ -4463,6 +4678,8 @@ enum nl80211_reg_rule_attr {
+@@ -4468,6 +4681,8 @@ enum nl80211_reg_rule_attr {
  
  	NL80211_ATTR_POWER_RULE_PSD,
  
@@ -396,23 +394,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
  	/* keep last */
  	__NL80211_REG_RULE_ATTR_AFTER_LAST,
  	NL80211_REG_RULE_ATTR_MAX = __NL80211_REG_RULE_ATTR_AFTER_LAST - 1
-@@ -4698,6 +4915,7 @@ enum nl80211_survey_info {
-  *	overrides all other flags.
-  * @NL80211_MNTR_FLAG_ACTIVE: use the configured MAC address
-  *	and ACK incoming unicast packets.
-+ * @NL80211_MNTR_FLAG_SKIP_TX: do not pass local tx packets
-  *
-  * @__NL80211_MNTR_FLAG_AFTER_LAST: internal use
-  * @NL80211_MNTR_FLAG_MAX: highest possible monitor flag
-@@ -4710,6 +4928,7 @@ enum nl80211_mntr_flags {
- 	NL80211_MNTR_FLAG_OTHER_BSS,
- 	NL80211_MNTR_FLAG_COOK_FRAMES,
- 	NL80211_MNTR_FLAG_ACTIVE,
-+	NL80211_MNTR_FLAG_SKIP_TX,
- 
- 	/* keep last */
- 	__NL80211_MNTR_FLAG_AFTER_LAST,
-@@ -4744,6 +4963,11 @@ enum nl80211_mesh_power_mode {
+@@ -4751,6 +4966,11 @@ enum nl80211_mesh_power_mode {
  	NL80211_MESH_POWER_MAX = __NL80211_MESH_POWER_AFTER_LAST - 1
  };
  
@@ -424,7 +406,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
  /**
   * enum nl80211_meshconf_params - mesh configuration parameters
   *
-@@ -5398,6 +5622,11 @@ enum nl80211_key_attributes {
+@@ -5405,6 +5625,11 @@ enum nl80211_key_attributes {
   *	see &struct nl80211_txrate_he
   * @NL80211_TXRATE_HE_GI: configure HE GI, 0.8us, 1.6us and 3.2us.
   * @NL80211_TXRATE_HE_LTF: configure HE LTF, 1XLTF, 2XLTF and 4XLTF.
@@ -436,7 +418,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
   * @__NL80211_TXRATE_AFTER_LAST: internal
   * @NL80211_TXRATE_MAX: highest TX rate attribute
   */
-@@ -5410,6 +5639,10 @@ enum nl80211_tx_rate_attributes {
+@@ -5417,6 +5642,10 @@ enum nl80211_tx_rate_attributes {
  	NL80211_TXRATE_HE,
  	NL80211_TXRATE_HE_GI,
  	NL80211_TXRATE_HE_LTF,
@@ -447,7 +429,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
  
  	/* keep last */
  	__NL80211_TXRATE_AFTER_LAST,
-@@ -5428,6 +5661,7 @@ struct nl80211_txrate_vht {
+@@ -5435,6 +5664,7 @@ struct nl80211_txrate_vht {
  };
  
  #define NL80211_HE_NSS_MAX		8
@@ -455,7 +437,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
  /**
   * struct nl80211_txrate_he - HE MCS/NSS txrate bitmap
   * @mcs: MCS bitmap table for each NSS (array index 0 for 1 stream, etc.)
-@@ -5443,6 +5677,14 @@ enum nl80211_txrate_gi {
+@@ -5450,6 +5680,14 @@ enum nl80211_txrate_gi {
  };
  
  /**
@@ -470,7 +452,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
   * enum nl80211_band - Frequency band
   * @NL80211_BAND_2GHZ: 2.4 GHz ISM band
   * @NL80211_BAND_5GHZ: around 5 GHz band (4.9 - 5.7 GHz)
-@@ -5474,6 +5716,11 @@ enum nl80211_ps_state {
+@@ -5481,6 +5719,11 @@ enum nl80211_ps_state {
  	NL80211_PS_ENABLED,
  };
  
@@ -482,7 +464,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
  /**
   * enum nl80211_attr_cqm - connection quality monitor attributes
   * @__NL80211_ATTR_CQM_INVALID: invalid
-@@ -5518,6 +5765,7 @@ enum nl80211_attr_cqm {
+@@ -5525,6 +5768,7 @@ enum nl80211_attr_cqm {
  	NL80211_ATTR_CQM_TXE_INTVL,
  	NL80211_ATTR_CQM_BEACON_LOSS_EVENT,
  	NL80211_ATTR_CQM_RSSI_LEVEL,
@@ -490,7 +472,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
  
  	/* keep last */
  	__NL80211_ATTR_CQM_AFTER_LAST,
-@@ -5631,6 +5879,8 @@ enum nl80211_tid_config_attr {
+@@ -5638,6 +5882,8 @@ enum nl80211_tid_config_attr {
  	NL80211_TID_CONFIG_ATTR_AMSDU_CTRL,
  	NL80211_TID_CONFIG_ATTR_TX_RATE_TYPE,
  	NL80211_TID_CONFIG_ATTR_TX_RATE,
@@ -499,7 +481,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
  
  	/* keep last */
  	__NL80211_TID_CONFIG_ATTR_AFTER_LAST,
-@@ -6018,6 +6268,10 @@ enum nl80211_iface_limit_attrs {
+@@ -6025,6 +6271,10 @@ enum nl80211_iface_limit_attrs {
   * @NL80211_IFACE_COMB_BI_MIN_GCD: u32 attribute specifying the minimum GCD of
   *	different beacon intervals supported by all the interface combinations
   *	in this group (if not present, all beacon intervals be identical).
@@ -510,7 +492,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
   * @NUM_NL80211_IFACE_COMB: number of attributes
   * @MAX_NL80211_IFACE_COMB: highest attribute number
   *
-@@ -6034,7 +6288,18 @@ enum nl80211_iface_limit_attrs {
+@@ -6041,7 +6291,18 @@ enum nl80211_iface_limit_attrs {
   *	numbers = [ #{STA} <= 1, #{P2P-client,P2P-GO} <= 3 ], max = 4
   *	=> allows a STA plus three P2P interfaces
   *
@@ -530,7 +512,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
   * within the %NL80211_ATTR_INTERFACE_COMBINATIONS attribute to indicate
   * that any of these groups must match.
   *
-@@ -6053,12 +6318,44 @@ enum nl80211_if_combination_attrs {
+@@ -6060,12 +6321,44 @@ enum nl80211_if_combination_attrs {
  	NL80211_IFACE_COMB_RADAR_DETECT_WIDTHS,
  	NL80211_IFACE_COMB_RADAR_DETECT_REGIONS,
  	NL80211_IFACE_COMB_BI_MIN_GCD,
@@ -575,7 +557,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
  
  /**
   * enum nl80211_plink_state - state of a mesh peer link finite state machine
-@@ -6566,6 +6863,18 @@ enum nl80211_feature_flags {
+@@ -6573,6 +6866,18 @@ enum nl80211_feature_flags {
   *	(signaling and payload protected) A-MSDUs and this shall be advertised
   *	in the RSNXE.
   *
@@ -594,7 +576,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
   * @NUM_NL80211_EXT_FEATURES: number of extended features.
   * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
   */
-@@ -6632,6 +6941,7 @@ enum nl80211_ext_feature_index {
+@@ -6639,6 +6944,7 @@ enum nl80211_ext_feature_index {
  	NL80211_EXT_FEATURE_PROT_RANGE_NEGO_AND_MEASURE,
  	NL80211_EXT_FEATURE_BSS_COLOR,
  	NL80211_EXT_FEATURE_FILS_CRYPTO_OFFLOAD,
@@ -602,7 +584,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
  	NL80211_EXT_FEATURE_RADAR_BACKGROUND,
  	NL80211_EXT_FEATURE_POWERED_ADDR_CHANGE,
  	NL80211_EXT_FEATURE_PUNCT,
-@@ -6641,6 +6951,10 @@ enum nl80211_ext_feature_index {
+@@ -6648,6 +6954,10 @@ enum nl80211_ext_feature_index {
  	NL80211_EXT_FEATURE_OWE_OFFLOAD_AP,
  	NL80211_EXT_FEATURE_DFS_CONCURRENT,
  	NL80211_EXT_FEATURE_SPP_AMSDU_SUPPORT,
@@ -613,7 +595,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
  
  	/* add new features before the definition below */
  	NUM_NL80211_EXT_FEATURES,
-@@ -6765,6 +7079,8 @@ enum nl80211_timeout_reason {
+@@ -6772,6 +7082,8 @@ enum nl80211_timeout_reason {
   *	these channels would passively be scanned. Also note that when the flag
   *	is set, in addition to the colocated APs, PSC channels would also be
   *	scanned if the user space has asked for it.
@@ -622,7 +604,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
   */
  enum nl80211_scan_flags {
  	NL80211_SCAN_FLAG_LOW_PRIORITY				= 1<<0,
-@@ -6782,6 +7098,7 @@ enum nl80211_scan_flags {
+@@ -6789,6 +7101,7 @@ enum nl80211_scan_flags {
  	NL80211_SCAN_FLAG_MIN_PREQ_CONTENT			= 1<<12,
  	NL80211_SCAN_FLAG_FREQ_KHZ				= 1<<13,
  	NL80211_SCAN_FLAG_COLOCATED_6GHZ			= 1<<14,
@@ -630,7 +612,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
  };
  
  /**
-@@ -7731,6 +8048,8 @@ enum nl80211_obss_pd_attributes {
+@@ -7738,6 +8051,8 @@ enum nl80211_obss_pd_attributes {
   * @NL80211_HE_BSS_COLOR_ATTR_COLOR: the current BSS Color.
   * @NL80211_HE_BSS_COLOR_ATTR_DISABLED: is BSS coloring disabled.
   * @NL80211_HE_BSS_COLOR_ATTR_PARTIAL: the AID equation to be used..
@@ -639,7 +621,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
   *
   * @__NL80211_HE_BSS_COLOR_ATTR_LAST: Internal
   * @NL80211_HE_BSS_COLOR_ATTR_MAX: highest BSS Color attribute.
-@@ -7741,6 +8060,7 @@ enum nl80211_bss_color_attributes {
+@@ -7748,6 +8063,7 @@ enum nl80211_bss_color_attributes {
  	NL80211_HE_BSS_COLOR_ATTR_COLOR,
  	NL80211_HE_BSS_COLOR_ATTR_DISABLED,
  	NL80211_HE_BSS_COLOR_ATTR_PARTIAL,
@@ -647,7 +629,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
  
  	/* keep last */
  	__NL80211_HE_BSS_COLOR_ATTR_LAST,
-@@ -7987,6 +8307,21 @@ enum nl80211_sar_specs_attrs {
+@@ -7994,6 +8310,21 @@ enum nl80211_sar_specs_attrs {
   *	Setting this flag is permitted only if the driver advertises EMA support
   *	by setting wiphy->ema_max_profile_periodicity to non-zero.
   *
@@ -669,7 +651,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
   * @__NL80211_MBSSID_CONFIG_ATTR_LAST: Internal
   * @NL80211_MBSSID_CONFIG_ATTR_MAX: highest attribute
   */
-@@ -7998,6 +8333,9 @@ enum nl80211_mbssid_config_attributes {
+@@ -8005,6 +8336,9 @@ enum nl80211_mbssid_config_attributes {
  	NL80211_MBSSID_CONFIG_ATTR_INDEX,
  	NL80211_MBSSID_CONFIG_ATTR_TX_IFINDEX,
  	NL80211_MBSSID_CONFIG_ATTR_EMA,
@@ -679,9 +661,9 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
  
  	/* keep last */
  	__NL80211_MBSSID_CONFIG_ATTR_LAST,
-@@ -8032,6 +8370,9 @@ enum nl80211_ap_settings_flags {
-  *	combination for this radio. Attribute may be present multiple times
-  *	and contains attributes defined in &enum nl80211_if_combination_attrs.
+@@ -8041,6 +8375,9 @@ enum nl80211_ap_settings_flags {
+  * @NL80211_WIPHY_RADIO_ATTR_ANTENNA_MASK: bitmask (u32) of antennas
+  *	connected to this radio.
   *
 + * @NL80211_WIPHY_RADIO_ATTR_ANTENNA_MASK: bitmask (u32) of antennas
 + * 	connected to this radio.
@@ -689,15 +671,7 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
   * @__NL80211_WIPHY_RADIO_ATTR_LAST: Internal
   * @NL80211_WIPHY_RADIO_ATTR_MAX: Highest attribute
   */
-@@ -8041,6 +8382,7 @@ enum nl80211_wiphy_radio_attrs {
- 	NL80211_WIPHY_RADIO_ATTR_INDEX,
- 	NL80211_WIPHY_RADIO_ATTR_FREQ_RANGE,
- 	NL80211_WIPHY_RADIO_ATTR_INTERFACE_COMBINATION,
-+	NL80211_WIPHY_RADIO_ATTR_ANTENNA_MASK,
- 
- 	/* keep last */
- 	__NL80211_WIPHY_RADIO_ATTR_LAST,
-@@ -8070,4 +8412,162 @@ enum nl80211_wiphy_radio_freq_range {
+@@ -8080,4 +8417,162 @@ enum nl80211_wiphy_radio_freq_range {
  	NL80211_WIPHY_RADIO_FREQ_ATTR_MAX = __NL80211_WIPHY_RADIO_FREQ_ATTR_LAST - 1,
  };
  

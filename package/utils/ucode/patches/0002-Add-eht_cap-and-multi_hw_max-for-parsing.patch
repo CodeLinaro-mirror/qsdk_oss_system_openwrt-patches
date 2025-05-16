@@ -50,25 +50,16 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
 
 --- a/lib/nl80211.c
 +++ b/lib/nl80211.c
-@@ -563,7 +563,7 @@ static const uc_nl_nested_spec_t nl80211
+@@ -465,7 +465,7 @@ static const uc_nl_nested_spec_t nl80211
  
- static const uc_nl_nested_spec_t nl80211_wiphy_bands_iftype_data_nla = {
+ static const uc_nl_nested_spec_t nl80211_reg_rules_nla = {
  	.headsize = 0,
 -	.nattrs = 7,
 +	.nattrs = 9,
  	.attrs = {
- 		{ NL80211_BAND_IFTYPE_ATTR_IFTYPES, "iftypes", DT_NESTED, 0, &nl80211_ifcomb_limit_types_nla },
- 		{ NL80211_BAND_IFTYPE_ATTR_HE_CAP_MAC, "he_cap_mac", DT_U8, DF_ARRAY, NULL },
-@@ -572,6 +572,8 @@ static const uc_nl_nested_spec_t nl80211
- 		{ NL80211_BAND_IFTYPE_ATTR_HE_CAP_PPE, "he_cap_ppe", DT_U8, DF_ARRAY, NULL },
- 		{ NL80211_BAND_IFTYPE_ATTR_HE_6GHZ_CAPA, "he_6ghz_capa", DT_U16, 0, NULL },
- 		{ NL80211_BAND_IFTYPE_ATTR_VENDOR_ELEMS, "vendor_elems", DT_STRING, DF_BINARY, NULL },
-+		{ NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MAC, "eht_cap_mac", DT_U32, DF_ARRAY, NULL },
-+		{ NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PHY, "eht_cap_phy", DT_U32, DF_ARRAY, NULL },
- 	}
- };
- 
-@@ -827,9 +829,26 @@ static const uc_nl_nested_spec_t nl80211
+ 		{ NL80211_ATTR_REG_RULE_FLAGS, "reg_rule_flags", DT_U32, 0, NULL },
+ 		{ NL80211_ATTR_FREQ_RANGE_START, "freq_range_start", DT_U32, 0, NULL },
+@@ -860,9 +860,26 @@ static const uc_nl_nested_spec_t nl80211
  	}
  };
  
@@ -91,15 +82,15 @@ Signed-off-by: Gunaal R <quic_gunar@quicinc.com>
 +
  static const uc_nl_nested_spec_t nl80211_msg = {
  	.headsize = 0,
--	.nattrs = 128,
-+	.nattrs = 129,
+-	.nattrs = 130,
++	.nattrs = 131,
  	.attrs = {
  		{ NL80211_ATTR_4ADDR, "4addr", DT_U8, 0, NULL },
  		{ NL80211_ATTR_AIRTIME_WEIGHT, "airtime_weight", DT_U16, 0, NULL },
-@@ -959,6 +978,7 @@ static const uc_nl_nested_spec_t nl80211
- 		{ NL80211_ATTR_MAX_AP_ASSOC_STA, "max_ap_assoc", DT_U16, 0, NULL },
+@@ -994,6 +1011,7 @@ static const uc_nl_nested_spec_t nl80211
  		{ NL80211_ATTR_SURVEY_INFO, "survey_info", DT_NESTED, 0, &nl80211_survey_info_nla },
  		{ NL80211_ATTR_WIPHY_RADIOS, "radios", DT_NESTED, DF_MULTIPLE|DF_AUTOIDX, &nl80211_wiphy_radio_nla },
+ 		{ NL80211_ATTR_VIF_RADIO_MASK, "vif_radio_mask", DT_U32, 0, NULL },
 +		{ NL80211_ATTR_MULTI_HW_MACS, "multi_hw_macs", DT_NESTED, DF_MULTIPLE|DF_AUTOIDX, &nl80211_attr_multi_hw_macs },
  	}
  };
