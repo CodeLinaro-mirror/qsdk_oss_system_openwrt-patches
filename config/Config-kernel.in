@@ -203,3 +203,7 @@ config KERNEL_QCA_MINIDUMP_DEBUG
 	help
 	  Enable this option to be debugging and diagnosing issues on Minidump
 	  driver.
+
+config KERNEL_GCOV_KERNEL
+	bool "TO enable the GCOV KUNIT TEST"
+	default n
