@@ -1,0 +1,70 @@
+Author: Ken Zhu <guigenz@qti.qualcomm.com>
+Date:   Fri May 30 18:40:11 2025 -0700
+
+    firewall: add multiple port range in snat port.
+
+    using new option snat_mport to set multiple port range
+    in snat rule.
+
+    Change-Id: Ia854c37d1e936dfe4a24407721e03ceea2a2f0a7
+    Signed-off-by: Ken Zhu <guigenz@qti.qualcomm.com>
+
+diff -Nur a/root/usr/share/firewall4/templates/redirect.uc b/root/usr/share/firewall4/templates/redirect.uc
+--- a/root/usr/share/firewall4/templates/redirect.uc	2024-12-18 01:34:15.000000000 -0800
++++ b/root/usr/share/firewall4/templates/redirect.uc	2025-05-30 18:25:01.360254416 -0700
+@@ -79,5 +79,6 @@
+ {%-  else -%}
+ 	{{ redirect.target }} {{ redirect.raddr ? fw4.host(redirect.raddr, redirect.rport != null) : '' }}
+ 	{%- if (redirect.rport): %}:{{ fw4.port(redirect.rport) }}{% endif %}
++	{%- if (redirect.snat_mr): %}: {{ fw4.port_map(redirect.snat_mr) }}{% endif %}
+ {%   endif %} comment {{ fw4.quote(`!fw4: ${redirect.name}`, true) }}
+ {%  endif -%}
+diff -Nur a/root/usr/share/ucode/fw4.uc b/root/usr/share/ucode/fw4.uc
+--- a/root/usr/share/ucode/fw4.uc	2025-05-30 16:43:30.362300303 -0700
++++ b/root/usr/share/ucode/fw4.uc	2025-05-30 22:18:49.889651613 -0700
+@@ -1710,6 +1710,19 @@
+ 		return this.quote(v[0]);
+ 	},
+ 
++	port_map: function(v) {
++		let vals = to_array(v) ;
++		let group = [];
++		for (let r in vals) {
++			let m = this.parse_port(r);
++			for(let i = m.min; i <= m.max; i++){
++				push(group, i);
++			}
++		}
++		let len = length(group);
++		return  `numgen inc mod ${len} map { ${join(', ', map(group, function(val, idx){return sprintf("%d : %s", idx, val);}))} }`;
++	},
++
+ 	concat: function(v) {
+ 		return join(' . ', to_array(v));
+ 	},
+@@ -3036,6 +3049,7 @@
+ 
+ 			snat_ip: [ "network", null, NO_INVERT ],
+ 			snat_port: [ "port", null, NO_INVERT ],
++			snat_mport: [ "string" ],
+ 
+ 			dest_ip: [ "network" ],
+ 			dest_port: [ "port" ],
+@@ -3077,7 +3091,7 @@
+ 			snat.target = "masquerade";
+ 		}
+ 
+-		if (snat.target == "snat" && !snat.snat_ip && !snat.snat_port) {
++		if (snat.target == "snat" && !snat.snat_ip && (!snat.snat_port || !snat.snat_mport)) {
+ 			this.warn_section(data, "needs either 'snat_ip' or 'snat_port' for target snat, ignoring section");
+ 			return;
+ 		}
+@@ -3125,7 +3139,7 @@
+ 
+ 				raddr: raddrs ? raddrs[0] : null,
+ 				rport: rport,
+-
++				snat_mr: snat.snat_mport,
+ 				chain: snat.src?.zone ? `srcnat_${snat.src.zone.name}` : "srcnat"
+ 			};
+ 
