@@ -10,16 +10,7 @@ Index: iperf-3.17.1/src/iperf.h
 ===================================================================
 --- iperf-3.17.1.orig/src/iperf.h
 +++ iperf-3.17.1/src/iperf.h
-@@ -63,6 +63,8 @@
- 
- #include "iperf_pthread.h"
- 
-+#include <qca-nss-netfn/netfn_sk_offload.h>
-+
- /*
-  * Atomic types highly desired, but if not, we approximate what we need
-  * with normal integers and warn.
-@@ -83,6 +85,10 @@ typedef atomic_uint_fast64_t atomic_iper
+@@ -83,6 +83,21 @@ typedef atomic_uint_fast64_t atomic_iper
  typedef unsigned int uint
  #endif // __vxworks or __VXWORKS__
  
@@ -27,10 +18,21 @@ Index: iperf-3.17.1/src/iperf.h
 +#define SO_OFFLOAD 95
 +#endif
 +
++/**
++ * netfn_sk_offload_apps
++ *	Socket Offload Apps.
++ */
++enum netfn_sk_offload_apps {
++	NSS_SK_OFFLOAD_NONE	 = 0,	/**< No Offload */
++	NSS_SK_OFFLOAD_IPERF_32  = 1,	/**< Offload option for IPERF 32 bit */
++	NSS_SK_OFFLOAD_IPERF_64  = 2,	/**< Offload option for IPERF 64 bit */
++	NSS_SK_OFFLOAD_MAX       = 3,	/**< Max limit */
++};
++
  struct iperf_interval_results
  {
      atomic_iperf_size_t bytes_transferred; /* bytes transferred in this interval */
-@@ -365,6 +371,7 @@ struct iperf_test
+@@ -365,6 +380,7 @@ struct iperf_test
      double remote_cpu_util[3];                     /* cpu utilization for the remote host/client - total, user, system */
  
      int       num_streams;                      /* total streams in the test (-P) */
