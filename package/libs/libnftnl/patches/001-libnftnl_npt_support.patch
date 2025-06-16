@@ -1,13 +1,10 @@
-Author: Suhas N Bhargav <quic_sbhargav@quicinc.com>
-Date:   Fri Jul 5 17:32:51 2024 +0530
+Author: Suhas N Bhargav <sbhargav@qti.qualcomm.com>
+Date:   Wed Jun 11 14:18:38 2025 +0530
 
-    openwrt-patches: libnftnl Userspace utility to enable Network Prefix Translation(NPTv6)
+    libnftnl: Fix the failure observed with NFtable command for SNPT/DNPT Targets
 
-    The openwrt patch helps to copy the required data from userspace to
-    Linux kernel
-
-    Change-Id: I14eff180071fe696b19c2bcd1fa62455d0e543f2
-    Signed-off-by: Suhas N Bhargav <quic_sbhargav@quicinc.com>
+    Change-Id: I4fa2d98f6a9482db7b8fca71705f99957a2cd72d
+    Signed-off-by: Suhas N Bhargav <sbhargav@qti.qualcomm.com>
 ---
 Index: libnftnl-1.2.8/include/libnftnl/expr.h
 ===================================================================
@@ -15,15 +12,15 @@ Index: libnftnl-1.2.8/include/libnftnl/expr.h
 +++ libnftnl-1.2.8/include/libnftnl/expr.h
 @@ -168,6 +168,16 @@ enum {
  };
- 
+
  enum {
-+        NFTNL_EXPR_NPT_TYPE		= NFTNL_EXPR_BASE,
-+        NFTNL_EXPR_NPT_FAMILY,
-+        NFTNL_EXPR_NPT_REG_SRC_PFX,
-+        NFTNL_EXPR_NPT_REG_DST_PFX,
-+        NFTNL_EXPR_NPT_SRC_PFXLEN,
-+        NFTNL_EXPR_NPT_DST_PFXLEN,
-+	 __NFTNL_EXPR_NPT_MAX
++	NFTNL_EXPR_NPT_TYPE		= NFTNL_EXPR_BASE,
++	NFTNL_EXPR_NPT_FAMILY,
++	NFTNL_EXPR_NPT_REG_SRC_PFX,
++	NFTNL_EXPR_NPT_REG_DST_PFX,
++	NFTNL_EXPR_NPT_SRC_PFXLEN,
++	NFTNL_EXPR_NPT_DST_PFXLEN,
++	__NFTNL_EXPR_NPT_MAX
 +};
 +
 +enum {
@@ -47,11 +44,11 @@ Index: libnftnl-1.2.8/include/linux/netfilter/nf_tables.h
 +	NFT_NAT_SNPT,
 +	NFT_NAT_DNPT
  };
- 
+
  /**
 @@ -1464,6 +1468,28 @@ enum nft_masq_attributes {
  #define NFTA_MASQ_MAX		(__NFTA_MASQ_MAX - 1)
- 
+
  /**
 + * enum nft_npt_attributes - nf_tables NPT expression attributes
 + *
@@ -72,7 +69,7 @@ Index: libnftnl-1.2.8/include/linux/netfilter/nf_tables.h
 +	NFTA_NPT_REG_DST_PFX_LEN,
 +	__NFTA_NPT_MAX
 +};
-+#define NFTA_NPT_MAX           (__NFTA_NPT_MAX - 1)
++#define NFTA_NPT_MAX		(__NFTA_NPT_MAX - 1)
 +
 +/**
   * enum nft_redir_attributes - nf_tables redirect expression netlink attributes
@@ -82,10 +79,10 @@ Index: libnftnl-1.2.8/src/expr/npt.c
 ===================================================================
 --- /dev/null
 +++ libnftnl-1.2.8/src/expr/npt.c
-@@ -0,0 +1,234 @@
+@@ -0,0 +1,242 @@
 +/*
 + * SPDX-License-Identifier: GPL-2.0-only
-+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) 2024-2025 Qualcomm Innovation Center, Inc. All rights reserved.
 + */
 +
 +#include "internal.h"
@@ -116,25 +113,23 @@ Index: libnftnl-1.2.8/src/expr/npt.c
 +
 +	switch(type) {
 +	case NFTNL_EXPR_NPT_TYPE:
-+		memcpy(&npt->type, data, sizeof(npt->type));
++		memcpy(&npt->type, data, data_len);
 +		break;
 +	case NFTNL_EXPR_NPT_FAMILY:
-+		memcpy(&npt->family, data, sizeof(npt->family));
++		memcpy(&npt->family, data, data_len);
 +		break;
 +	case NFTNL_EXPR_NPT_REG_SRC_PFX:
-+		memcpy(&npt->sreg_src_pfx, data, sizeof(npt->sreg_src_pfx));
++		memcpy(&npt->sreg_src_pfx, data, data_len);
 +		break;
 +	case NFTNL_EXPR_NPT_REG_DST_PFX:
-+		memcpy(&npt->sreg_dst_pfx, data, sizeof(npt->sreg_dst_pfx));
++		memcpy(&npt->sreg_dst_pfx, data, data_len);
 +		break;
 +	case NFTNL_EXPR_NPT_SRC_PFXLEN:
-+		memcpy(&npt->src_pfx_len, data, sizeof(npt->src_pfx_len));
++		memcpy(&npt->src_pfx_len, data, data_len);
 +		break;
 +	case NFTNL_EXPR_NPT_DST_PFXLEN:
-+		memcpy(&npt->dst_pfx_len, data, sizeof(npt->dst_pfx_len));
++		memcpy(&npt->dst_pfx_len, data, data_len);
 +		break;
-+	default:
-+		return -1;
 +	}
 +
 +	return 0;
@@ -228,7 +223,7 @@ Index: libnftnl-1.2.8/src/expr/npt.c
 +		e->flags |= (1 << NFTNL_EXPR_NPT_DST_PFXLEN);
 +	}
 +
-+        return 0;
++	return 0;
 +}
 +
 +static void nftnl_expr_npt_build(struct nlmsghdr *nlh, const struct nftnl_expr *e)
@@ -307,10 +302,20 @@ Index: libnftnl-1.2.8/src/expr/npt.c
 +	return offset;
 +}
 +
++static struct attr_policy npt_attr_policy[__NFTNL_EXPR_NPT_MAX] = {
++	[NFTNL_EXPR_NPT_TYPE]          = { .maxlen = sizeof(uint32_t) },
++	[NFTNL_EXPR_NPT_FAMILY]        = { .maxlen = sizeof(uint32_t) },
++	[NFTNL_EXPR_NPT_REG_SRC_PFX]   = { .maxlen = sizeof(uint32_t) },
++	[NFTNL_EXPR_NPT_REG_DST_PFX]   = { .maxlen = sizeof(uint32_t) },
++	[NFTNL_EXPR_NPT_SRC_PFXLEN]    = { .maxlen = sizeof(uint8_t) },
++	[NFTNL_EXPR_NPT_DST_PFXLEN]    = { .maxlen = sizeof(uint8_t) },
++};
++
 +struct expr_ops expr_ops_npt = {
 +	.name		= "npt",
 +	.alloc_len	= sizeof(struct nftnl_expr_npt),
 +	.nftnl_max_attr	= __NFTNL_EXPR_NPT_MAX - 1,
++	.attr_policy	= npt_attr_policy,
 +	.set		= nftnl_expr_npt_set,
 +	.get		= nftnl_expr_npt_get,
 +	.parse		= nftnl_expr_npt_parse,
