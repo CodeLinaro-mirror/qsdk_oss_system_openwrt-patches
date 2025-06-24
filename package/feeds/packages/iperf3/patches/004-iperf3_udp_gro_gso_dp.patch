@@ -384,15 +384,15 @@ Index: iperf-3.17.1/src/iperf.h
 ===================================================================
 --- iperf-3.17.1.orig/src/iperf.h
 +++ iperf-3.17.1/src/iperf.h
-@@ -88,6 +88,7 @@ typedef unsigned int uint
+@@ -86,6 +86,7 @@ typedef unsigned int uint
  #ifndef SO_OFFLOAD
  #define SO_OFFLOAD 95
  #endif
 +#define UDP_CMSG_BUF_LEN 256
  
- struct iperf_interval_results
- {
-@@ -180,6 +181,9 @@ struct iperf_settings
+ /**
+  * netfn_sk_offload_apps
+@@ -189,6 +190,9 @@ struct iperf_settings
      int       idle_timeout;         /* server idle time timeout */
      unsigned int snd_timeout; /* Timeout for sending tcp messages in active mode, in us */
      struct iperf_time rcv_timeout;  /* Timeout for receiving messages in active mode, in us */
@@ -402,7 +402,7 @@ Index: iperf-3.17.1/src/iperf.h
  };
  
  struct iperf_test;
-@@ -241,6 +245,9 @@ struct iperf_stream
+@@ -250,6 +254,9 @@ struct iperf_stream
      SLIST_ENTRY(iperf_stream) streams;
  
      void     *data;
@@ -412,7 +412,7 @@ Index: iperf-3.17.1/src/iperf.h
  };
  
  struct protocol {
-@@ -466,5 +473,5 @@ extern int gerror; /* error value from g
+@@ -475,5 +482,5 @@ extern int gerror; /* error value from g
  
  /* In Reverse mode, maximum number of packets to wait for "accept" response - to handle out of order packets */
  #define MAX_REVERSE_OUT_OF_ORDER_PACKETS 2
@@ -529,19 +529,19 @@ Index: iperf-3.17.1/src/iperf_client_api.c
 ===================================================================
 --- iperf-3.17.1.orig/src/iperf_client_api.c
 +++ iperf-3.17.1/src/iperf_client_api.c
-@@ -477,6 +477,15 @@ iperf_connect(struct iperf_test *test)
- 	    if (test->verbose) {
- 		printf("Setting UDP block size to %d\n", test->settings->blksize);
+@@ -479,6 +479,15 @@ iperf_connect(struct iperf_test *test)
  	    }
-+
-+#if defined(HAVE_SO_OFFLOAD)
-+	    if (test->offload && (test->protocol->id == Pudp)) {
-+		    test->settings->udp_gso_len = test->settings->blksize;
-+		    if (test->debug) {
-+			    fprintf(stdout, "UDP GSO length %d\n", test->settings->udp_gso_len);
-+		    }
-+	    }
-+#endif /* HAVE_SO_OFFLOAD */
  	}
  
++#if defined(HAVE_SO_OFFLOAD)
++	if (test->offload && (test->protocol->id == Pudp)) {
++		test->settings->udp_gso_len = test->settings->blksize;
++		if (test->debug) {
++			fprintf(stdout, "UDP GSO length %d\n", test->settings->udp_gso_len);
++		}
++	}
++#endif /* HAVE_SO_OFFLOAD */
++
  	/*
+ 	 * Regardless of whether explicitly or implicitly set, if the
+ 	 * block size is larger than the MSS, print a warning.
