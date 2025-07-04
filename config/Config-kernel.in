@@ -207,3 +207,172 @@ config KERNEL_QCA_MINIDUMP_DEBUG
 config KERNEL_GCOV_KERNEL
 	bool "TO enable the GCOV KUNIT TEST"
 	default n
+
+
+#
+# KUnit base configuration
+#
+
+menuconfig KERNEL_KUNIT
+	tristate "KUnit - Enable support for unit tests"
+	select GLOB
+	help
+	  Enables support for kernel unit tests (KUnit), a lightweight unit
+	  testing and mocking framework for the Linux kernel. These tests are
+	  able to be run locally on a developer's workstation without a VM or
+	  special hardware when using UML. Can also be used on most other
+	  architectures. For more information, please see
+	  Documentation/dev-tools/kunit/.
+
+if KERNEL_KUNIT
+
+    config KERNEL_KUNIT_DEBUGFS
+	bool "KUnit - Enable /sys/kernel/debug/kunit debugfs representation" if !KUNIT_ALL_TESTS
+	default KERNEL_KUNIT_ALL_TESTS
+	help
+	  Enable debugfs representation for kunit.  Currently this consists
+	  of /sys/kernel/debug/kunit/<test_suite>/results files for each
+	  test suite, which allow users to see results of the last test suite
+	  run that occurred.
+
+    config KERNEL_KUNIT_FAULT_TEST
+	bool "Enable KUnit tests which print BUG stacktraces"
+	depends on KERNEL_KUNIT_TEST
+	depends on !UML
+	default y
+	help
+	  Enables fault handling tests for the KUnit framework. These tests may
+	  trigger a kernel BUG(), and the associated stack trace, even when they
+	  pass. If this conflicts with your test infrastrcture (or is confusing
+	  or annoying), they can be disabled by setting this to N.
+
+    config KERNEL_KUNIT_TEST
+	tristate "KUnit test for KUnit" if !KUNIT_ALL_TESTS
+	default KERNEL_KUNIT_ALL_TESTS
+	help
+	  Enables the unit tests for the KUnit test framework. These tests test
+	  the KUnit test framework itself; the tests are both written using
+	  KUnit and test KUnit. This option should only be enabled for testing
+	  purposes by developers interested in testing that KUnit works as
+	  expected.
+
+    config KERNEL_KUNIT_EXAMPLE_TEST
+	tristate "Example test for KUnit" if !KUNIT_ALL_TESTS
+	default KERNEL_KUNIT_ALL_TESTS
+	help
+	  Enables an example unit test that illustrates some of the basic
+	  features of KUnit. This test only exists to help new users understand
+	  what KUnit is and how it is used. Please refer to the example test
+	  itself, lib/kunit/example-test.c, for more information. This option
+	  is intended for curious hackers who would like to understand how to
+	  use KUnit for kernel development.
+
+    config KERNEL_KUNIT_ALL_TESTS
+	tristate "All KUnit tests with satisfied dependencies"
+	help
+	  Enables all KUnit tests, if they can be enabled.
+	  KUnit tests run during boot and output the results to the debug log
+	  in TAP format (http://testanything.org/). Only useful for kernel devs
+	  running the KUnit test harness, and not intended for inclusion into a
+	  production build.
+
+	  For more information on KUnit and unit tests in general please refer
+	  to the KUnit documentation in Documentation/dev-tools/kunit/.
+
+	  If unsure, say N.
+
+    config KERNEL_KUNIT_DEFAULT_ENABLED
+	bool "Default value of kunit.enable"
+	default y
+	help
+	  Sets the default value of kunit.enable. If set to N then KUnit
+	  tests will not execute unless kunit.enable=1 is passed to the
+	  kernel command line.
+
+	  In most cases this should be left as Y. Only if additional opt-in
+	  behavior is needed should this be set to N.
+
+endif # KUNIT
+
+config ARCH_HAS_GCOV_PROFILE_ALL
+	def_bool n
+config KERNRL_TIME_KUNIT_TEST
+	def_bool n
+config KERNRL_GCOV_PROFILE_ALL
+	def_bool n
+config KERNRL_BINFMT_ELF_KUNIT_TEST
+	def_bool n
+config KERNRL_NET_HANDSHAKE_KUNIT_TEST
+	def_bool n
+config KERNRL_NETDEV_ADDR_LIST_TEST
+	def_bool n
+config KERNRL_PM_QOS_KUNIT_TEST
+	def_bool n
+config KERNRL_DM_KUNIT_TEST
+	def_bool n
+config KERNRL_DRIVER_PE_KUNIT_TEST
+	def_bool n
+config KERNRL_REGMAP_KUNIT
+	def_bool n
+config KERNRL_REGMAP_BUILD
+	def_bool n
+config KERNRL_INPUT_KUNIT_TEST
+	def_bool n
+config KERNRL_SND_SOC_TOPOLOGY_BUILD
+	def_bool n
+config KERNRL_SND_SOC_UTILS_KUNIT_TEST
+	def_bool n
+config KERNRL_CLK_KUNIT_TEST
+	def_bool n
+config KERNRL_CLK_GATE_KUNIT_TEST
+	def_bool n
+config KERNRL_IIO_FORMAT_KUNIT_TEST
+	def_bool n
+config KERNRL_EXT4_KUNIT_TESTS
+	def_bool n
+config KERNRL_FAT_KUNIT_TEST
+	def_bool n
+config KERNRL_CPUMASK_KUNIT_TEST
+	def_bool n
+config KERNRL_TEST_IOV_ITER
+	def_bool n
+config KERNRL_BITFIELD_KUNIT
+	def_bool n
+config KERNRL_CHECKSUM_KUNIT
+	def_bool n
+config KERNRL_HASH_KUNIT_TEST
+	def_bool n
+config KERNRL_RESOURCE_KUNIT_TEST
+	def_bool n
+config KERNRL_SYSCTL_KUNIT_TEST
+	def_bool n
+config KERNRL_LIST_KUNIT_TEST
+	def_bool n
+config KERNRL_HASHTABLE_KUNIT_TEST
+	def_bool n
+config KERNRL_LINEAR_RANGES_TEST
+	def_bool n
+config KERNRL_CMDLINE_KUNIT_TEST
+	def_bool n
+config KERNRL_BITS_TEST
+	def_bool n
+config KERNRL_RATIONAL_KUNIT_TEST
+	def_bool n
+config KERNRL_MEMCPY_KUNIT_TEST
+	def_bool n
+config KERNRL_IS_SIGNED_TYPE_KUNIT_TEST
+	def_bool n
+config KERNRL_OVERFLOW_KUNIT_TEST
+	def_bool n
+config KERNRL_STACKINIT_KUNIT_TEST
+	def_bool n
+config KERNRL_FORTIFY_KUNIT_TEST
+	def_bool n
+config KERNRL_HW_BREAKPOINT_KUNIT_TEST
+	def_bool n
+config KERNRL_SIPHASH_KUNIT_TEST
+	def_bool n
+config KERNRL_STRCAT_KUNIT_TEST
+	def_bool n
+config KERNRL_STRSCPY_KUNIT_TEST
+	def_bool n
