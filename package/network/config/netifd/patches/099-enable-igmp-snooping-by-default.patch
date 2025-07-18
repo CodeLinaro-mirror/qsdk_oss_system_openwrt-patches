@@ -1,0 +1,24 @@
+Author: Suhas N Bhargav <sbhargav@qti.qualcomm.com>
+Date:   Fri Jul 18 17:33:14 2025 +0530
+
+    netifd: Enable IGMP snooping by default on Bridge interface
+    
+    This patch changes the default behavior of IGMP snooping from disabled to enabled.
+    As a result, IGMP snooping can be used by default on ATH profile too.
+    
+    Change-Id: I8996c7f507919a994b9fe9012ba3732100d3c059
+    Signed-off-by: Suhas N Bhargav <sbhargav@qti.qualcomm.com>
+---
+Index: netifd-2024.12.17~ea01ed41/bridge.c
+===================================================================
+--- netifd-2024.12.17~ea01ed41.orig/bridge.c
++++ netifd-2024.12.17~ea01ed41/bridge.c
+@@ -1225,7 +1225,7 @@ bridge_apply_settings(struct bridge_stat
+ 	cfg->stp = false;
+ 	cfg->stp_kernel = false;
+ 	cfg->robustness = 2;
+-	cfg->igmp_snoop = false;
++	cfg->igmp_snoop = true;
+ 	cfg->multicast_querier = false;
+ 	cfg->query_interval = 12500;
+ 	cfg->query_response_interval = 1000;
