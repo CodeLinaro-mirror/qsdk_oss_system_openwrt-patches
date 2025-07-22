@@ -31,4 +31,7 @@ boot() {
 	if [ -d /usr/opensync ]; then
 		opensync_func
 	fi
+	echo "|/sbin/core-upload.sh %e %p %u %g %s %t %h %P" > /proc/sys/kernel/core_pattern
+	ulimit -c unlimited
+
 }
