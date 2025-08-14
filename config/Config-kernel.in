@@ -292,6 +292,12 @@ if KERNEL_KUNIT
 	  In most cases this should be left as Y. Only if additional opt-in
 	  behavior is needed should this be set to N.
 
+	config KERNEL_ATH_GCOV_PROFILE
+	bool "Default value of ATH GCOV profile enable"
+	default n
+	help
+		Enable GCOV profile in ATH packages.
+
 endif # KUNIT
 
 config ARCH_HAS_GCOV_PROFILE_ALL
