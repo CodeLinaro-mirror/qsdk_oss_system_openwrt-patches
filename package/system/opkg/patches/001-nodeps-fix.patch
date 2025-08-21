@@ -1,0 +1,26 @@
+From: Deepak kumar <deepaku@qti.qualcomm.com>
+Date: Thu, 21 Aug 2025 12:14:40 +0530
+
+Subject: [PATCH] opkg : Enable nodeps support in latest opkg
+
+Signed-off-by: Deepak Kumar <deepaku@qti.qualcomm.com>
+
+Index: opkg-2024.10.16~38eccbb1/libopkg/pkg_hash.c
+===================================================================
+--- opkg-2024.10.16~38eccbb1.orig/libopkg/pkg_hash.c
++++ opkg-2024.10.16~38eccbb1/libopkg/pkg_hash.c
+@@ -379,12 +379,12 @@ pkg_t *pkg_hash_fetch_best_installation_
+ 				if ((arch_priority > 0)
+ 				    &&
+ 				    (!pkg_vec_contains(matching_pkgs, maybe))) {
+-					if (!pkg_hash_check_unresolved(maybe)) {
++					if (conf->nodeps || !pkg_hash_check_unresolved(maybe)) {
+ 						max_count++;
+ 						abstract_pkg_vec_insert(matching_apkgs,
+ 									maybe->parent);
+ 						pkg_vec_insert(matching_pkgs, maybe);
+-					}
++					}
+ 				}
+ 			}
+ 
