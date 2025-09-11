@@ -1,0 +1,121 @@
+Author: Krithi D Shetty <kdshetty@qti.qualcomm.com>
+Date:   Thu Sep 11 09:37:21 2025 +0530
+
+    [iproute2] Enable ignore t bit and mcuc hw offload support.
+
+    Add support for enabling mcuc hw offload
+
+    Change-Id: Ic9ea55728a93b3cc6533e18a96ce6940aec79bc0
+    Signed-off-by: KRITHI D SHETTY <kdshetty@qti.qualcomm.com>
+---
+Index: iproute2-6.11.0/bridge/link.c
+===================================================================
+--- iproute2-6.11.0.orig/bridge/link.c
++++ iproute2-6.11.0/bridge/link.c
+@@ -212,6 +212,9 @@ static void print_protinfo(FILE *fp, str
+ 			print_uint(PRINT_ANY, "mcast_max_groups",
+ 				   "mcast_max_groups %u ", rta_getattr_u32(at));
+ 		}
++		if (prtb[IFLA_BRPORT_MCAST_MCUC_HW_OFFLOAD])
++			print_on_off(PRINT_ANY, "mcast_mcuc_hw_offload", "mcast_mcuc_hw_offload %s ",
++					rta_getattr_u8(prtb[IFLA_BRPORT_MCAST_MCUC_HW_OFFLOAD]));
+ 	} else
+ 		print_stp_state(rta_getattr_u8(attr));
+ }
+@@ -322,6 +325,7 @@ static void usage(void)
+ 		"                               [ backup_port DEVICE ] [ nobackup_port ]\n"
+ 		"                               [ backup_nhid NHID ]\n"
+ 		"                               [ self ] [ master ]\n"
++		"                               [ mcast_mcuc_hw_offload {on | off} ]\n"
+ 		"       bridge link show [dev DEV] [master DEVICE]\n");
+ 	exit(-1);
+ }
+@@ -365,6 +369,7 @@ static int brlink_modify(int argc, char
+ 	__s8 state = -1;
+ 	__s16 mode = -1;
+ 	__u16 flags = 0;
++	__s8 mcast_mcuc_hw_offload = -1;
+ 	struct rtattr *nest;
+ 	int ret;
+ 
+@@ -510,6 +515,11 @@ static int brlink_modify(int argc, char
+ 			if (get_u32(&backup_nhid, *argv, 0))
+ 				invarg("invalid backup_nhid", *argv);
+ 			backup_nhid_set = true;
++		} else if (strcmp(*argv, "mcast_mcuc_hw_offload") == 0) {
++			NEXT_ARG();
++			mcast_mcuc_hw_offload = parse_on_off("mcast_mcuc_hw_offload", *argv, &ret);
++			if (ret)
++				return ret;
+ 		} else {
+ 			usage();
+ 		}
+@@ -600,6 +610,10 @@ static int brlink_modify(int argc, char
+ 		addattr32(&req.n, sizeof(req), IFLA_BRPORT_BACKUP_NHID,
+ 			  backup_nhid);
+ 
++	if (mcast_mcuc_hw_offload >= 0)
++                addattr8(&req.n, sizeof(req), IFLA_BRPORT_MCAST_MCUC_HW_OFFLOAD,
++                         mcast_mcuc_hw_offload);
++
+ 	addattr_nest_end(&req.n, nest);
+ 
+ 	/* IFLA_AF_SPEC nested attribute. Contains IFLA_BRIDGE_FLAGS that
+Index: iproute2-6.11.0/ip/iplink_bridge_slave.c
+===================================================================
+--- iproute2-6.11.0.orig/ip/iplink_bridge_slave.c
++++ iproute2-6.11.0/ip/iplink_bridge_slave.c
+@@ -44,6 +44,7 @@ static void print_explain(FILE *f)
+ 		"			[ mab {on | off} ]\n"
+ 		"			[ backup_port DEVICE ] [ nobackup_port ]\n"
+ 		"			[ backup_nhid NHID ]\n"
++		"                       [ mcast_mcuc_hw_offload {on | off} ]\n"
+ 	);
+ }
+ 
+@@ -313,6 +314,11 @@ static void bridge_slave_print_opt(struc
+ 	if (tb[IFLA_BRPORT_BACKUP_NHID])
+ 		print_uint(PRINT_ANY, "backup_nhid", "backup_nhid %u ",
+ 			   rta_getattr_u32(tb[IFLA_BRPORT_BACKUP_NHID]));
++
++	if (tb[IFLA_BRPORT_MCAST_MCUC_HW_OFFLOAD])
++                print_on_off(PRINT_ANY, "mcast_mcuc_hw_offload", "mcast_mcuc_hw_offload %s ",
++                             rta_getattr_u8(tb[IFLA_BRPORT_MCAST_MCUC_HW_OFFLOAD]));
++
+ }
+ 
+ static void bridge_slave_parse_on_off(char *arg_name, char *arg_val,
+@@ -456,6 +462,10 @@ static int bridge_slave_parse_opt(struct
+ 				invarg("backup_nhid is invalid", *argv);
+ 			addattr32(n, 1024, IFLA_BRPORT_BACKUP_NHID,
+ 				  backup_nhid);
++		} else if (matches(*argv, "mcast_mcuc_hw_offload") == 0) {
++			NEXT_ARG();
++			bridge_slave_parse_on_off("mcast_mcuc_hw_offload", *argv, n,
++					IFLA_BRPORT_MCAST_MCUC_HW_OFFLOAD);
+ 		} else if (matches(*argv, "help") == 0) {
+ 			explain();
+ 			return -1;
+Index: iproute2-6.11.0/include/uapi/linux/if_link.h
+===================================================================
+--- iproute2-6.11.0.orig/include/uapi/linux/if_link.h
++++ iproute2-6.11.0/include/uapi/linux/if_link.h
+@@ -1049,6 +1049,9 @@ enum {
+  *   backup port that has VLAN tunnel mapping enabled (via the
+  *   *IFLA_BRPORT_VLAN_TUNNEL* option). Setting a value of 0 (default) has
+  *   the effect of not attaching any ID.
++ *
++ * @IFLA_BRPORT_MCAST_MCUC_HW_OFFLOAD
++ *  Enable multicast mcuc offload
+  */
+ enum {
+ 	IFLA_BRPORT_UNSPEC,
+@@ -1096,6 +1099,8 @@ enum {
+ 	IFLA_BRPORT_MCAST_MAX_GROUPS,
+ 	IFLA_BRPORT_NEIGH_VLAN_SUPPRESS,
+ 	IFLA_BRPORT_BACKUP_NHID,
++	IFLA_BRPORT_BPDU_FILTER,
++	IFLA_BRPORT_MCAST_MCUC_HW_OFFLOAD,
+ 	__IFLA_BRPORT_MAX
+ };
+ #define IFLA_BRPORT_MAX (__IFLA_BRPORT_MAX - 1)

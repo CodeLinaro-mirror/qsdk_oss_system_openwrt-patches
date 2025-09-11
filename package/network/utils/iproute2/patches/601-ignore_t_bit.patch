@@ -1,0 +1,71 @@
+Author: Krithi D Shetty <kdshetty@qti.qualcomm.com>
+Date:   Thu Sep 11 09:37:21 2025 +0530
+
+    [iproute2] Enable ignore t bit and mcuc hw offload support.
+
+    Add support for ignoring transient bit for IPv6 multicast addresses
+
+    Change-Id: Ic9ea55728a93b3cc6533e18a96ce6940aec79bc0
+    Signed-off-by: KRITHI D SHETTY <kdshetty@qti.qualcomm.com>
+---
+Index: iproute2-6.11.0/ip/iplink_bridge.c
+===================================================================
+--- iproute2-6.11.0.orig/ip/iplink_bridge.c
++++ iproute2-6.11.0/ip/iplink_bridge.c
+@@ -62,6 +62,7 @@ static void print_explain(FILE *f)
+ 		"		  [ nf_call_iptables NF_CALL_IPTABLES ]\n"
+ 		"		  [ nf_call_ip6tables NF_CALL_IP6TABLES ]\n"
+ 		"		  [ nf_call_arptables NF_CALL_ARPTABLES ]\n"
++		"		  [ mcast_ignore_t_bit MCAST_IGNORE_T_BIT ]\n"
+ 		"\n"
+ 		"Where: VLAN_PROTOCOL := { 802.1Q | 802.1ad }\n"
+ 	);
+@@ -413,6 +414,14 @@ static int bridge_parse_opt(struct link_
+ 
+ 			addattr8(n, 1024, IFLA_BR_NF_CALL_ARPTABLES,
+ 				 nf_call_arpt);
++		} else if (matches(*argv, "mcast_ignore_t_bit") == 0) {
++			__u8 mcast_ignore_t_bit;
++
++			NEXT_ARG();
++			if (get_u8(&mcast_ignore_t_bit, *argv, 0))
++				invarg("invalid mcast_ignore_t_bit", *argv);
++
++			addattr8(n, 1024, IFLA_BR_MCAST_IGNORE_T_BIT, mcast_ignore_t_bit);
+ 		} else if (matches(*argv, "help") == 0) {
+ 			explain();
+ 			return -1;
+@@ -756,6 +765,11 @@ static void bridge_print_opt(struct link
+ 			   "nf_call_arptables",
+ 			   "nf_call_arptables %u ",
+ 			   rta_getattr_u8(tb[IFLA_BR_NF_CALL_ARPTABLES]));
++	if (tb[IFLA_BR_MCAST_IGNORE_T_BIT])
++		print_uint(PRINT_ANY,
++				"mcast_ignore_t_bit",
++				"mcast_ignore_t_bit %u ",
++				rta_getattr_u8(tb[IFLA_BR_MCAST_IGNORE_T_BIT]));
+ }
+ 
+ static void bridge_print_help(struct link_util *lu, int argc, char **argv,
+Index: iproute2-6.11.0/include/uapi/linux/if_link.h
+===================================================================
+--- iproute2-6.11.0.orig/include/uapi/linux/if_link.h
++++ iproute2-6.11.0/include/uapi/linux/if_link.h
+@@ -738,6 +738,9 @@ enum in6_addr_gen_mode {
+  * @IFLA_BR_FDB_MAX_LEARNED
+  *   Set the number of max dynamically learned FDB entries for the current
+  *   bridge.
++ *
++ * @IFLA_BR_MCAST_IGNORE_T_BIT
++ *  Ignore the transient bit in IPv6 multicast addresses
+  */
+ enum {
+ 	IFLA_BR_UNSPEC,
+@@ -790,6 +793,7 @@ enum {
+ 	IFLA_BR_MCAST_QUERIER_STATE,
+ 	IFLA_BR_FDB_N_LEARNED,
+ 	IFLA_BR_FDB_MAX_LEARNED,
++	IFLA_BR_MCAST_IGNORE_T_BIT,
+ 	__IFLA_BR_MAX,
+ };
+ 
