@@ -208,6 +208,12 @@ config KERNEL_GCOV_KERNEL
 	bool "TO enable the GCOV KUNIT TEST"
 	default n
 
+config KERNEL_IPQ_PROFILE_MINENT
+	bool "Select minent build profile"
+	default n
+	help
+	Enable/Disable MINENT kernel config. Used to enable specific minent
+	features for MINENT profile.
 
 #
 # KUnit base configuration
