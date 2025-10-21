@@ -1,0 +1,441 @@
+Author: Krithi D Shetty <kdshetty@qti.qualcomm.com>
+Date:   Tue Oct 21 15:02:29 2025 +0530
+
+    [iproute2] Add support to avoid snooping for custom groups
+
+    mcast-rule action flood utility to avoid snooping for custom multicast groups
+
+    Change-Id: Id04ec124d09ed38a41fc17ec0ab53c8b50340195
+    Signed-off-by: KRITHI D SHETTY <kdshetty@qti.qualcomm.com>
+---
+Index: iproute2-6.11.0/bridge/bridge.c
+===================================================================
+--- iproute2-6.11.0.orig/bridge/bridge.c
++++ iproute2-6.11.0/bridge/bridge.c
+@@ -37,7 +37,7 @@ static void usage(void)
+ 	fprintf(stderr,
+ "Usage: bridge [ OPTIONS ] OBJECT { COMMAND | help }\n"
+ "       bridge [ -force ] -batch filename\n"
+-"where  OBJECT := { link | fdb | mdb | mst | vlan | vni | monitor }\n"
++"where  OBJECT := { link | fdb | mdb | mst | vlan | vni | monitor | mcast-rule }\n"
+ "       OPTIONS := { -V[ersion] | -s[tatistics] | -d[etails] |\n"
+ "                    -o[neline] | -t[imestamp] | -n[etns] name |\n"
+ "                    -com[pressvlans] -c[olor] -p[retty] -j[son] |\n"
+@@ -50,7 +50,6 @@ static int do_help(int argc, char **argv
+ 	usage();
+ }
+ 
+-
+ static const struct cmd {
+ 	const char *cmd;
+ 	int (*func)(int argc, char **argv);
+@@ -62,6 +61,7 @@ static const struct cmd {
+ 	{ "vlan",	do_vlan },
+ 	{ "vni",	do_vni },
+ 	{ "monitor",	do_monitor },
++	{ "mcast-rule",	do_mcast_rule },
+ 	{ "help",	do_help },
+ 	{ 0 }
+ };
+Index: iproute2-6.11.0/include/uapi/linux/rtnetlink.h
+===================================================================
+--- iproute2-6.11.0.orig/include/uapi/linux/rtnetlink.h
++++ iproute2-6.11.0/include/uapi/linux/rtnetlink.h
+@@ -194,6 +194,13 @@ enum {
+ 	RTM_GETTUNNEL,
+ #define RTM_GETTUNNEL	RTM_GETTUNNEL
+ 
++	RTM_NEWMCASTRULE = 124,
++#define RTM_NEWMCASTRULE RTM_NEWMCASTRULE
++	RTM_DELMCASTRULE = 125,
++#define RTM_DELMCASTRULE RTM_DELMCASTRULE
++	RTM_GETMCASTRULE = 126,
++#define RTM_GETMCASTRULE RTM_GETMCASTRULE
++
+ 	__RTM_MAX,
+ #define RTM_MAX		(((__RTM_MAX + 3) & ~3) - 1)
+ };
+Index: iproute2-6.11.0/bridge/mcast_rule.c
+===================================================================
+--- /dev/null
++++ iproute2-6.11.0/bridge/mcast_rule.c
+@@ -0,0 +1,325 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * ADD mcast-rule action flood utility on bridge with netlink
++ */
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <unistd.h>
++#include <sys/socket.h>
++#include <string.h>
++#include <errno.h>
++#include <netinet/in.h>
++
++/* Prevent kernel headers from redefining structures already defined by libc */
++#ifndef _LINUX_IN6_H
++#define _LINUX_IN6_H
++#endif
++
++#include <linux/if_bridge.h>
++
++#include "version.h"
++#include "utils.h"
++#include "br_common.h"
++#include "namespace.h"
++#include "color.h"
++#include "rt_names.h"
++#include "json_print.h"
++
++static int is_bridge_master(const char *dev)
++{
++	char path[PATH_MAX];
++	snprintf(path, sizeof(path), "/sys/class/net/%s/bridge", dev);
++	return access(path, F_OK) == 0;
++}
++
++static int is_ipv4_mcast(__be32 ip)
++{
++	__u32 h = ntohl(ip);
++	return (h & 0xF0000000U) == 0xE0000000U; /* 224.0.0.0/4 */
++}
++
++static int is_ipv6_mcast(const struct in6_addr *ip6)
++{
++	return ip6->s6_addr[0] == 0xFF;
++}
++
++static void mcast_rule_usage(void)
++{
++	fprintf(stderr,
++			"Usage:\n"
++			"  bridge mcast-rule add dev DEV group GROUP action flood\n"
++			"  bridge mcast-rule del dev DEV group GROUP\n"
++			"  bridge mcast-rule show [ dev DEV ]\n"
++			"\n"
++			"Notes:\n"
++			"  - GROUP may be IPv4 or IPv6 multicast address\n"
++			"  - Only action \"flood\" is supported\n");
++	exit(-1);
++}
++
++static int mcast_rule_modify(int cmd, int argc, char **argv)
++{
++	struct {
++		struct nlmsghdr n;
++		struct br_mcast_rule_msg hdr;
++		char buf[1024];
++	} req = {
++		.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct br_mcast_rule_msg)),
++		.n.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK,
++		.n.nlmsg_type = cmd,
++	};
++	char *dev = NULL;
++	char *group_str = NULL;
++	char *action_kw = NULL;
++	int family = AF_UNSPEC;
++	unsigned int ifindex;
++	unsigned int glen = 0;
++	unsigned char group_bin[16] = {0};
++	int require_action = (cmd == RTM_NEWMCASTRULE);
++
++	while (argc > 0) {
++		if (strcmp(*argv, "dev") == 0) {
++			NEXT_ARG();
++			dev = *argv;
++		} else if (strcmp(*argv, "group") == 0) {
++			NEXT_ARG();
++			group_str = *argv;
++		} else if (strcmp(*argv, "action") == 0) {
++			NEXT_ARG();
++			action_kw = *argv;
++		} else if (matches(*argv, "help") == 0) {
++			mcast_rule_usage();
++		} else {
++			invarg("Unknown argument", *argv);
++		}
++		argc--; argv++;
++	}
++
++	if (!dev || !group_str) {
++		fprintf(stderr, "dev and group are required arguments.\n");
++		return -1;
++	}
++
++	ifindex = ll_name_to_index(dev);
++	if (!ifindex)
++		return nodev(dev);
++
++	/* Optional client-side validation: ensure device is a bridge master */
++	if (!is_bridge_master(dev)) {
++		fprintf(stderr, "Device \"%s\" is not a bridge master (no /sys/class/net/%s/bridge). "
++				"Kernel will enforce as well.\n", dev, dev);
++		/* continue anyway; kernel extack will clarify */
++	}
++
++	/* Determine family and parse group into binary */
++	if (strchr(group_str, ':')) {
++		struct in6_addr ip6;
++		if (!inet_pton(AF_INET6, group_str, &ip6)) {
++			fprintf(stderr, "Invalid IPv6 group \"%s\"\n", group_str);
++			return -1;
++		}
++		family = AF_INET6;
++		glen = 16;
++		memcpy(group_bin, &ip6, glen);
++		if (!is_ipv6_mcast(&ip6)) {
++			fprintf(stderr, "Group \"%s\" is not an IPv6 multicast address.\n",
++					group_str);
++			return -1;
++		}
++	} else {
++		__be32 ip4;
++		if (!inet_pton(AF_INET, group_str, &ip4)) {
++			fprintf(stderr, "Invalid IPv4 group \"%s\"\n", group_str);
++			return -1;
++		}
++		family = AF_INET;
++		glen = 4;
++		memcpy(group_bin, &ip4, glen);
++		if (ip4 == 0 || !is_ipv4_mcast(ip4)) {
++			fprintf(stderr, "Group \"%s\" is not an IPv4 multicast address.\n",
++					group_str);
++			return -1;
++		}
++	}
++
++	/* For add, require "action flood" and reject anything else */
++	if (require_action) {
++		if (!action_kw || strcmp(action_kw, "flood") != 0) {
++			fprintf(stderr, "For add, only \"action flood\" is supported.\n");
++			return -1;
++		}
++	}
++
++	req.hdr.family  = family;       /* AF_INET or AF_INET6 */
++	req.hdr.ifindex = ifindex;      /* bridge ifindex */
++
++	/* Build nested entry with group (and action for add) */
++	{
++		struct rtattr *nest = addattr_nest(&req.n, sizeof(req),
++				BR_MCASTRULE_ENTRY);
++		nest->rta_type |= NLA_F_NESTED;
++
++		addattr_l(&req.n, sizeof(req), BR_MCASTRULE_ENTRY_GROUP,
++				group_bin, glen);
++
++		if (require_action)
++			addattr8(&req.n, sizeof(req), BR_MCASTRULE_ENTRY_ACTION, 1); /* flood */
++
++		addattr_nest_end(&req.n, nest);
++	}
++
++	/* Send; libnetlink will print kernel extack strings on failure */
++	if (rtnl_talk(&rth, &req.n, NULL) < 0)
++		return -1;
++
++	return 0;
++}
++
++static unsigned int mcast_rule_filter_index;
++
++static void print_mcast_rule_entry(struct rtattr *a, unsigned int ifindex)
++{
++	struct rtattr *tb[BR_MCASTRULE_ENTRY_MAX + 1];
++	char addrbuf[INET6_ADDRSTRLEN];
++	const void *grp = NULL;
++	int af = AF_UNSPEC;
++	const char *dev = ll_index_to_name(ifindex);
++
++	parse_rtattr_flags(tb, BR_MCASTRULE_ENTRY_MAX, RTA_DATA(a),
++			RTA_PAYLOAD(a), NLA_F_NESTED);
++
++	if (tb[BR_MCASTRULE_ENTRY_GROUP]) {
++		int glen = RTA_PAYLOAD(tb[BR_MCASTRULE_ENTRY_GROUP]);
++		grp = RTA_DATA(tb[BR_MCASTRULE_ENTRY_GROUP]);
++		if (glen == 4)
++			af = AF_INET;
++		else if (glen == 16)
++			af = AF_INET6;
++	}
++
++	/* Only "flood" action supported at the moment; default to flood if missing */
++	/* action value 1 == flood */
++	/* Print one line: dev X group G action flood */
++	if (grp && af != AF_UNSPEC) {
++		const char *astr = inet_ntop(af, grp, addrbuf, sizeof(addrbuf));
++		if (!astr)
++			astr = "(invalid)";
++		printf("dev %s group %s action flood\n", dev ? dev : "(unknown)", astr);
++	}
++}
++
++static int print_mcast_rule_dump(struct nlmsghdr *n, void *arg)
++{
++	struct br_mcast_rule_msg *hdr = NLMSG_DATA(n);
++	struct rtattr *a;
++	int rem;
++
++	/* Accept both RTM_GETMCASTRULE and RTM_NEWMCASTRULE in dump */
++	if (n->nlmsg_type != RTM_GETMCASTRULE &&
++			n->nlmsg_type != RTM_NEWMCASTRULE &&
++			n->nlmsg_type != RTM_DELMCASTRULE) {
++		fprintf(stderr,
++				"Not RTM_GETMCASTRULE/RTM_NEWMCASTRULE/RTM_DELMCASTRULE: %08x %08x %08x\n",
++				n->nlmsg_len, n->nlmsg_type, n->nlmsg_flags);
++		return 0;
++	}
++
++	/* Filter by device if requested */
++	if (mcast_rule_filter_index && mcast_rule_filter_index != hdr->ifindex)
++		return 0;
++
++	rem = n->nlmsg_len - NLMSG_LENGTH(sizeof(*hdr));
++	if (rem < 0) {
++		fprintf(stderr, "BUG: wrong nlmsg len %d\n", rem);
++		return -1;
++	}
++	for (a = (struct rtattr *)(((char *)hdr) + NLMSG_ALIGN(sizeof(*hdr)));
++			RTA_OK(a, rem);
++			a = RTA_NEXT(a, rem)) {
++		unsigned short rta_type = a->rta_type & NLA_TYPE_MASK;
++
++		if (rta_type > BR_MCASTRULE_MAX)
++			continue;
++
++		switch (rta_type) {
++			case BR_MCASTRULE_ENTRY:
++				print_mcast_rule_entry(a, hdr->ifindex);
++				break;
++			default:
++				break;
++		}
++	}
++
++	return 0;
++}
++
++static int mcast_rule_show(int argc, char **argv)
++{
++	char *filter_dev = NULL;
++	struct br_mcast_rule_msg req = {
++		.family  = PF_BRIDGE,
++		.reserved1 = 0,
++		.reserved2 = 0,
++		.ifindex = 0,
++	};
++
++	while (argc > 0) {
++		if (strcmp(*argv, "dev") == 0) {
++			NEXT_ARG();
++			if (filter_dev)
++				duparg("dev", *argv);
++			filter_dev = *argv;
++		} else if (matches(*argv, "help") == 0) {
++			mcast_rule_usage();
++		} else {
++			invarg("Unknown argument", *argv);
++		}
++		argc--; argv++;
++	}
++
++	if (filter_dev) {
++		mcast_rule_filter_index = ll_name_to_index(filter_dev);
++		if (!mcast_rule_filter_index)
++			return nodev(filter_dev);
++	} else {
++		mcast_rule_filter_index = 0;
++	}
++
++	/* Send dump request and print rules */
++	if (rtnl_dump_request(&rth, RTM_GETMCASTRULE, &req, sizeof(req)) < 0) {
++		perror("Cannot send dump request");
++		return -1;
++	}
++	if (rtnl_dump_filter(&rth, print_mcast_rule_dump, stdout) < 0) {
++		fprintf(stderr, "Dump terminated\n");
++		return -1;
++	}
++
++	fflush(stdout);
++	return 0;
++}
++
++int do_mcast_rule(int argc, char **argv)
++{
++	ll_init_map(&rth);
++	timestamp = 0;
++
++	if (argc > 0) {
++		if (matches(*argv, "add") == 0)
++			return mcast_rule_modify(RTM_NEWMCASTRULE, argc - 1, argv + 1);
++		if (matches(*argv, "del") == 0 ||
++				matches(*argv, "delete") == 0)
++			return mcast_rule_modify(RTM_DELMCASTRULE, argc - 1, argv + 1);
++		if (matches(*argv, "show") == 0 ||
++				matches(*argv, "lst") == 0 ||
++				matches(*argv, "list") == 0)
++			return mcast_rule_show(argc - 1, argv + 1);
++		if (matches(*argv, "help") == 0)
++			mcast_rule_usage();
++	}
++
++	fprintf(stderr, "Command \"%s\" is unknown, try \"bridge mcast-rule help\".\n",
++			argc > 0 ? *argv : "");
++	return -1;
++}
+Index: iproute2-6.11.0/bridge/br_common.h
+===================================================================
+--- iproute2-6.11.0.orig/bridge/br_common.h
++++ iproute2-6.11.0/bridge/br_common.h
+@@ -24,6 +24,7 @@ int do_mst(int argc, char **argv);
+ int do_vlan(int argc, char **argv);
+ int do_link(int argc, char **argv);
+ int do_vni(int argc, char **argv);
++int do_mcast_rule(int argc, char **argv);
+ 
+ extern int preferred_family;
+ extern int show_stats;
+Index: iproute2-6.11.0/bridge/Makefile
+===================================================================
+--- iproute2-6.11.0.orig/bridge/Makefile
++++ iproute2-6.11.0/bridge/Makefile
+@@ -1,5 +1,5 @@
+ # SPDX-License-Identifier: GPL-2.0
+-BROBJ = bridge.o fdb.o monitor.o link.o mdb.o mst.o vlan.o vni.o
++BROBJ = bridge.o fdb.o monitor.o link.o mdb.o mst.o vlan.o vni.o mcast_rule.o
+ 
+ include ../config.mk
+ 
+Index: iproute2-6.11.0/include/uapi/linux/if_bridge.h
+===================================================================
+--- iproute2-6.11.0.orig/include/uapi/linux/if_bridge.h
++++ iproute2-6.11.0/include/uapi/linux/if_bridge.h
+@@ -882,4 +882,26 @@ enum {
+ 	__BRIDGE_QUERIER_MAX
+ };
+ #define BRIDGE_QUERIER_MAX (__BRIDGE_QUERIER_MAX - 1)
++
++enum {
++	BR_MCASTRULE_UNSPEC,
++	BR_MCASTRULE_ENTRY,
++	__BR_MCASTRULE_MAX,
++};
++#define BR_MCASTRULE_MAX (__BR_MCASTRULE_MAX - 1)
++
++enum {
++	BR_MCASTRULE_ENTRY_UNSPEC,
++	BR_MCASTRULE_ENTRY_GROUP,
++	BR_MCASTRULE_ENTRY_ACTION,
++	__BR_MCASTRULE_ENTRY_MAX,
++};
++#define BR_MCASTRULE_ENTRY_MAX (__BR_MCASTRULE_ENTRY_MAX - 1)
++
++struct br_mcast_rule_msg {
++	__u8  family;      /* AF_INET or AF_INET6 */
++	__u8  reserved1;
++	__u16 reserved2;
++	__u32 ifindex;     /* target bridge ifindex */
++};
+ #endif /* _LINUX_IF_BRIDGE_H */
