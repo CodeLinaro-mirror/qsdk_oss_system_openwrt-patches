@@ -1,0 +1,34 @@
+From: Naveen Raj Ranganathan <naver@qti.qualcomm.com>
+Date: Wed, 29 Oct 2025 22:05:40 +0530
+Subject: [PATCH] Adding defensive null consistency
+
+Change-Id: I50066952b4cca0843398309fe9e8595c0b4d9dff
+Signed-off-by: Naveen Raj Ranganathan <naver@qti.qualcomm.com>
+
+Index: lldpd-1.0.18/src/daemon/interfaces.c
+===================================================================
+--- lldpd-1.0.18.orig/src/daemon/interfaces.c
++++ lldpd-1.0.18/src/daemon/interfaces.c
+@@ -262,6 +262,22 @@ iface_append_vlan_to_lower(struct lldpd
+ 		    vlan->name);
+ 		return;
+ 	}
++	if (!cfg) {
++		log_debug("interfaces", "skip VLAN append: cfg is NULL");
++		return;
++	}
++	if (!interfaces) {
++		log_debug("interfaces", "skip VLAN append: interfaces is NULL");
++		return;
++	}
++	if (!upper) {
++		log_debug("interfaces", "skip VLAN append: upper iface is NULL");
++		return;
++	}
++	if (!vlan) {
++		log_debug("interfaces", "skip VLAN append: vlan is NULL");
++		return;
++	}
+ 	depth++;
+ 	struct interfaces_device *lower;
+ 	log_debug("interfaces",
