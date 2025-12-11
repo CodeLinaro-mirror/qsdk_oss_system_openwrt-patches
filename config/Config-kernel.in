@@ -215,6 +215,70 @@ config KERNEL_IPQ_PROFILE_MINENT
 	Enable/Disable MINENT kernel config. Used to enable specific minent
 	features for MINENT profile.
 
+config KERNEL_KFENCE
+	bool "KFENCE: low-overhead sampling-based memory safety error detector"
+	help
+	  KFENCE is a low-overhead sampling-based detector of heap out-of-bounds
+	  access, use-after-free, and invalid-free errors. KFENCE is designed
+	  to have negligible cost to permit enabling it in production
+	  environments.
+
+	  See <file:Documentation/dev-tools/kfence.rst> for more details.
+
+	  Note that, KFENCE is not a substitute for explicit testing with tools
+	  such as KASAN. KFENCE can detect a subset of bugs that KASAN can
+	  detect, albeit at very different performance profiles. If you can
+	  afford to use KASAN, continue using KASAN, for example in test
+	  environments. If your kernel targets production use, and cannot
+	  enable KASAN due to its cost, consider using KFENCE.
+
+if KERNEL_KFENCE
+
+	config KERNEL_KFENCE_SAMPLE_INTERVAL
+		int "Default sample interval in milliseconds"
+		default 100
+		help
+		  The KFENCE sample interval determines the frequency with which heap
+		  allocations will be guarded by KFENCE. May be overridden via boot
+		  parameter "kfence.sample_interval".
+
+		  Set this to 0 to disable KFENCE by default, in which case only
+		  setting "kfence.sample_interval" to a non-zero value enables KFENCE.
+
+	config KERNEL_KFENCE_NUM_OBJECTS
+		int "Number of guarded objects available"
+		range 1 65535
+		default 255
+		help
+		  The number of guarded objects available. For each KFENCE object, 2
+		  pages are required; with one containing the object and two adjacent
+		  ones used as guard pages.
+
+	config KERNEL_KFENCE_DEFERRABLE
+		bool "Use a deferrable timer to trigger allocations"
+		help
+		  Use a deferrable timer to trigger allocations. This avoids forcing
+		  CPU wake-ups if the system is idle, at the risk of a less predictable
+		  sample interval.
+
+		  Warning: The KUnit test suite fails with this option enabled - due to
+		  the unpredictability of the sample interval!
+
+		  Say N if you are unsure.
+
+	config KERNEL_KFENCE_STRESS_TEST_FAULTS
+		int "Stress testing of fault handling and error reporting" if EXPERT
+		default 0
+		help
+		  The inverse probability with which to randomly protect KFENCE object
+		  pages, resulting in spurious use-after-frees. The main purpose of
+		  this option is to stress test KFENCE with concurrent error reports
+		  and allocations/frees. A value of 0 disables stress testing logic.
+
+		  Only for KFENCE testing; set to 0 if you are not a KFENCE developer.
+
+endif
+
 #
 # KUnit base configuration
 #
