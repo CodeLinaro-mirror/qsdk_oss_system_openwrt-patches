@@ -1,0 +1,45 @@
+From: Vijay Balaji <vijbal@qti.qualcomm.com>
+Subject: [PATCH] uboot-envtools: fix fw_setenv negative value support
+
+fw_setenv treated negative values (e.g. bootdelay -1) as invalid options.
+Fix this by using the '+' prefix in getopt string to enforce strict POSIX
+parsing, which stops option processing at the first non-option argument.
+
+Also ensure parse_common_args includes 'n' and 's' options to correctly
+handle them when strict parsing is enabled, preventing premature stop
+scenarios.
+
+Change-Id: I42ac955e1bf6f46f81a9800de2813666d1a21f8c
+Signed-off-by: Vijay Balaji <vijbal@qti.qualcomm.com>
+---
+Index: u-boot-2024.07/tools/env/fw_env_main.c
+===================================================================
+--- u-boot-2024.07.orig/tools/env/fw_env_main.c
++++ u-boot-2024.07/tools/env/fw_env_main.c
+@@ -120,7 +120,7 @@ static void parse_common_args(int argc,
+ 	env_opts.config_file = CONFIG_FILE;
+ #endif
+ 
+-	while ((c = getopt_long(argc, argv, ":a:c:l:h:v", long_options, NULL)) !=
++	while ((c = getopt_long(argc, argv, "+a:c:ns:l:h:v", long_options, NULL)) !=
+ 	       EOF) {
+ 		switch (c) {
+ #ifdef CONFIG_FILE
+@@ -156,7 +156,7 @@ int parse_printenv_args(int argc, char *
+ 
+ 	parse_common_args(argc, argv);
+ 
+-	while ((c = getopt_long(argc, argv, "a:c:ns:l:h:v", long_options, NULL))
++	while ((c = getopt_long(argc, argv, "+a:c:ns:l:h:v", long_options, NULL))
+ 		!= EOF) {
+ 		switch (c) {
+ 		case 'n':
+@@ -183,7 +183,7 @@ int parse_setenv_args(int argc, char *ar
+ 
+ 	parse_common_args(argc, argv);
+ 
+-	while ((c = getopt_long(argc, argv, "a:c:ns:l:h:v", long_options, NULL))
++	while ((c = getopt_long(argc, argv, "+a:c:ns:l:h:v", long_options, NULL))
+ 		!= EOF) {
+ 		switch (c) {
+ 		case 's':
