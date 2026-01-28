@@ -1,0 +1,50 @@
+From ce6a56ae47c4aab38c03a2c4270f62ae28488da8 Mon Sep 17 00:00:00 2001
+From: Diya Sati <dsati@qti.qualcomm.com>
+Date: Tue, 20 May 2025 20:43:46 +0530
+Subject: [PATCH] Add NL command for UHR in ucode
+
+Signed-off-by: Diya Sati <dsati@qti.qualcomm.com>
+Signed-off-by: Karthikeyan Kathirvel <karthikeyan.kathirvel@oss.qualcomm.com>
+---
+ include/linux/nl80211.h | 2 ++
+ lib/nl80211.c           | 4 +++-
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/include/linux/nl80211.h b/include/linux/nl80211.h
+index 2b1a984..2695640 100644
+--- a/include/linux/nl80211.h
++++ b/include/linux/nl80211.h
+@@ -4313,6 +4313,8 @@ enum nl80211_band_iftype_attr {
+ 	NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PHY,
+	NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MCS_SET,
+ 	NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PPE,
++	NL80211_BAND_IFTYPE_ATTR_UHR_CAP_MAC,
++	NL80211_BAND_IFTYPE_ATTR_UHR_CAP_PHY,
+
+	/* keep last */
+	__NL80211_BAND_IFTYPE_ATTR_AFTER_LAST,
+diff --git a/lib/nl80211.c b/lib/nl80211.c
+index 2cdeba2..e0ce5c5 100644
+--- a/lib/nl80211.c
++++ b/lib/nl80211.c
+@@ -589,7 +589,7 @@ static const uc_nl_nested_spec_t nl80211_wiphy_bands_rates_nla = {
+
+ static const uc_nl_nested_spec_t nl80211_wiphy_bands_iftype_data_nla = {
+	.headsize = 0,
+-	.nattrs = 9,
++	.nattrs = 11,
+ 	.attrs = {
+ 		{ NL80211_BAND_IFTYPE_ATTR_IFTYPES, "iftypes", DT_NESTED, 0, &nl80211_ifcomb_limit_types_nla },
+ 		{ NL80211_BAND_IFTYPE_ATTR_HE_CAP_MAC, "he_cap_mac", DT_U8, DF_ARRAY, NULL },
+@@ -602,6 +602,8 @@ static const uc_nl_nested_spec_t nl80211_wiphy_bands_iftype_data_nla = {
+ 		{ NL80211_BAND_IFTYPE_ATTR_VENDOR_ELEMS, "vendor_elems", DT_STRING, DF_BINARY, NULL },
+ 		{ NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MAC, "eht_cap_mac", DT_U8, DF_ARRAY, NULL },
+ 		{ NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PHY, "eht_cap_phy", DT_U8, DF_ARRAY, NULL },
++		{ NL80211_BAND_IFTYPE_ATTR_UHR_CAP_MAC, "uhr_cap_mac", DT_U8, 0, NULL },
++		{ NL80211_BAND_IFTYPE_ATTR_UHR_CAP_PHY, "uhr_cap_phy", DT_U8, 0, NULL },
+ 	}
+ };
+ 
+-- 
+2.34.1
+
