@@ -7,28 +7,17 @@ Date:   Thu Feb 25 16:19:14 2021 -0800
     odhcpd periodically send ping packet.It will setup route to send ping
     packet and later remove the route entry.Each ping triggers some
     listeners to do the flush accordingly.
-    
+
     Keep sending NS once odhcpd reloads. Change it to only send NS one time.
-    
+
     Change-Id: I39b196abc7dcb8ea87647ebadd9163e54b5e76d5
     Signed-off-by: Ken Zhu <guigenz@codeaurora.org>
     Signed-off-by: Ken Zhu <quic_guigenz@quicinc.com>
 
-diff -Nur a/src/config.c b/src/config.c
---- a/src/config.c	2023-06-24 09:48:29.000000000 -0700
-+++ b/src/config.c	2023-12-07 16:20:20.202013583 -0800
-@@ -554,7 +554,7 @@
- 		iface->router_event.uloop.fd = -1;
- 		iface->dhcpv6_event.uloop.fd = -1;
- 		iface->ndp_event.uloop.fd = -1;
--		iface->ndp_ping_fd = -1;
-+		iface->ndp_ns_fd = -1;
- 		iface->dhcpv4_event.uloop.fd = -1;
- 		INIT_LIST_HEAD(&iface->ia_assignments);
- 		INIT_LIST_HEAD(&iface->dhcpv4_assignments);
-diff -Nur a/src/ndp.c b/src/ndp.c
---- a/src/ndp.c	2023-06-24 09:48:29.000000000 -0700
-+++ b/src/ndp.c	2023-12-07 16:21:34.165406309 -0800
+Index: odhcpd-2025.10.02~b14cf98c/src/ndp.c
+===================================================================
+--- odhcpd-2025.10.02~b14cf98c.orig/src/ndp.c	2026-02-12 12:51:52.828815097 +0530
++++ odhcpd-2025.10.02~b14cf98c/src/ndp.c	2026-02-12 12:57:48.561148843 +0530
 @@ -81,9 +81,9 @@
  		goto out;
  	}
@@ -107,7 +96,7 @@ diff -Nur a/src/ndp.c b/src/ndp.c
  		}
  	}
  
-@@ -277,22 +277,48 @@
+@@ -277,25 +277,48 @@
  	}
  }
  
@@ -115,8 +104,9 @@ diff -Nur a/src/ndp.c b/src/ndp.c
 +/* Send an NS. This is less for actually pinging but for the
   * neighbor cache to be kept up-to-date. */
 -static void ping6(struct in6_addr *addr,
+-		struct interface *iface)
 +static void ns_send(struct in6_addr *addr,
- 		const struct interface *iface)
++		const struct interface *iface)
  {
 -	struct sockaddr_in6 dest = { .sin6_family = AF_INET6, .sin6_addr = *addr , };
 -	struct icmp6_hdr echo = { .icmp6_type = ICMP6_ECHO_REQUEST };
@@ -130,13 +120,18 @@ diff -Nur a/src/ndp.c b/src/ndp.c
 +	struct in6_addr daddr = {/*0*/};
 +
 +	memset(&ns, 0, sizeof(ns));
-+
+ 
+-	inet_ntop(AF_INET6, addr, ipbuf, sizeof(ipbuf));
+-	syslog(LOG_DEBUG, "Pinging for %s on %s", ipbuf, iface->name);
 +	ns.nh.nd_ns_type   = ND_NEIGHBOR_SOLICIT;
 +	memcpy(&ns.nh.nd_ns_target, addr, sizeof(struct in6_addr));
-+
+ 
+-	netlink_setup_route(addr, 128, iface->ifindex, NULL, 128, true);
 +	ns.opt.nd_opt_type = ND_OPT_SOURCE_LINKADDR;
 +	ns.opt.nd_opt_len  = 1;
-+
+ 
+-	/* Use link-local address as source for RFC 4861 compliance and macOS compatibility */
+-	odhcpd_try_send_with_src(iface->ndp_ping_fd, &dest, &iov, 1, iface);
 +	if (odhcpd_get_mac(iface, ns.hwaddr)) {
 +		return;
 +	}
@@ -156,27 +151,23 @@ diff -Nur a/src/ndp.c b/src/ndp.c
 +	struct sockaddr_in6 dest = {AF_INET6, 0, 0, daddr, iface->ifindex};
 +
 +	struct iovec iov = {&ns, sizeof(ns)};
- 
--	inet_ntop(AF_INET6, addr, ipbuf, sizeof(ipbuf));
--	syslog(LOG_DEBUG, "Pinging for %s on %s", ipbuf, iface->name);
++
 +	odhcpd_send(iface->ndp_ns_fd, &dest, &iov, 1, iface);
  
--	netlink_setup_route(addr, 128, iface->ifindex, NULL, 128, true);
--	odhcpd_send(iface->ndp_ping_fd, &dest, &iov, 1, iface);
 -	netlink_setup_route(addr, 128, iface->ifindex, NULL, 128, false);
  }
  
  /* Send a Neighbor Advertisement. */
-@@ -319,7 +345,7 @@
- 	inet_ntop(AF_INET6, to_addr, ipbuf, sizeof(ipbuf));
+@@ -323,7 +346,7 @@
  	syslog(LOG_DEBUG, "Answering NS to %s on %s", ipbuf, iface->ifname);
  
--	odhcpd_send(iface->ndp_ping_fd, &dest, &iov, 1, iface);
-+	odhcpd_send(iface->ndp_ns_fd, &dest, &iov, 1, iface);
+ 	/* Use link-local address as source for RFC 4861 compliance and macOS compatibility */
+-	odhcpd_try_send_with_src(iface->ndp_ping_fd, &dest, &iov, 1, iface);
++	odhcpd_try_send_with_src(iface->ndp_ns_fd, &dest, &iov, 1, iface);
  }
  
  /* Handle solicitations */
-@@ -360,7 +386,7 @@
+@@ -366,7 +389,7 @@
  	avl_for_each_element(&interfaces, c, avl) {
  		if (iface != c && c->ndp == MODE_RELAY &&
  				(ns_is_dad || !c->external))
@@ -185,10 +176,11 @@ diff -Nur a/src/ndp.c b/src/ndp.c
  	}
  
  	/* Catch global-addressed NS and answer them manually.
-diff -Nur a/src/odhcpd.h b/src/odhcpd.h
---- a/src/odhcpd.h	2023-06-24 09:48:29.000000000 -0700
-+++ b/src/odhcpd.h	2023-12-07 16:20:20.202013583 -0800
-@@ -264,7 +264,7 @@
+Index: odhcpd-2025.10.02~b14cf98c/src/odhcpd.h
+===================================================================
+--- odhcpd-2025.10.02~b14cf98c.orig/src/odhcpd.h	2026-02-12 12:51:52.840815648 +0530
++++ odhcpd-2025.10.02~b14cf98c/src/odhcpd.h	2026-02-12 13:01:34.539528708 +0530
+@@ -302,7 +302,7 @@
  
  	// NDP runtime data
  	struct odhcpd_event ndp_event;
@@ -197,7 +189,7 @@ diff -Nur a/src/odhcpd.h b/src/odhcpd.h
  
  	// IPv4 runtime data
  	struct odhcpd_ipaddr *addr4;
-@@ -285,6 +285,7 @@
+@@ -323,6 +323,7 @@
  	enum odhcpd_mode ndp;
  	enum odhcpd_mode dhcpv4;
  
@@ -205,9 +197,10 @@ diff -Nur a/src/odhcpd.h b/src/odhcpd.h
  	// Config
  	bool inuse;
  	bool external;
-diff -Nur a/src/router.c b/src/router.c
---- a/src/router.c	2023-06-24 09:48:29.000000000 -0700
-+++ b/src/router.c	2023-12-07 16:20:20.202013583 -0800
+Index: odhcpd-2025.10.02~b14cf98c/src/router.c
+===================================================================
+--- odhcpd-2025.10.02~b14cf98c.orig/src/router.c	2026-02-12 12:51:52.812814362 +0530
++++ odhcpd-2025.10.02~b14cf98c/src/router.c	2026-02-12 13:01:51.612312818 +0530
 @@ -197,7 +197,8 @@
  		mreq.ipv6mr_interface = iface->ifindex;
  		inet_pton(AF_INET6, ALL_IPV6_ROUTERS, &mreq.ipv6mr_multiaddr);
@@ -218,3 +211,16 @@ diff -Nur a/src/router.c b/src/router.c
  			inet_pton(AF_INET6, ALL_IPV6_NODES, &mreq.ipv6mr_multiaddr);
  			forward_router_solicitation(iface);
  		} else if (iface->ra == MODE_SERVER) {
+Index: odhcpd-2025.10.02~b14cf98c/src/config.c
+===================================================================
+--- odhcpd-2025.10.02~b14cf98c.orig/src/config.c	2026-02-12 13:04:23.627305942 +0530
++++ odhcpd-2025.10.02~b14cf98c/src/config.c	2026-02-12 13:04:49.368490203 +0530
+@@ -939,7 +939,7 @@
+ 		iface->router_event.uloop.fd = -1;
+ 		iface->dhcpv6_event.uloop.fd = -1;
+ 		iface->ndp_event.uloop.fd = -1;
+-		iface->ndp_ping_fd = -1;
++		iface->ndp_ns_fd = -1;
+ 		iface->dhcpv4_event.uloop.fd = -1;
+ 		INIT_LIST_HEAD(&iface->ia_assignments);
+ 		INIT_LIST_HEAD(&iface->dhcpv4_assignments);
