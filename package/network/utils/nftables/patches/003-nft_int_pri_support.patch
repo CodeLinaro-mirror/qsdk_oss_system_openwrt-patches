@@ -1,0 +1,169 @@
+From c175911e649a938c3ecc4223f355d6f70fd7c437 Mon Sep 17 00:00:00 2001
+From: unnatid <unnatid@qti.qualcomm.com>
+Date: Thu, 11 Dec 2025 17:48:05 +0530
+Subject: [PATCH] Openwrt: added a new option to set internal priority in
+ nftables
+
+This Change adds support for the internal priority field (int_pri)
+in nftables. It extends the nftables functionality to allow filtering
+and matching based on the skb->int_pri field in the Linux kernel.
+
+Signed-off-by: Unnati Dixit <unnatid@qti.qualcomm.com>
+---
+ include/datatype.h                  |  2 ++
+ include/linux/netfilter/nf_tables.h |  2 ++
+ include/meta.h                      |  1 +
+ src/datatype.c                      |  1 +
+ src/expression.c                    |  1 +
+ src/meta.c                          | 45 +++++++++++++++++++++++++++++
+ 6 files changed, 52 insertions(+)
+
+diff --git a/include/datatype.h b/include/datatype.h
+index df3bc38..2adb4b4 100644
+--- a/include/datatype.h
++++ b/include/datatype.h
+@@ -49,6 +49,7 @@
+  * @TYPE_TIME_HOUR	Hour type (integer subtype)
+  * @TYPE_TIME_DAY	Day type (integer subtype)
+  * @TYPE_CGROUPV2	cgroups v2 (integer subtype)
++ * @TYPE_INT_PRI	internal priority (integer subtype)
+  */
+ enum datatypes {
+ 	TYPE_INVALID,
+@@ -98,6 +99,7 @@ enum datatypes {
+ 	TYPE_TIME_HOUR,
+ 	TYPE_TIME_DAY,
+ 	TYPE_CGROUPV2,
++	TYPE_INT_PRI,
+ 	__TYPE_MAX
+ };
+ #define TYPE_MAX		(__TYPE_MAX - 1)
+diff --git a/include/linux/netfilter/nf_tables.h b/include/linux/netfilter/nf_tables.h
+index 8df6fbe..f88263d 100644
+--- a/include/linux/netfilter/nf_tables.h
++++ b/include/linux/netfilter/nf_tables.h
+@@ -936,6 +936,7 @@ enum nft_exthdr_attributes {
+  * @NFT_META_SDIF: slave device interface index
+  * @NFT_META_SDIFNAME: slave device interface name
+  * @NFT_META_BRI_BROUTE: packet br_netfilter_broute bit
++ * @NFT_META_INT_PRI: packet int_pri (skb->int_pri)
+  */
+ enum nft_meta_keys {
+ 	NFT_META_LEN,
+@@ -976,6 +977,7 @@ enum nft_meta_keys {
+ 	NFT_META_SDIFNAME,
+ 	NFT_META_BRI_BROUTE,
+ 	__NFT_META_IIFTYPE,
++	NFT_META_INT_PRI,
+ };
+
+ /**
+diff --git a/include/meta.h b/include/meta.h
+index af2d772..36aa78b 100644
+--- a/include/meta.h
++++ b/include/meta.h
+@@ -44,6 +44,7 @@ extern const struct datatype ifname_type;
+ extern const struct datatype date_type;
+ extern const struct datatype hour_type;
+ extern const struct datatype day_type;
++extern const struct datatype int_pri_type;
+
+ bool lhs_is_meta_hour(const struct expr *meta);
+
+diff --git a/src/datatype.c b/src/datatype.c
+index ea73eaf..1283e02 100644
+--- a/src/datatype.c
++++ b/src/datatype.c
+@@ -81,6 +81,7 @@ static const struct datatype *datatypes[TYPE_MAX + 1] = {
+ 	[TYPE_TIME_HOUR]	= &hour_type,
+ 	[TYPE_TIME_DAY]		= &day_type,
+ 	[TYPE_CGROUPV2]		= &cgroupv2_type,
++	[TYPE_INT_PRI]		= &int_pri_type,
+ };
+
+ const struct datatype *datatype_lookup(enum datatypes type)
+diff --git a/src/expression.c b/src/expression.c
+index c0cb7f2..efe8dfd 100644
+--- a/src/expression.c
++++ b/src/expression.c
+@@ -1083,6 +1083,7 @@ static const char *calculate_delim(const struct expr *expr, int *count)
+ 	case TYPE_CT_STATE:
+ 	case TYPE_CT_STATUS:
+ 	case TYPE_PKTTYPE:
++	case TYPE_INT_PRI:
+ 		if (*count < 2)
+ 			return singleline;
+ 		*count = 0;
+diff --git a/src/meta.c b/src/meta.c
+index a17bacf..602d2c6 100644
+--- a/src/meta.c
++++ b/src/meta.c
+@@ -579,6 +579,38 @@ success:
+ 	return NULL;
+ }
+
++static void int_pri_type_print(const struct expr *expr, struct output_ctx *octx)
++{
++	uint8_t int_pri = mpz_get_uint8(expr->value);
++
++	nft_print(octx, "%u", int_pri);
++}
++
++static struct error_record *int_pri_type_parse(struct parse_ctx *ctx,
++						const struct expr *sym,
++						struct expr **res)
++{
++	unsigned long int_pri_val;
++	uint8_t int_pri;
++	char *endptr;
++
++	errno = 0;
++	int_pri_val = strtoul(sym->identifier, &endptr, 10);
++	if (errno == ERANGE || int_pri_val == ULONG_MAX || *endptr != '\0') {
++		return error(&sym->location, "Could not parse %s", sym->dtype->desc);
++	}
++
++	if (int_pri_val > 15) {
++		return error(&sym->location, "Invalid priority value. Must be between 0 and 15.");
++	}
++
++	int_pri = (uint8_t)int_pri_val;
++	*res = constant_expr_alloc(&sym->location, sym->dtype,
++				BYTEORDER_HOST_ENDIAN,
++				sizeof(int_pri) * BITS_PER_BYTE, &int_pri);
++	return NULL;
++}
++
+ const struct datatype date_type = {
+ 	.type = TYPE_TIME_DATE,
+ 	.name = "time",
+@@ -612,6 +644,17 @@ const struct datatype hour_type = {
+ 	.parse = hour_type_parse,
+ };
+
++const struct datatype int_pri_type = {
++	.type = TYPE_INT_PRI,
++	.name = "int_pri",
++	.desc = "HW internal priority",
++	.byteorder = BYTEORDER_HOST_ENDIAN,
++	.size = sizeof(uint8_t) * BITS_PER_BYTE,
++	.basetype = &integer_type,
++	.print = int_pri_type_print,
++	.parse = int_pri_type_parse,
++};
++
+ const struct meta_template meta_templates[] = {
+ 	[NFT_META_LEN]		= META_TEMPLATE("length",    &integer_type,
+ 						4 * 8, BYTEORDER_HOST_ENDIAN),
+@@ -704,6 +747,8 @@ const struct meta_template meta_templates[] = {
+ 						BYTEORDER_HOST_ENDIAN),
+ 	[NFT_META_BRI_BROUTE]	= META_TEMPLATE("broute",   &integer_type,
+ 						1    , BYTEORDER_HOST_ENDIAN),
++	[NFT_META_INT_PRI]	= META_TEMPLATE("int_pri",   &int_pri_type,
++						1 * 8, BYTEORDER_HOST_ENDIAN),
+ };
+
+ static bool meta_key_is_unqualified(enum nft_meta_keys key)
+--
+2.34.1
+
