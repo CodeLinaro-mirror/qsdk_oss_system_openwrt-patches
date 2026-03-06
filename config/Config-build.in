@@ -37,3 +37,11 @@ config ENABLE_UBI_CORE
 	help
 	  This enables support for picking the correct KENREL_LOADADDR when UBI
 	  core is enabled on IPQ targets.
+
+config MEM_PROFILE_OPTIMIZED
+	bool
+        prompt "Optimized memory profile"
+	default n
+        help
+          This option select memory profile to used, which defines
+          the Optimized memory configuration used in network and wifi
