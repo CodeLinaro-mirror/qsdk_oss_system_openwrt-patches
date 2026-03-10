@@ -69,6 +69,12 @@ config KERNEL_CPU_FREQ_THERMAL
 config KERNEL_SKB_DEBUG
 	bool "Enable DEBUG Object support"
 
+config KERNEL_DEBUG_PAGEALLOC
+	bool "Debug page memory allocations"
+
+config KERNEL_DEBUG_PAGEALLOC_ENABLE_DEFAULT
+	bool "Enable debug page memory allocations by default"
+
 if KERNEL_SKB_DEBUG
 
 	config KERNEL_DEBUG_OBJECTS
