@@ -221,6 +221,26 @@ config KERNEL_IPQ_PROFILE_MINENT
 	Enable/Disable MINENT kernel config. Used to enable specific minent
 	features for MINENT profile.
 
+config KERNEL_UBSAN
+	bool "Compile the kernel with undefined behaviour sanity checker"
+	depends on KERNEL_IPQ_PROFILE_MINENT
+
+config KERNEL_UBSAN_DIV_ZERO
+	bool "Perform checking for integer divide-by-zero"
+	depends on KERNEL_UBSAN
+	help
+	  This option enables -fsanitize=integer-divide-by-zero which checks
+	  for integer division by zero. This is effectively redundant with the
+	  kernel's existing exception handling, though it can provide greater
+	  debugging information under CONFIG_UBSAN_REPORT_FULL.
+
+config KERNEL_UBSAN_UNREACHABLE
+	bool "Perform checking for unreachable code"
+	depends on KERNEL_UBSAN
+	help
+	  This option enables -fsanitize=unreachable which checks for control
+	  flow reaching an expected-to-be-unreachable position.
+
 config KERNEL_KFENCE
 	bool "KFENCE: low-overhead sampling-based memory safety error detector"
 	help
