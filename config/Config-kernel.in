@@ -217,17 +217,15 @@ config KERNEL_GCOV_KERNEL
 config KERNEL_IPQ_PROFILE_MINENT
 	bool "Select minent build profile"
 	default n
+	select KERNEL_UBSAN if KERNEL_FTRACE
 	help
 	Enable/Disable MINENT kernel config. Used to enable specific minent
 	features for MINENT profile.
 
-config KERNEL_UBSAN
-	bool "Compile the kernel with undefined behaviour sanity checker"
-	depends on KERNEL_IPQ_PROFILE_MINENT
-
 config KERNEL_UBSAN_DIV_ZERO
 	bool "Perform checking for integer divide-by-zero"
 	depends on KERNEL_UBSAN
+	default y
 	help
 	  This option enables -fsanitize=integer-divide-by-zero which checks
 	  for integer division by zero. This is effectively redundant with the
@@ -237,6 +235,7 @@ config KERNEL_UBSAN_DIV_ZERO
 config KERNEL_UBSAN_UNREACHABLE
 	bool "Perform checking for unreachable code"
 	depends on KERNEL_UBSAN
+	default y
 	help
 	  This option enables -fsanitize=unreachable which checks for control
 	  flow reaching an expected-to-be-unreachable position.
