@@ -225,7 +225,6 @@ config KERNEL_IPQ_PROFILE_MINENT
 config KERNEL_UBSAN_DIV_ZERO
 	bool "Perform checking for integer divide-by-zero"
 	depends on KERNEL_UBSAN
-	default y
 	help
 	  This option enables -fsanitize=integer-divide-by-zero which checks
 	  for integer division by zero. This is effectively redundant with the
@@ -235,7 +234,6 @@ config KERNEL_UBSAN_DIV_ZERO
 config KERNEL_UBSAN_UNREACHABLE
 	bool "Perform checking for unreachable code"
 	depends on KERNEL_UBSAN
-	default y
 	help
 	  This option enables -fsanitize=unreachable which checks for control
 	  flow reaching an expected-to-be-unreachable position.
