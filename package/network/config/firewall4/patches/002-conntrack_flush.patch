@@ -11,38 +11,38 @@ Date:   Tue Aug 22 11:31:34 2023 -0700
     Change-Id: Id260208dead71ff781b9f0658f7f8dadb753b7b4
     Signed-off-by: Murat Sezgin <quic_msezgin@quicinc.com>
 
-Index: firewall4-2023-03-23-04a06bd7/root/etc/init.d/firewall
+Index: firewall4-2024.12.18~18fc0ead/root/etc/init.d/firewall
 ===================================================================
---- firewall4-2023-03-23-04a06bd7.orig/root/etc/init.d/firewall
-+++ firewall4-2023-03-23-04a06bd7/root/etc/init.d/firewall
-@@ -10,18 +10,30 @@ service_triggers() {
+--- firewall4-2024.12.18~18fc0ead.orig/root/etc/init.d/firewall	2024-12-18 15:04:15.000000000 +0530
++++ firewall4-2024.12.18~18fc0ead/root/etc/init.d/firewall	2026-03-25 11:18:05.524452098 +0530
+@@ -11,18 +11,30 @@
  
  restart() {
  	fw4 restart
 +
-+	#flush conntrack table
-+	echo f > /proc/net/nf_conntrack
++        #flush conntrack table
++        echo f > /proc/net/nf_conntrack
  }
  
  start_service() {
  	fw4 ${QUIET} start
 +
-+	#flush conntrack table
-+	echo f > /proc/net/nf_conntrack
++        #flush conntrack table
++        echo f > /proc/net/nf_conntrack
  }
  
  stop_service() {
  	fw4 flush
 +
-+	#flush conntrack table
-+	echo f > /proc/net/nf_conntrack
++        #flush conntrack table
++        echo f > /proc/net/nf_conntrack
  }
  
  reload_service() {
  	fw4 reload
 +
-+	#flush conntrack table
-+	echo f > /proc/net/nf_conntrack
++        #flush conntrack table
++        echo f > /proc/net/nf_conntrack
  }
  
  boot() {
