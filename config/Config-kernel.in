@@ -302,6 +302,43 @@ if KERNEL_KFENCE
 
 endif
 
+config KERNEL_SECURITYFS
+	bool "Enable the securityfs filesystem"
+	depends on KERNEL_SECURITY
+	help
+	  This will build the securityfs filesystem.  It is currently used by
+	  various security modules (AppArmor, IMA, SafeSetID, TOMOYO, TPM).
+
+	  If you are unsure how to answer this question, answer N.
+
+config KERNEL_SECURITY_PATH
+	bool "Security hooks for pathname based access control"
+	depends on KERNEL_SECURITY
+	help
+	  This enables the security hooks for pathname based access control.
+	  If enabled, a security module can use these hooks to
+	  implement pathname based access controls.
+	  If you are unsure how to answer this question, answer N.
+
+if KERNEL_SECURITY_SELINUX
+
+	config KERNEL_SECURITY_SELINUX_AVC_STATS
+		bool "SELinux AVC Statistics"
+		default n
+		help
+		  This option collects access vector cache statistics to
+		  /sys/fs/selinux/avc/cache_stats, which may be monitored via
+		  tools such as avcstat.
+
+	config KERNEL_DEFAULT_SECURITY_SELINUX
+		bool "Use SELinux as default security module"
+		default n
+		help
+		  This option instructs the kernel to use the SELinux security
+		  module as the default security module.
+
+endif
+
 #
 # KUnit base configuration
 #
