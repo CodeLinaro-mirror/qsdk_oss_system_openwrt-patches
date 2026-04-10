@@ -1,0 +1,438 @@
+#!/bin/sh
+#
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: ISC
+#
+# PTP chain sequencer
+#
+# Waits for ptp4l to reach s2 (servo locked), then starts ts2phc and phc2sys
+# in sequence so that the XGMAC PHC is set before phc2sys tries to step the
+# system clock.
+#
+# Sequence:
+#   1. Kill any orphaned ts2phc/phc2sys from a previous run
+#   2. Poll pmc until ptp4l offsetFromMaster is stable (< 100 ns for 3 reads)
+#   3. Start ts2phc (if --ts2phc-src and --ts2phc-dst are given)
+#      ts2phc stdout is piped through logger so output appears in logread
+#   4. Poll logread until ts2phc offset < 1000 ns (XGMAC PHC synced)
+#   5. Query UTC-TAI offset from ptp4l via pmc
+#   6. Start phc2sys (if --phc2sys-src is given)
+#      phc2sys stdout is piped through logger so output appears in logread
+#   7. Monitor loop:
+#      - If ptp4l loses sync (link down/up), kill ts2phc+phc2sys and redo
+#        steps 2-6 once ptp4l re-syncs.  This is necessary because a ptp4l
+#        PHC step after link recovery misaligns the PPS output, causing the
+#        XGMAC driver to reject pulses as "PPS glitch".
+#      - If ts2phc or phc2sys exit unexpectedly, restart them.
+#   8. Exit cleanly on SIGTERM (procd will respawn the whole chain)
+#
+# Process liveness is tracked by name via 'killall -0' (no pkill on board).
+# Installed to /usr/sbin/ptp-sequencer by the linuxptp package.
+
+TS2PHC_BIN=/usr/sbin/ts2phc
+PHC2SYS_BIN=/usr/sbin/phc2sys
+
+# Defaults (overridden by command-line args)
+TS2PHC_SRC=""
+TS2PHC_DST=""
+TS2PHC_OPTS=""
+PHC2SYS_SRC=""
+PHC2SYS_STEP="0.128"
+PHC2SYS_OPTS=""
+SYNC_TIMEOUT=300         # seconds to wait for ptp4l sync before giving up
+PTP4L_STABLE_THRESH=100  # ns - ptp4l considered stable when |offset| < this
+PTP4L_STABLE_COUNT=3     # number of consecutive stable readings required
+PTP4L_LOST_THRESH=5000   # ns - ptp4l considered lost when |offset| > this
+PTP4L_LOST_COUNT=3       # consecutive large-offset readings before declaring lost
+TS2PHC_SYNC_TIMEOUT=120  # seconds to wait for ts2phc to sync before starting phc2sys
+TS2PHC_SYNC_THRESHOLD=1000  # ns - ts2phc considered synced when |offset| < this
+
+RUNNING=1
+
+# ---------------------------------------------------------------------------
+# Parse command-line arguments
+# ---------------------------------------------------------------------------
+while [ $# -gt 0 ]; do
+	case "$1" in
+		--ts2phc-src)          TS2PHC_SRC="$2";            shift 2 ;;
+		--ts2phc-dst)          TS2PHC_DST="$2";            shift 2 ;;
+		--ts2phc-opts)         TS2PHC_OPTS="$2";           shift 2 ;;
+		--phc2sys-src)         PHC2SYS_SRC="$2";           shift 2 ;;
+		--phc2sys-step)        PHC2SYS_STEP="$2";          shift 2 ;;
+		--phc2sys-opts)        PHC2SYS_OPTS="$2";          shift 2 ;;
+		--sync-timeout)        SYNC_TIMEOUT="$2";          shift 2 ;;
+		--ts2phc-sync-timeout) TS2PHC_SYNC_TIMEOUT="$2";   shift 2 ;;
+		--ts2phc-sync-thresh)  TS2PHC_SYNC_THRESHOLD="$2"; shift 2 ;;
+		*) shift ;;
+	esac
+done
+
+# ---------------------------------------------------------------------------
+# Cleanup handler: kill children by name and exit
+# ---------------------------------------------------------------------------
+cleanup() {
+	RUNNING=0
+	logger -t ptp -p info "ptp-sequencer: stopping ts2phc and phc2sys"
+	killall -q phc2sys 2>/dev/null
+	killall -q ts2phc  2>/dev/null
+	wait
+	exit 0
+}
+trap cleanup TERM INT
+
+# ---------------------------------------------------------------------------
+# Kill any orphaned ts2phc/phc2sys left over from a previous sequencer run.
+# This prevents two instances of the same daemon fighting over the same PHC.
+# ---------------------------------------------------------------------------
+logger -t ptp -p info "ptp-sequencer: clearing any orphaned ts2phc/phc2sys"
+killall -q ts2phc  2>/dev/null
+killall -q phc2sys 2>/dev/null
+sleep 1
+
+# ---------------------------------------------------------------------------
+# Wait for ptp4l to reach a stable sync state.
+#
+# Two-phase wait:
+#   Phase 1: Wait for ptp4l to reach s2 (|offsetFromMaster| < 1000 ns)
+#   Phase 2: Wait for the PHC to stabilise (|offsetFromMaster| < 100 ns
+#            for PTP4L_STABLE_COUNT consecutive readings, 2 s apart)
+#
+# This is necessary because ts2phc uses eth5's PHC as a PPS source.  If the
+# PHC has only just been stepped (s1) and is still slewing, the PPS output
+# may not be aligned to the correct second boundary, causing the XGMAC driver
+# to reject the pulses as "PPS glitch".
+#
+# Notes:
+#  - pmc command name is CURRENT_DATA_SET (not CURRENT_DS) on this build
+#  - offsetFromMaster is reported as a float (e.g. "3.0"); strip the decimal
+#    part before integer comparison
+# ---------------------------------------------------------------------------
+wait_ptp4l_sync() {
+	local elapsed=0
+	local offset int_offset abs_offset
+	local stable_count=0
+
+	logger -t ptp -p info \
+		"ptp-sequencer: waiting for ptp4l sync (timeout: ${SYNC_TIMEOUT}s, stable threshold: ${PTP4L_STABLE_THRESH}ns x${PTP4L_STABLE_COUNT})"
+
+	while [ "$elapsed" -lt "$SYNC_TIMEOUT" ]; do
+		if [ "$RUNNING" -eq 0 ]; then
+			return 1
+		fi
+		# ptp4l creates its UDS socket at /var/run/ptp4l when it starts
+		if [ -S /var/run/ptp4l ]; then
+			offset=$(pmc -u -b 0 'GET CURRENT_DATA_SET' 2>/dev/null \
+				| awk '/offsetFromMaster/ { print $2; exit }')
+			if [ -n "$offset" ]; then
+				# Strip decimal part: "3.0" -> "3", "-5.0" -> "-5"
+				int_offset="${offset%.*}"
+				abs_offset="${int_offset#-}"
+
+				# Sanity check: ptp4l reports INT64_MAX/2 (~1.4e14 ns) when
+				# the port is in LISTENING or UNCALIBRATED state (not yet a
+				# slave).  Skip values > 1 second (1e9 ns) as invalid.
+				if [ "$abs_offset" -gt 1000000000 ] 2>/dev/null; then
+					stable_count=0
+					sleep 2
+					elapsed=$((elapsed + 2))
+					continue
+				fi
+
+				if [ "$abs_offset" -lt "$PTP4L_STABLE_THRESH" ] 2>/dev/null; then
+					stable_count=$((stable_count + 1))
+					logger -t ptp -p info \
+						"ptp-sequencer: ptp4l stable reading ${stable_count}/${PTP4L_STABLE_COUNT} (offset=${offset}ns)"
+					if [ "$stable_count" -ge "$PTP4L_STABLE_COUNT" ]; then
+						logger -t ptp -p info \
+							"ptp-sequencer: ptp4l PHC stable, proceeding to ts2phc"
+						return 0
+					fi
+				else
+					# Reset stable count if offset is too large
+					if [ "$stable_count" -gt 0 ]; then
+						logger -t ptp -p info \
+							"ptp-sequencer: ptp4l offset ${offset}ns > threshold, resetting stable count"
+						stable_count=0
+					fi
+				fi
+			fi
+		fi
+		sleep 2
+		elapsed=$((elapsed + 2))
+	done
+
+	logger -t ptp -p warn \
+		"ptp-sequencer: ptp4l sync timeout after ${SYNC_TIMEOUT}s; proceeding anyway"
+	return 1
+}
+
+# ---------------------------------------------------------------------------
+# Check if ptp4l has lost sync.
+# Returns 0 (true) if ptp4l offset > PTP4L_LOST_THRESH for PTP4L_LOST_COUNT
+# consecutive readings.  Returns 1 (false) if ptp4l is still synced.
+#
+# Uses a global counter ptp4l_lost_count to track consecutive bad readings
+# across monitor loop iterations.
+# ---------------------------------------------------------------------------
+ptp4l_lost_count=0
+
+check_ptp4l_lost() {
+	local offset int_offset abs_offset
+
+	if [ ! -S /var/run/ptp4l ]; then
+		# ptp4l socket gone — definitely lost
+		ptp4l_lost_count=$((ptp4l_lost_count + 1))
+	else
+		offset=$(pmc -u -b 0 'GET CURRENT_DATA_SET' 2>/dev/null \
+			| awk '/offsetFromMaster/ { print $2; exit }')
+		if [ -z "$offset" ]; then
+			# pmc failed — count as lost
+			ptp4l_lost_count=$((ptp4l_lost_count + 1))
+		else
+			int_offset="${offset%.*}"
+			abs_offset="${int_offset#-}"
+			if [ "$abs_offset" -gt "$PTP4L_LOST_THRESH" ] 2>/dev/null; then
+				ptp4l_lost_count=$((ptp4l_lost_count + 1))
+				logger -t ptp -p warn \
+					"ptp-sequencer: ptp4l offset ${offset}ns > lost threshold (${ptp4l_lost_count}/${PTP4L_LOST_COUNT})"
+			else
+				# Offset is fine — reset counter
+				ptp4l_lost_count=0
+				return 1
+			fi
+		fi
+	fi
+
+	if [ "$ptp4l_lost_count" -ge "$PTP4L_LOST_COUNT" ]; then
+		ptp4l_lost_count=0
+		return 0  # lost
+	fi
+	return 1  # not yet confirmed lost
+}
+
+# ---------------------------------------------------------------------------
+# Query UTC-TAI offset from ptp4l via pmc
+#
+# Uses GET TIME_PROPERTIES_DATA_SET (full name required on this pmc build).
+# Only trusts currentUtcOffset when currentUtcOffsetValid = 1.
+# Falls back to -37 (TAI-UTC = 37 s, valid since 2017-01-01) when:
+#   - pmc fails / ptp4l not synced (raw is empty)
+#   - currentUtcOffsetValid = 0 (grandmaster not advertising valid offset)
+# ---------------------------------------------------------------------------
+get_utc_tai_offset() {
+	local raw valid fallback="-37"
+	local pmc_out
+
+	pmc_out=$(pmc -u -b 0 'GET TIME_PROPERTIES_DATA_SET' 2>/dev/null)
+
+	# Match "currentUtcOffset" but NOT "currentUtcOffsetValid"
+	raw=$(echo "$pmc_out" \
+		| awk '/currentUtcOffset[^V]/ { print $2; exit }')
+	valid=$(echo "$pmc_out" \
+		| awk '/currentUtcOffsetValid/ { print $2; exit }')
+
+	if [ -z "$raw" ]; then
+		logger -t ptp -p warn \
+			"ptp-sequencer: pmc GET TIME_PROPERTIES_DATA_SET failed; using fallback ${fallback}s"
+		echo "$fallback"
+	elif [ "$valid" != "1" ]; then
+		logger -t ptp -p warn \
+			"ptp-sequencer: currentUtcOffsetValid=0 (grandmaster not advertising UTC offset); using fallback ${fallback}s"
+		echo "$fallback"
+	else
+		logger -t ptp -p info \
+			"ptp-sequencer: UTC-TAI offset from ptp4l: -${raw}s (currentUtcOffsetValid=1)"
+		echo "-${raw}"
+	fi
+}
+
+# ---------------------------------------------------------------------------
+# Wait for ts2phc to sync the XGMAC PHC (|offset| < TS2PHC_SYNC_THRESHOLD ns)
+#
+# ts2phc stdout is piped through 'logger -t ts2phc' by start_ts2phc(), so
+# every ts2phc output line appears in logread as:
+#   "user.info ts2phc[PID]: [ts] /dev/ptp1 offset   -17 s2 freq ..."
+#
+# To avoid matching stale ts2phc lines from a previous run (e.g. after a
+# link down/up recovery), start_ts2phc() writes a unique sentinel line to
+# syslog before starting ts2phc.  wait_ts2phc_sync() only considers logread
+# lines that appear after the sentinel.  This is robust against log restarts:
+# if logd is restarted and the buffer is cleared, the sentinel is gone too,
+# so there are no stale lines to match — the sequencer simply waits for new
+# ts2phc output.
+# ---------------------------------------------------------------------------
+
+# Sentinel tag written to syslog just before ts2phc starts.
+# Uses the sequencer PID so it is unique across sequencer restarts.
+TS2PHC_SENTINEL="ts2phc-start-$$"
+
+wait_ts2phc_sync() {
+	local elapsed=0
+	local offset int_offset abs_offset line
+
+	logger -t ptp -p info \
+		"ptp-sequencer: waiting for ts2phc to sync (timeout: ${TS2PHC_SYNC_TIMEOUT}s, threshold: ${TS2PHC_SYNC_THRESHOLD}ns)"
+
+	# Brief initial wait so ts2phc has time to produce its first log line
+	sleep 3
+	elapsed=3
+
+	while [ "$elapsed" -lt "$TS2PHC_SYNC_TIMEOUT" ]; do
+		if [ "$RUNNING" -eq 0 ]; then
+			return 1
+		fi
+		# Only consider ts2phc lines that appeared after the sentinel.
+		# awk prints lines after the sentinel that contain "s2 freq".
+		# If the sentinel is absent (logd restarted), awk finds nothing —
+		# the sequencer waits for new ts2phc output, which is correct.
+		line=$(logread 2>/dev/null \
+			| awk "/ts2phc: === ${TS2PHC_SENTINEL} ===/{found=1; next} \
+			       found && / ts2phc\[/ && / s2 freq/{print}" \
+			| tail -1)
+		if [ -n "$line" ]; then
+			offset=$(echo "$line" \
+				| awk '{ for(i=1;i<=NF;i++) if($i=="offset") { print $(i+1); break } }')
+			if [ -n "$offset" ]; then
+				int_offset="${offset%.*}"
+				abs_offset="${int_offset#-}"
+				if [ "$abs_offset" -lt "$TS2PHC_SYNC_THRESHOLD" ] 2>/dev/null; then
+					logger -t ptp -p info \
+						"ptp-sequencer: ts2phc synced (offset=${offset}ns)"
+					return 0
+				else
+					logger -t ptp -p info \
+						"ptp-sequencer: ts2phc not yet synced (offset=${offset}ns, threshold=${TS2PHC_SYNC_THRESHOLD}ns)"
+				fi
+			fi
+		else
+			logger -t ptp -p info \
+				"ptp-sequencer: ts2phc poll: no s2 line after sentinel yet (elapsed=${elapsed}s)"
+		fi
+		sleep 2
+		elapsed=$((elapsed + 2))
+	done
+
+	logger -t ptp -p warn \
+		"ptp-sequencer: ts2phc sync timeout after ${TS2PHC_SYNC_TIMEOUT}s; starting phc2sys anyway"
+	return 1
+}
+
+# ---------------------------------------------------------------------------
+# Start ts2phc
+# ts2phc -s <src> -c <dst> -m [extra opts]
+#
+# Writes a unique sentinel to syslog before starting ts2phc so that
+# wait_ts2phc_sync() can ignore stale lines from previous runs.
+# stdout is piped through 'logger -t ts2phc' so every output line appears in
+# logread and can be grepped by wait_ts2phc_sync().
+# ---------------------------------------------------------------------------
+start_ts2phc() {
+	if [ -z "$TS2PHC_SRC" ] || [ -z "$TS2PHC_DST" ]; then
+		logger -t ptp -p warn \
+			"ptp-sequencer: ts2phc source or destination not set, skipping ts2phc"
+		return 1
+	fi
+	logger -t ptp -p info \
+		"ptp-sequencer: starting ts2phc -s $TS2PHC_SRC -c $TS2PHC_DST"
+	# Write sentinel to syslog so wait_ts2phc_sync() can ignore stale lines
+	logger -t ts2phc -p user.info "=== ${TS2PHC_SENTINEL} ==="
+	# Pipe stdout+stderr through logger so output appears in logread as
+	# "ts2phc[PID]: [timestamp] /dev/ptp1 offset N sX freq F"
+	# shellcheck disable=SC2086
+	"$TS2PHC_BIN" -s "$TS2PHC_SRC" -c "$TS2PHC_DST" -m $TS2PHC_OPTS \
+		2>&1 | logger -t ts2phc -p user.info &
+	logger -t ptp -p info "ptp-sequencer: ts2phc started"
+}
+
+# ---------------------------------------------------------------------------
+# Start phc2sys
+#
+# stdout is piped through 'logger -t phc2sys' so output appears in logread.
+# ---------------------------------------------------------------------------
+start_phc2sys() {
+	local utc_tai_offset
+	if [ -z "$PHC2SYS_SRC" ]; then
+		logger -t ptp -p warn \
+			"ptp-sequencer: no phc2sys source configured, skipping phc2sys"
+		return 1
+	fi
+	utc_tai_offset=$(get_utc_tai_offset)
+	logger -t ptp -p info \
+		"ptp-sequencer: starting phc2sys $PHC2SYS_SRC -> CLOCK_REALTIME (UTC-TAI=${utc_tai_offset}s)"
+	# shellcheck disable=SC2086
+	"$PHC2SYS_BIN" \
+		-s "$PHC2SYS_SRC" \
+		-c CLOCK_REALTIME \
+		-O "$utc_tai_offset" \
+		-m \
+		-S "$PHC2SYS_STEP" \
+		$PHC2SYS_OPTS \
+		2>&1 | logger -t phc2sys -p user.info &
+	logger -t ptp -p info "ptp-sequencer: phc2sys started"
+}
+
+# ---------------------------------------------------------------------------
+# Stop ts2phc and phc2sys (used when ptp4l loses sync)
+# ---------------------------------------------------------------------------
+stop_ts2phc_phc2sys() {
+	logger -t ptp -p info \
+		"ptp-sequencer: stopping ts2phc and phc2sys (ptp4l lost sync)"
+	killall -q phc2sys 2>/dev/null
+	killall -q ts2phc  2>/dev/null
+	sleep 1
+}
+
+# ---------------------------------------------------------------------------
+# Full resync sequence: wait for ptp4l stable, start ts2phc, wait for sync,
+# start phc2sys.  Called at startup and after ptp4l loses/regains sync.
+# ---------------------------------------------------------------------------
+do_sync_sequence() {
+	wait_ptp4l_sync
+	[ "$RUNNING" -eq 0 ] && return
+
+	if [ -n "$TS2PHC_SRC" ] && [ -n "$TS2PHC_DST" ]; then
+		start_ts2phc
+		wait_ts2phc_sync
+	fi
+	[ "$RUNNING" -eq 0 ] && return
+
+	if [ -n "$PHC2SYS_SRC" ]; then
+		start_phc2sys
+	fi
+}
+
+# ===========================================================================
+# Main sequence
+# ===========================================================================
+
+# Initial sync sequence
+do_sync_sequence
+
+# Monitor loop: watch for ptp4l losing sync (link down/up) and unexpected exits
+logger -t ptp -p info "ptp-sequencer: entering monitor loop"
+while [ "$RUNNING" -eq 1 ]; do
+	sleep 5
+
+	# Check if ptp4l has lost sync (e.g. link down/up)
+	if check_ptp4l_lost; then
+		logger -t ptp -p warn \
+			"ptp-sequencer: ptp4l lost sync, stopping ts2phc/phc2sys and waiting for re-sync"
+		stop_ts2phc_phc2sys
+		# Wait for ptp4l to re-sync and redo the full sequence
+		do_sync_sequence
+		logger -t ptp -p info "ptp-sequencer: re-sync complete, resuming monitor loop"
+		continue
+	fi
+
+	# Restart ts2phc if it exited unexpectedly (and ptp4l is still synced)
+	if [ -n "$TS2PHC_SRC" ] && ! killall -0 ts2phc 2>/dev/null; then
+		logger -t ptp -p warn "ptp-sequencer: ts2phc exited unexpectedly, restarting"
+		start_ts2phc
+	fi
+
+	# Restart phc2sys if it exited unexpectedly (and ptp4l is still synced)
+	if [ -n "$PHC2SYS_SRC" ] && ! killall -0 phc2sys 2>/dev/null; then
+		logger -t ptp -p warn "ptp-sequencer: phc2sys exited unexpectedly, restarting"
+		start_phc2sys
+	fi
+done

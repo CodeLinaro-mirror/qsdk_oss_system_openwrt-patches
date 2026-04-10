@@ -1,0 +1,105 @@
+#!/bin/sh
+#
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: ISC
+#
+# PTP (IEEE 1588 / Precision Time Protocol) firewall rules
+#
+# This script is executed by fw3/fw4 after their own setup, via the
+# 'config include ptp' entry in /etc/config/firewall (added by
+# /etc/uci-defaults/99-ptp at first boot).
+#
+# Allows:
+#   - PTP Event   messages  UDP port 319  (L3)
+#   - PTP General messages  UDP port 320  (L3)
+#   - PTP IPv4 multicast    224.0.1.129   (L3)
+#   - PTP IPv6 multicast    ff02::6b      (L3)
+#   - PTP Ethernet frames   EtherType 0x88F7 (L2, fw4 via nft / fw3 via ebtables)
+#
+# NOTE: rules are INSERTED at the front of the chain (not appended) so they
+# are evaluated before the 'jump handle_reject' rule that fw4/fw3 places at
+# the end of the input/forward chains.
+
+PTP_EVENT_PORT=319
+PTP_GENERAL_PORT=320
+PTP_ETHERTYPE=0x88F7
+PTP_MCAST_IPV4="224.0.1.129"
+PTP_MCAST_IPV6="ff02::6b"
+
+if [ -x /usr/sbin/nft ] && nft list table inet fw4 >/dev/null 2>&1; then
+	# ---- fw4 / nftables ----
+	# Use 'nft insert rule' so PTP rules are placed at the TOP of the chain,
+	# before fw4's 'jump handle_reject' terminal rule.
+	# Rules are inserted in reverse order so the final order is:
+	#   1. udp dport { 319, 320 } accept
+	#   2. ip  daddr 224.0.1.129 accept
+	#   3. ip6 daddr ff02::6b    accept
+	# (insert prepends, so last insert ends up first)
+
+	# input chain (inserted in reverse order; first insert ends up last)
+	nft insert rule inet fw4 input \
+		ether type $PTP_ETHERTYPE accept \
+		comment '"PTP Ethernet input"'
+	nft insert rule inet fw4 input \
+		ip6 daddr $PTP_MCAST_IPV6 accept \
+		comment '"PTP IPv6 mcast input"'
+	nft insert rule inet fw4 input \
+		ip daddr $PTP_MCAST_IPV4 accept \
+		comment '"PTP IPv4 mcast input"'
+	nft insert rule inet fw4 input \
+		udp dport { $PTP_EVENT_PORT, $PTP_GENERAL_PORT } accept \
+		comment '"PTP UDP input"'
+
+	# forward chain (inserted in reverse order; first insert ends up last)
+	nft insert rule inet fw4 forward \
+		ether type $PTP_ETHERTYPE accept \
+		comment '"PTP Ethernet forward"'
+	nft insert rule inet fw4 forward \
+		ip6 daddr $PTP_MCAST_IPV6 accept \
+		comment '"PTP IPv6 mcast forward"'
+	nft insert rule inet fw4 forward \
+		ip daddr $PTP_MCAST_IPV4 accept \
+		comment '"PTP IPv4 mcast forward"'
+	nft insert rule inet fw4 forward \
+		udp dport { $PTP_EVENT_PORT, $PTP_GENERAL_PORT } accept \
+		comment '"PTP UDP forward"'
+else
+	# ---- fw3 / iptables ----
+	# -I inserts at position 1 (top of chain), before any DROP/REJECT rules.
+
+	# IPv4: UDP 319/320 and multicast
+	iptables -w -C INPUT -p udp -m multiport \
+		--dports ${PTP_EVENT_PORT},${PTP_GENERAL_PORT} -j ACCEPT 2>/dev/null || \
+	iptables -w -I INPUT 1 -p udp -m multiport \
+		--dports ${PTP_EVENT_PORT},${PTP_GENERAL_PORT} -j ACCEPT
+
+	iptables -w -C INPUT -d ${PTP_MCAST_IPV4} -j ACCEPT 2>/dev/null || \
+	iptables -w -I INPUT 1 -d ${PTP_MCAST_IPV4} -j ACCEPT
+
+	iptables -w -C FORWARD -p udp -m multiport \
+		--dports ${PTP_EVENT_PORT},${PTP_GENERAL_PORT} -j ACCEPT 2>/dev/null || \
+	iptables -w -I FORWARD 1 -p udp -m multiport \
+		--dports ${PTP_EVENT_PORT},${PTP_GENERAL_PORT} -j ACCEPT
+
+	# IPv6: UDP 319/320 and multicast
+	ip6tables -w -C INPUT -p udp -m multiport \
+		--dports ${PTP_EVENT_PORT},${PTP_GENERAL_PORT} -j ACCEPT 2>/dev/null || \
+	ip6tables -w -I INPUT 1 -p udp -m multiport \
+		--dports ${PTP_EVENT_PORT},${PTP_GENERAL_PORT} -j ACCEPT
+
+	ip6tables -w -C INPUT -d ${PTP_MCAST_IPV6} -j ACCEPT 2>/dev/null || \
+	ip6tables -w -I INPUT 1 -d ${PTP_MCAST_IPV6} -j ACCEPT
+
+	ip6tables -w -C FORWARD -p udp -m multiport \
+		--dports ${PTP_EVENT_PORT},${PTP_GENERAL_PORT} -j ACCEPT 2>/dev/null || \
+	ip6tables -w -I FORWARD 1 -p udp -m multiport \
+		--dports ${PTP_EVENT_PORT},${PTP_GENERAL_PORT} -j ACCEPT
+
+	# Layer 2: EtherType 0x88F7 via ebtables (if available)
+	if [ -x /usr/sbin/ebtables ]; then
+		ebtables -C INPUT   -p ${PTP_ETHERTYPE} -j ACCEPT 2>/dev/null || \
+		ebtables -I INPUT   1 -p ${PTP_ETHERTYPE} -j ACCEPT
+		ebtables -C FORWARD -p ${PTP_ETHERTYPE} -j ACCEPT 2>/dev/null || \
+		ebtables -I FORWARD 1 -p ${PTP_ETHERTYPE} -j ACCEPT
+	fi
+fi
