@@ -38,7 +38,7 @@ get_ptp_capable_interfaces() {
 	local iface
 	for iface in $(ls /sys/class/net/ 2>/dev/null); do
 		[ "$iface" = "lo" ] && continue
-		if ethtool -T "$iface" 2>/dev/null | grep -q "PTP Hardware Clock"; then
+		if ethtool -T "$iface" 2>/dev/null | grep -qE "PTP Hardware Clock: [0-9]+"; then
 			result="$result $iface"
 		fi
 	done
