@@ -1,0 +1,488 @@
+#!/bin/sh /etc/rc.common
+#
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: ISC
+#
+# PTP (Precision Time Protocol) init script for OpenWrt
+#
+# Sync chain:
+#   External PTP Master
+#     -> ptp4l  (WAN/eth0, slave mode)       -- syncs eth0 PHC from external master
+#     -> ts2phc (eth0 PHC -> XGMAC PHC)      -- copies time to XGMAC hardware clock
+#     -> phc2sys (XGMAC PHC -> system clock) -- keeps system time in sync
+#
+# ptp4l is started as a direct procd instance.
+# ts2phc and phc2sys are started by /usr/sbin/ptp-sequencer (a second procd
+# instance) which waits for ptp4l to reach s2 before starting ts2phc, and
+# then waits for the XGMAC PHC to settle before starting phc2sys.  This
+# prevents phc2sys from trying to step the system clock by decades when the
+# XGMAC PHC has not yet been set.
+#
+# Firewall rules for PTP traffic are managed separately via
+# /etc/firewall.d/ptp (registered as a fw3/fw4 include in /etc/config/firewall
+# by /etc/uci-defaults/99-ptp at first boot).
+
+START=99
+STOP=10
+USE_PROCD=1
+
+PTP4L_BIN=/usr/sbin/ptp4l
+PTP_SEQUENCER_BIN=/usr/sbin/ptp-sequencer
+PTP4L_CONF=/tmp/ptp4l-auto.conf
+
+# ---------------------------------------------------------------------------
+# Helper: enumerate all network interfaces with PTP hardware clock capability
+# ---------------------------------------------------------------------------
+get_ptp_capable_interfaces() {
+	local result=""
+	local iface
+	for iface in $(ls /sys/class/net/ 2>/dev/null); do
+		[ "$iface" = "lo" ] && continue
+		if ethtool -T "$iface" 2>/dev/null | grep -q "PTP Hardware Clock"; then
+			result="$result $iface"
+		fi
+	done
+	echo "$result"
+}
+
+# ---------------------------------------------------------------------------
+# Helper: get the PHC device number for a given network interface
+# Returns just the numeric index (e.g. "0" for /dev/ptp0).
+# ---------------------------------------------------------------------------
+get_phc_num_for_iface() {
+	local iface="$1"
+	ethtool -T "$iface" 2>/dev/null \
+		| grep "PTP Hardware Clock" \
+		| grep -o '[0-9]\+' \
+		| head -1
+}
+
+# ---------------------------------------------------------------------------
+# Helper: find the XGMAC PTP device that is linked up
+# ---------------------------------------------------------------------------
+get_xgmac_ptp_device() {
+	local fallback_dev=""
+	local ptp_sysfs dev_name ptp_num clock_name iface iface_ptp_num operstate
+
+	for ptp_sysfs in /sys/class/ptp/ptp*; do
+		[ -d "$ptp_sysfs" ] || continue
+		[ -f "$ptp_sysfs/clock_name" ] || continue
+
+		clock_name=$(cat "$ptp_sysfs/clock_name" 2>/dev/null)
+
+		if echo "$clock_name" | grep -qi "xgmac"; then
+			dev_name=$(basename "$ptp_sysfs")
+			ptp_num="${dev_name#ptp}"
+
+			for iface in $(ls /sys/class/net/ 2>/dev/null); do
+				[ "$iface" = "lo" ] && continue
+				iface_ptp_num=$(get_phc_num_for_iface "$iface")
+				if [ "$iface_ptp_num" = "$ptp_num" ]; then
+					operstate=$(cat "/sys/class/net/$iface/operstate" 2>/dev/null)
+					if [ "$operstate" = "up" ]; then
+						logger -t ptp -p info \
+							"XGMAC PHC /dev/$dev_name found, interface $iface is up (clock: $clock_name)"
+						echo "/dev/$dev_name"
+						return 0
+					else
+						logger -t ptp -p info \
+							"XGMAC PHC /dev/$dev_name found, interface $iface is $operstate (clock: $clock_name)"
+						fallback_dev="/dev/$dev_name"
+					fi
+				fi
+			done
+
+			if [ -z "$fallback_dev" ]; then
+				fallback_dev="/dev/$dev_name"
+				logger -t ptp -p info \
+					"XGMAC PHC /dev/$dev_name found (no associated interface, clock: $clock_name)"
+			fi
+		fi
+	done
+
+	if [ -n "$fallback_dev" ]; then
+		logger -t ptp -p warn \
+			"No linked-up XGMAC PHC found; using $fallback_dev as fallback"
+		echo "$fallback_dev"
+		return 0
+	fi
+
+	logger -t ptp -p warn "No XGMAC PHC device found in /sys/class/ptp/"
+	return 1
+}
+
+# ---------------------------------------------------------------------------
+# Helper: check whether a network interface has an IPv4 address
+# ---------------------------------------------------------------------------
+iface_has_ip() {
+	local iface="$1"
+	ip addr show "$iface" 2>/dev/null | grep -q "inet "
+}
+
+# ---------------------------------------------------------------------------
+# Helper: configure the PPS input source for the XGMAC on ipq5210.
+#
+# On ipq5210 the XGMAC PPS input mux must be set before ts2phc starts.
+# The mux is controlled via debugfs:
+#   /sys/kernel/debug/qca-nss-dp/ptp/pps_in_source
+#
+# The correct value is derived from the ts2phc source PHC clock_name:
+#   clock_name = "internal_phc"  ->  pps_in_source = "internal_phy"
+#   clock_name = "PON_PTP"       ->  pps_in_source = "pon_mac"
+#   anything else (external PHY) ->  pps_in_source = "external_phy" (default)
+#
+# On ipq9650 the mux does not exist and no configuration is needed.
+# A manual override is available via the UCI option pps_in_source.
+# ---------------------------------------------------------------------------
+configure_pps_source() {
+	local src_phc="$1"
+	local pps_in_source_override="$2"
+	local board ptp_num clock_name pps_source
+
+	# Only needed on ipq5210; ipq9650 does not have this mux
+	board=$(cat /tmp/sysinfo/board_name 2>/dev/null)
+	case "$board" in
+		*ipq5210*) ;;
+		*)
+			return 0 ;;
+	esac
+
+	local debugfs="/sys/kernel/debug/qca-nss-dp/ptp/pps_in_source"
+	if [ ! -f "$debugfs" ]; then
+		logger -t ptp -p warn \
+			"PPS source debugfs not found: $debugfs (skipping PPS mux config)"
+		return 0
+	fi
+
+	# Manual override via UCI pps_in_source option
+	if [ -n "$pps_in_source_override" ]; then
+		echo "$pps_in_source_override" > "$debugfs"
+		logger -t ptp -p info \
+			"PPS source set to $pps_in_source_override (manual override)"
+		return 0
+	fi
+
+	# Auto-detect from source PHC clock_name
+	ptp_num="${src_phc#/dev/ptp}"
+	clock_name=$(cat "/sys/class/ptp/ptp${ptp_num}/clock_name" 2>/dev/null)
+
+	case "$clock_name" in
+		internal_phc)
+			pps_source="internal_phy" ;;
+		PON_PTP)
+			pps_source="pon_mac" ;;
+		*)
+			pps_source="external_phy" ;;
+	esac
+
+	echo "$pps_source" > "$debugfs"
+	logger -t ptp -p info \
+		"PPS source set to $pps_source (auto-detected from clock_name=$clock_name)"
+}
+
+# ---------------------------------------------------------------------------
+# Helper: check whether the current board is supported (ipq5210 or ipq9650)
+# ---------------------------------------------------------------------------
+is_supported_board() {
+	local board
+	board=$(cat /tmp/sysinfo/board_name 2>/dev/null)
+	case "$board" in
+		*ipq5210*|*ipq9650*)
+			return 0 ;;
+		*)
+			logger -t ptp -p warn \
+				"Board '$board' is not supported (requires ipq5210 or ipq9650)"
+			return 1 ;;
+	esac
+}
+
+# ---------------------------------------------------------------------------
+# UCI section validator
+# ---------------------------------------------------------------------------
+validate_ptp_section() {
+	uci_validate_section ptp settings "${1}" \
+		'enabled:bool:1' \
+		'interface:string:eth0' \
+		'wan_uci_name:string:wan' \
+		'log_level:range(0,7):6' \
+		'run_ptp4l:bool:1' \
+		'run_ts2phc:bool:1' \
+		'run_phc2sys:bool:1' \
+		'ptp4l_opts:string' \
+		'ts2phc_opts:string' \
+		'phc2sys_opts:string' \
+		'slave_mode:bool:1' \
+		'ptp4l_phc_dev:string' \
+		'ts2phc_src_phc:string' \
+		'ts2phc_dst_phc:string' \
+		'phc2sys_src_phc:string' \
+		'pps_in_source:string' \
+		'step_threshold:string:0.128'
+}
+
+# ===========================================================================
+# procd service management
+# ===========================================================================
+
+start_service() {
+	local enabled interface wan_uci_name
+	local run_ptp4l run_ts2phc run_phc2sys
+	local ptp4l_opts ts2phc_opts phc2sys_opts slave_mode
+	local ptp4l_phc_dev ts2phc_src_phc ts2phc_dst_phc phc2sys_src_phc pps_in_source step_threshold
+
+	# ---- Load UCI configuration ----
+	config_load ptp
+	config_get enabled        settings enabled        1
+	config_get interface      settings interface      "eth0"
+	config_get wan_uci_name   settings wan_uci_name   "wan"
+	config_get run_ptp4l      settings run_ptp4l      1
+	config_get run_ts2phc     settings run_ts2phc     1
+	config_get run_phc2sys    settings run_phc2sys    1
+	config_get ptp4l_opts     settings ptp4l_opts     ""
+	config_get ts2phc_opts    settings ts2phc_opts    ""
+	config_get phc2sys_opts   settings phc2sys_opts   ""
+	config_get slave_mode     settings slave_mode     1
+	config_get ptp4l_phc_dev   settings ptp4l_phc_dev   ""
+	config_get ts2phc_src_phc  settings ts2phc_src_phc  ""
+	config_get ts2phc_dst_phc  settings ts2phc_dst_phc  ""
+	config_get phc2sys_src_phc settings phc2sys_src_phc ""
+	config_get pps_in_source   settings pps_in_source   ""
+	config_get step_threshold  settings step_threshold  "0.128"
+
+	[ "$enabled" != "1" ] && {
+		logger -t ptp -p info "PTP service is disabled"
+		return 0
+	}
+
+	if ! is_supported_board; then
+		return 0
+	fi
+
+	# Guard against double-start: the service_triggers() interface trigger fires
+	# when the WAN interface comes up (shortly after boot), which can cause a
+	# second start_service() call while the first ptp4l is still initialising.
+	# Skip the restart if ptp4l is already running to avoid killing a healthy
+	# sequencer mid-run.
+	if killall -0 ptp4l 2>/dev/null; then
+		logger -t ptp -p info \
+			"PTP already running (ptp4l detected); skipping redundant start"
+		return 0
+	fi
+
+	logger -t ptp -p info "=== PTP service starting (WAN interface: $interface) ==="
+
+	# ---- Enumerate PTP-capable interfaces ----
+	local ptp_ifaces
+	ptp_ifaces=$(get_ptp_capable_interfaces)
+	if [ -n "$ptp_ifaces" ]; then
+		logger -t ptp -p info "PTP-capable interfaces detected:$ptp_ifaces"
+	else
+		logger -t ptp -p warn "No PTP-capable interfaces found via ethtool -T"
+	fi
+
+	# ---- Check WAN interface has an IP address ----
+	if ! iface_has_ip "$interface"; then
+		logger -t ptp -p info \
+			"Interface $interface has no IP yet; PTP daemons will start when WAN is up"
+		return 0
+	fi
+	logger -t ptp -p info "Interface $interface has IP; proceeding with PTP daemon startup"
+
+	# =========================================================================
+	# Step 1: Register ptp4l as a direct procd instance
+	# =========================================================================
+	if [ "$run_ptp4l" = "1" ] && [ -x "$PTP4L_BIN" ]; then
+		local ptp4l_phc_num
+		ptp4l_phc_num=$(get_phc_num_for_iface "$interface")
+
+		if [ -n "$ptp4l_phc_dev" ]; then
+			logger -t ptp -p info \
+				"Starting ptp4l on $interface (PHC override: $ptp4l_phc_dev, slave mode)"
+		elif [ -n "$ptp4l_phc_num" ]; then
+			logger -t ptp -p info \
+				"Starting ptp4l on $interface (PHC: /dev/ptp${ptp4l_phc_num}, slave mode)"
+		else
+			logger -t ptp -p warn \
+				"Starting ptp4l on $interface (no hardware PHC detected, software timestamping)"
+		fi
+
+		cat > "$PTP4L_CONF" << EOF
+# Auto-generated by ptp init script
+[global]
+step_threshold  $step_threshold
+EOF
+		logger -t ptp -p info \
+			"ptp4l config written to $PTP4L_CONF (step_threshold=$step_threshold)"
+
+		procd_open_instance ptp4l
+		procd_set_param command "$PTP4L_BIN"
+		procd_append_param command -i "$interface"
+		procd_append_param command -f "$PTP4L_CONF"
+		procd_append_param command -m
+		[ "$slave_mode" = "1" ] && procd_append_param command -s
+		[ -n "$ptp4l_phc_dev" ] && procd_append_param command -p "$ptp4l_phc_dev"
+		[ -n "$ptp4l_opts" ] && procd_append_param command $ptp4l_opts
+		procd_set_param respawn 3600 5 0
+		procd_set_param stdout 1
+		procd_set_param stderr 1
+		procd_close_instance
+
+		logger -t ptp -p info "ptp4l instance registered"
+	fi
+
+	# =========================================================================
+	# Step 2: Resolve ts2phc PHC devices
+	#
+	# ts2phc is invoked as: ts2phc -s <src> -c <dst> -m
+	# No config file is needed; source and destination are passed on the
+	# command line via --ts2phc-src and --ts2phc-dst to the sequencer.
+	# =========================================================================
+	local ts2phc_ready=0
+	local src_phc="" xgmac_phc=""
+
+	if [ "$run_ts2phc" = "1" ] && [ -x /usr/sbin/ts2phc ]; then
+		# Resolve source PHC
+		if [ -n "$ts2phc_src_phc" ]; then
+			src_phc="$ts2phc_src_phc"
+			logger -t ptp -p info "ts2phc source PHC: $src_phc"
+		else
+			local ptp4l_phc_num
+			ptp4l_phc_num=$(get_phc_num_for_iface "$interface")
+			if [ -z "$ptp4l_phc_num" ]; then
+				logger -t ptp -p warn \
+					"Skipping ts2phc: no hardware PHC found for $interface (set ts2phc_src_phc to override)"
+			else
+				src_phc="/dev/ptp${ptp4l_phc_num}"
+			fi
+		fi
+
+		# Resolve destination PHC
+		if [ -n "$ts2phc_dst_phc" ]; then
+			xgmac_phc="$ts2phc_dst_phc"
+			logger -t ptp -p info "ts2phc destination PHC: $xgmac_phc"
+		else
+			xgmac_phc=$(get_xgmac_ptp_device)
+		fi
+
+		if [ -z "$src_phc" ]; then
+			: # already logged
+		elif [ -z "$xgmac_phc" ]; then
+			logger -t ptp -p warn \
+				"Skipping ts2phc: no destination PHC found (set ts2phc_dst_phc to override)"
+		elif [ "$src_phc" = "$xgmac_phc" ]; then
+			logger -t ptp -p info \
+				"Source and destination PHC are the same ($src_phc); ts2phc not needed"
+		else
+			logger -t ptp -p info \
+				"ts2phc: $src_phc -> $xgmac_phc"
+			# Configure the XGMAC PPS input mux (ipq5210 only)
+			configure_pps_source "$src_phc" "$pps_in_source"
+			ts2phc_ready=1
+		fi
+	fi
+
+	# =========================================================================
+	# Step 3: Resolve phc2sys source PHC
+	# =========================================================================
+	local phc2sys_src=""
+
+	if [ "$run_phc2sys" = "1" ] && [ -x /usr/sbin/phc2sys ]; then
+		if [ -n "$phc2sys_src_phc" ]; then
+			phc2sys_src="$phc2sys_src_phc"
+			logger -t ptp -p info "phc2sys source PHC: $phc2sys_src"
+		elif [ "$ts2phc_ready" = "1" ]; then
+			# ts2phc is running: sync from XGMAC PHC (ts2phc destination)
+			phc2sys_src="$xgmac_phc"
+		elif [ -n "$ts2phc_src_phc" ]; then
+			phc2sys_src="$ts2phc_src_phc"
+			logger -t ptp -p info "phc2sys using ts2phc_src_phc: $phc2sys_src"
+		else
+			# No ts2phc: sync directly from ptp4l's PHC
+			local ptp4l_phc_num
+			ptp4l_phc_num=$(get_phc_num_for_iface "$interface")
+			[ -n "$ptp4l_phc_num" ] && phc2sys_src="/dev/ptp${ptp4l_phc_num}"
+		fi
+
+		if [ -z "$phc2sys_src" ]; then
+			logger -t ptp -p warn \
+				"Skipping phc2sys: no source PHC found (set phc2sys_src_phc to override)"
+		fi
+	fi
+
+	# =========================================================================
+	# Step 4: Register ptp-chain sequencer instance
+	#
+	# The sequencer waits for ptp4l s2, then starts ts2phc and phc2sys in
+	# sequence.  This prevents phc2sys from stepping the clock by decades
+	# when the XGMAC PHC has not yet been set.
+	# =========================================================================
+	if [ "$ts2phc_ready" = "1" ] || [ -n "$phc2sys_src" ]; then
+		if [ ! -x "$PTP_SEQUENCER_BIN" ]; then
+			logger -t ptp -p warn \
+				"$PTP_SEQUENCER_BIN not found; ts2phc/phc2sys will not start"
+		else
+			logger -t ptp -p info "Registering ptp-chain sequencer instance"
+
+			procd_open_instance ptp-chain
+			procd_set_param command "$PTP_SEQUENCER_BIN"
+
+			# ts2phc args: pass source and destination directly (no config file)
+			if [ "$ts2phc_ready" = "1" ]; then
+				procd_append_param command --ts2phc-src "$src_phc"
+				procd_append_param command --ts2phc-dst "$xgmac_phc"
+				[ -n "$ts2phc_opts" ] && \
+					procd_append_param command --ts2phc-opts "$ts2phc_opts"
+			fi
+
+			# phc2sys args
+			if [ -n "$phc2sys_src" ]; then
+				procd_append_param command --phc2sys-src "$phc2sys_src"
+				procd_append_param command --phc2sys-step "$step_threshold"
+				[ -n "$phc2sys_opts" ] && \
+					procd_append_param command --phc2sys-opts "$phc2sys_opts"
+			fi
+
+			procd_set_param respawn 3600 5 0
+			procd_set_param term_timeout 15
+			# No stdout/stderr capture: ts2phc and phc2sys use -m to log
+			# directly to syslog with their own process name as the tag.
+			# Capturing stdout here would produce duplicate log lines.
+			procd_close_instance
+
+			logger -t ptp -p info "ptp-chain sequencer instance registered"
+		fi
+	fi
+
+	logger -t ptp -p info "=== PTP service startup complete ==="
+}
+
+stop_service() {
+	logger -t ptp -p info "Stopping PTP service"
+	rm -f "$PTP4L_CONF"
+	logger -t ptp -p info "PTP service stopped"
+}
+
+reload_service() {
+	logger -t ptp -p info "Reloading PTP service"
+	stop_service
+	start_service
+}
+
+service_triggers() {
+	is_supported_board || return 0
+
+	local interface wan_uci_name
+
+	config_load ptp
+	config_get interface    settings interface    "eth0"
+	config_get wan_uci_name settings wan_uci_name "wan"
+
+	procd_add_reload_trigger "ptp"
+	procd_add_reload_trigger "network"
+
+	procd_add_interface_trigger "interface.*" "$wan_uci_name" /etc/init.d/ptp restart
+
+	procd_open_validate
+	validate_ptp_section
+	procd_close_validate
+}
