@@ -112,6 +112,50 @@ get_xgmac_ptp_device() {
 }
 
 # ---------------------------------------------------------------------------
+# Helper: find all ath12k_ptp PHC devices (WiFi PTP clocks)
+#
+# Scans /sys/class/ptp/ptp*/clock_name and prints one /dev/ptpX per line for
+# every device whose clock_name contains the string "ath12k_ptp".
+# Used to auto-detect WiFi PHC destinations for the ts2phc_wifi instance.
+# ---------------------------------------------------------------------------
+find_ath12k_ptp_devs() {
+	local ptp_sysfs clock_name
+
+	for ptp_sysfs in /sys/class/ptp/ptp*; do
+		[ -d "$ptp_sysfs" ] || continue
+		[ -f "$ptp_sysfs/clock_name" ] || continue
+		clock_name=$(cat "$ptp_sysfs/clock_name" 2>/dev/null)
+		case "$clock_name" in
+			*ath12k_ptp*)
+				echo "/dev/$(basename "$ptp_sysfs")" ;;
+		esac
+	done
+}
+
+# ---------------------------------------------------------------------------
+# Helper: find the first non-ath12k_ptp PHC device
+#
+# Returns the first /dev/ptpX whose clock_name does NOT contain "ath12k_ptp".
+# Used as the auto-detected source PHC for the WiFi ts2phc instance when
+# ts2phc_wifi_src_phc is not explicitly set in UCI.
+# ---------------------------------------------------------------------------
+find_non_ath12k_ptp_dev() {
+	local ptp_sysfs clock_name
+
+	for ptp_sysfs in /sys/class/ptp/ptp*; do
+		[ -d "$ptp_sysfs" ] || continue
+		[ -f "$ptp_sysfs/clock_name" ] || continue
+		clock_name=$(cat "$ptp_sysfs/clock_name" 2>/dev/null)
+		case "$clock_name" in
+			*ath12k_ptp*) continue ;;
+		esac
+		echo "/dev/$(basename "$ptp_sysfs")"
+		return 0
+	done
+	return 1
+}
+
+# ---------------------------------------------------------------------------
 # Helper: check whether a network interface has an IPv4 address
 # ---------------------------------------------------------------------------
 iface_has_ip() {
@@ -208,9 +252,13 @@ validate_ptp_section() {
 		'run_ptp4l:bool:1' \
 		'run_ts2phc:bool:1' \
 		'run_phc2sys:bool:1' \
+		'run_ts2phc_wifi:bool:0' \
 		'ptp4l_opts:string' \
 		'ts2phc_opts:string' \
 		'phc2sys_opts:string' \
+		'ts2phc_wifi_src_phc:string' \
+		'ts2phc_wifi_dst_phc:string' \
+		'ts2phc_wifi_opts:string' \
 		'slave_mode:bool:1' \
 		'ptp4l_phc_dev:string' \
 		'ts2phc_src_phc:string' \
@@ -226,8 +274,8 @@ validate_ptp_section() {
 
 start_service() {
 	local enabled interface wan_uci_name
-	local run_ptp4l run_ts2phc run_phc2sys
-	local ptp4l_opts ts2phc_opts phc2sys_opts slave_mode
+	local run_ptp4l run_ts2phc run_phc2sys run_ts2phc_wifi
+	local ptp4l_opts ts2phc_opts phc2sys_opts ts2phc_wifi_src_phc ts2phc_wifi_dst_phc ts2phc_wifi_opts slave_mode
 	local ptp4l_phc_dev ts2phc_src_phc ts2phc_dst_phc phc2sys_src_phc pps_in_source step_threshold
 
 	# ---- Load UCI configuration ----
@@ -235,13 +283,17 @@ start_service() {
 	config_get enabled        settings enabled        1
 	config_get interface      settings interface      "eth0"
 	config_get wan_uci_name   settings wan_uci_name   "wan"
-	config_get run_ptp4l      settings run_ptp4l      1
-	config_get run_ts2phc     settings run_ts2phc     1
-	config_get run_phc2sys    settings run_phc2sys    1
-	config_get ptp4l_opts     settings ptp4l_opts     ""
-	config_get ts2phc_opts    settings ts2phc_opts    ""
-	config_get phc2sys_opts   settings phc2sys_opts   ""
-	config_get slave_mode     settings slave_mode     1
+	config_get run_ptp4l           settings run_ptp4l           1
+	config_get run_ts2phc          settings run_ts2phc          1
+	config_get run_phc2sys         settings run_phc2sys         1
+	config_get run_ts2phc_wifi     settings run_ts2phc_wifi     0
+	config_get ptp4l_opts          settings ptp4l_opts          ""
+	config_get ts2phc_opts         settings ts2phc_opts         ""
+	config_get phc2sys_opts        settings phc2sys_opts        ""
+	config_get ts2phc_wifi_src_phc settings ts2phc_wifi_src_phc ""
+	config_get ts2phc_wifi_dst_phc settings ts2phc_wifi_dst_phc ""
+	config_get ts2phc_wifi_opts    settings ts2phc_wifi_opts    ""
+	config_get slave_mode          settings slave_mode          1
 	config_get ptp4l_phc_dev   settings ptp4l_phc_dev   ""
 	config_get ts2phc_src_phc  settings ts2phc_src_phc  ""
 	config_get ts2phc_dst_phc  settings ts2phc_dst_phc  ""
@@ -382,6 +434,59 @@ EOF
 	fi
 
 	# =========================================================================
+	# Step 2b: Resolve WiFi ts2phc PHC devices (ath12k_ptp)
+	#
+	# A separate ts2phc instance syncs one or more ath12k_ptp WiFi PHC devices
+	# from a configurable source PHC (defaults to the first non-ath12k_ptp
+	# device found in /sys/class/ptp/).  The WiFi ts2phc is started by the
+	# ptp-chain sequencer after the main ts2phc has synced the XGMAC PHC,
+	# ensuring the source is stable regardless of which PHC is chosen.
+	# =========================================================================
+	local ts2phc_wifi_ready=0
+	local wifi_src_phc="" wifi_devs=""
+
+	if [ "$run_ts2phc_wifi" = "1" ] && [ -x /usr/sbin/ts2phc ]; then
+		# Resolve WiFi source PHC
+		if [ -n "$ts2phc_wifi_src_phc" ]; then
+			wifi_src_phc="$ts2phc_wifi_src_phc"
+			logger -t ptp -p info \
+				"ts2phc_wifi source PHC: $wifi_src_phc (override)"
+		else
+			wifi_src_phc=$(find_non_ath12k_ptp_dev)
+			if [ -z "$wifi_src_phc" ]; then
+				logger -t ptp -p warn \
+					"Skipping ts2phc_wifi: no non-ath12k_ptp source PHC found (set ts2phc_wifi_src_phc to override)"
+			else
+				logger -t ptp -p info \
+					"ts2phc_wifi source PHC: $wifi_src_phc (auto-detected)"
+			fi
+		fi
+
+		# Resolve WiFi destination PHC(s)
+		if [ -n "$ts2phc_wifi_dst_phc" ]; then
+			wifi_devs="$ts2phc_wifi_dst_phc"
+			logger -t ptp -p info \
+				"ts2phc_wifi destination PHC(s): $wifi_devs (override)"
+		else
+			wifi_devs=$(find_ath12k_ptp_devs | tr '\n' ' ')
+			wifi_devs="${wifi_devs% }"
+			if [ -z "$wifi_devs" ]; then
+				logger -t ptp -p warn \
+					"Skipping ts2phc_wifi: no ath12k_ptp device found (set ts2phc_wifi_dst_phc to override)"
+			else
+				logger -t ptp -p info \
+					"ts2phc_wifi destination PHC(s): $wifi_devs (auto-detected)"
+			fi
+		fi
+
+		if [ -n "$wifi_src_phc" ] && [ -n "$wifi_devs" ]; then
+			logger -t ptp -p info \
+				"ts2phc_wifi: $wifi_src_phc -> $wifi_devs"
+			ts2phc_wifi_ready=1
+		fi
+	fi
+
+	# =========================================================================
 	# Step 3: Resolve phc2sys source PHC
 	# =========================================================================
 	local phc2sys_src=""
@@ -416,7 +521,7 @@ EOF
 	# sequence.  This prevents phc2sys from stepping the clock by decades
 	# when the XGMAC PHC has not yet been set.
 	# =========================================================================
-	if [ "$ts2phc_ready" = "1" ] || [ -n "$phc2sys_src" ]; then
+	if [ "$ts2phc_ready" = "1" ] || [ "$ts2phc_wifi_ready" = "1" ] || [ -n "$phc2sys_src" ]; then
 		if [ ! -x "$PTP_SEQUENCER_BIN" ]; then
 			logger -t ptp -p warn \
 				"$PTP_SEQUENCER_BIN not found; ts2phc/phc2sys will not start"
@@ -432,6 +537,16 @@ EOF
 				procd_append_param command --ts2phc-dst "$xgmac_phc"
 				[ -n "$ts2phc_opts" ] && \
 					procd_append_param command --ts2phc-opts "$ts2phc_opts"
+			fi
+
+			# WiFi ts2phc args: separate ts2phc instance for ath12k_ptp devices
+			if [ "$ts2phc_wifi_ready" = "1" ]; then
+				procd_append_param command --ts2phc-wifi-src "$wifi_src_phc"
+				for wifi_dev in $wifi_devs; do
+					procd_append_param command --ts2phc-wifi-dst "$wifi_dev"
+				done
+				[ -n "$ts2phc_wifi_opts" ] && \
+					procd_append_param command --ts2phc-wifi-opts "$ts2phc_wifi_opts"
 			fi
 
 			# phc2sys args
