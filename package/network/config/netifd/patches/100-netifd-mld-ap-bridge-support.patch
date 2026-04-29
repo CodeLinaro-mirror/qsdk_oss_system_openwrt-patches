@@ -1,0 +1,76 @@
+From d9174db776993e590b4a329d056f72553390a7e8 Mon Sep 17 00:00:00 2001
+From: Vinay Adella <vadella@qti.qualcomm.com>
+Date: Mon, 6 Apr 2026 23:11:34 +0530
+Subject: [PATCH] netifd mld ap bridge support
+
+Signed-off-by: Vinay Adella <vadella@qti.qualcomm.com>
+---
+ wireless.c | 45 +++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 45 insertions(+)
+
+diff --git a/wireless.c b/wireless.c
+index c05bf7d..4a4baaa 100644
+--- a/wireless.c
++++ b/wireless.c
+@@ -363,6 +363,38 @@ static void wireless_check_interface(struct blob_attr *list, int *enabled, int *
+ 	}
+ }
+ 
++/*
++ * wireless_ifname_in_use - check if an ifname is still referenced by any
++ * active (non-disabled) wireless interface other than skip_vif.
++ *
++ * This is used to prevent removing a shared MLD netdevice from a bridge when
++ * only one of its per-link wifi-iface entries is disabled, while other
++ * per-link entries still reference the same ifname.
++ */
++static bool
++wireless_ifname_in_use(const char *ifname, struct wireless_interface *skip_vif)
++{
++	struct wireless_device *wdev;
++	struct wireless_interface *vif;
++
++	if (!ifname)
++		return false;
++
++	vlist_for_each_element(&wireless_devices, wdev, node) {
++		vlist_for_each_element(&wdev->interfaces, vif, node) {
++			if (vif == skip_vif)
++				continue;
++			if (vif->disabled)
++				continue;
++			if (!vif->ifname)
++				continue;
++			if (strcmp(vif->ifname, ifname) == 0)
++				return true;
++		}
++	}
++	return false;
++}
++
+ static void wireless_interface_handle_link(struct wireless_interface *vif, const char *ifname, bool up)
+ {
+ 	struct interface *iface;
+@@ -407,6 +439,19 @@ out:
+ 		if (!iface)
+ 			continue;
+ 
++		/*
++		 * For MLO setups, multiple wifi-iface entries (one per band/link)
++		 * share the same MLD netdevice ifname (e.g., wlan0). When one
++		 * per-link VIF is disabled, skip the link-down call if another
++		 * active VIF still references the same ifname, to avoid removing
++		 * the shared netdevice from the bridge prematurely.
++		 */
++		if (!up && wireless_ifname_in_use(ifname, vif)) {
++			D(WIRELESS, "Skipping link-down for ifname '%s': still in use by another VIF",
++			  ifname);
++			continue;
++		}
++
+ 		interface_handle_link(iface, ifname, vif->network_vlan, up, true);
+ 	}
+ }
+-- 
+2.34.1
+
