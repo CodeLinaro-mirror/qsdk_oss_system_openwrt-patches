@@ -15,6 +15,135 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE
 
 START=99
+
+PONCAL_MOUNT="/mnt/poncal"
+PONCAL_PART_NAME="0:PONCAL"
+
+mount_poncal_ubi() {
+	if grep -q " $PONCAL_MOUNT " /proc/mounts; then
+		echo "$PONCAL_MOUNT is already mounted, skipping..."
+		return 0
+	fi
+
+	local mtd_dev
+	mtd_dev=$(grep "\"$PONCAL_PART_NAME\"$" /proc/mtd | awk -F: '{print "/dev/" $1}')
+	if [ -z "$mtd_dev" ]; then
+		echo "MTD partition '$PONCAL_PART_NAME' not found"
+		return 1
+	fi
+	echo "Found MTD partition: $mtd_dev"
+
+	local mtd_num
+	mtd_num=$(echo "$mtd_dev" | grep -o '[0-9]*$')
+
+	# Attach UBI if not already attached to this MTD partition
+	echo "Attaching UBI to $mtd_dev (if not already attached)..."
+	if ! ubiattach -m "$mtd_num" -b 1 2>/dev/null; then
+		# Check if it's already attached
+		if ! grep -q "^ubi" /sys/class/ubi/ubi*/mtd_num 2>/dev/null; then
+			echo "Failed to attach UBI to MTD ${mtd_num}"
+			return 1
+		fi
+		echo "UBI already attached on MTD ${mtd_num}, continuing..."
+	fi
+
+	# Find the UBI device number attached to this MTD by scanning sysfs
+	local ubi_num ubi_idx
+	ubi_num=""
+	for ubi_path in /sys/class/ubi/ubi*/mtd_num; do
+		[ -f "$ubi_path" ] || continue
+		ubi_idx=$(echo "$ubi_path" | grep -o 'ubi[0-9]*' | grep -o '[0-9]*')
+		if [ "$(cat $ubi_path)" = "$mtd_num" ]; then
+			ubi_num="$ubi_idx"
+			break
+		fi
+	done
+	if [ -z "$ubi_num" ]; then
+		echo "No UBI device found for MTD ${mtd_num}"
+		return 1
+	fi
+	echo "UBI device number: ubi${ubi_num}"
+	# Get the first volume name on this UBI device
+	local vol_name
+	vol_name=$(ubinfo -a -d "$ubi_num" 2>/dev/null | awk '/Name:/ { print $2; exit }')
+	if [ -z "$vol_name" ]; then
+		echo "No UBI volume found on ubi${ubi_num}"
+		return 1
+	fi
+	echo "UBI volume name: $vol_name"
+	mkdir -p "$PONCAL_MOUNT"
+	echo "Mounting UBIFS ubi${ubi_num}:${vol_name} at $PONCAL_MOUNT..."
+	mount -t ubifs "ubi${ubi_num}:${vol_name}" "$PONCAL_MOUNT" || {
+		echo "Failed to mount UBIFS at $PONCAL_MOUNT"
+		return 1
+	}
+	echo "PONCAL mounted successfully at $PONCAL_MOUNT"
+	return 0
+}
+
+mount_poncal_emmc() {
+	# Skip if already mounted
+	if grep -q " $PONCAL_MOUNT " /proc/mounts; then
+		echo "$PONCAL_MOUNT is already mounted, skipping..."
+		return 0
+	fi
+	# Find the eMMC partition via partition label
+	local emmc_dev
+	emmc_dev=$(readlink -f "/dev/disk/by-partlabel/$PONCAL_PART_NAME" 2>/dev/null)
+	if [ -z "$emmc_dev" ] || [ ! -b "$emmc_dev" ]; then
+		echo "eMMC partition '$PONCAL_PART_NAME' not found"
+		return 1
+	fi
+	echo "Found eMMC partition: $emmc_dev"
+	# Mount ext4 at /mnt/poncal
+	mkdir -p "$PONCAL_MOUNT"
+	echo "Mounting ext4 at $PONCAL_MOUNT..."
+	mount -t ext4 "$emmc_dev" "$PONCAL_MOUNT" || {
+		echo "Failed to mount ext4 at $PONCAL_MOUNT"
+		return 1
+	}
+	echo "PONCAL mounted successfully at $PONCAL_MOUNT"
+	return 0
+}
+
+mount_poncal() {
+	# Restrict to IPQ5210 target only
+	local model
+	model=$(awk '{print $4}' /tmp/sysinfo/model 2>/dev/null)
+	if [ "$model" != "IPQ5210" ]; then
+		echo " Skipping for PONCAL mount for $model "
+		return 0
+	fi
+
+	# Check for PON support via device-tree gem_port property.
+	local PON_DP PON_SUPPORT
+	PON_DP=$(ls /proc/device-tree/soc@0 2>/dev/null | grep '^dp[0-9][0-9]*$' | sort -V | tail -n 1)
+	if [ -z "$PON_DP" ]; then
+		echo " No dp* interface found, skipping PONCAL mount"
+		return 0
+	fi
+	PON_SUPPORT=$(ls -la /proc/device-tree/soc@0/${PON_DP} 2>/dev/null | grep gem_port)
+	if [ -z "$PON_SUPPORT" ]; then
+		echo " PON support unavailable, skipping PONCAL mount"
+		return 0
+	fi
+
+	# gem_port confirmed - proceed with PONCAL mounting
+	local flash_type
+	if [ -e "/dev/ubi0" ]; then
+		flash_type="nand"
+		echo "Auto-detected flash type: nand (/dev/ubi0 found)"
+	else
+		flash_type="emmc"
+		echo "Auto-detected flash type: emmc (/dev/ubi0 not found)"
+	fi
+	case "$flash_type" in
+		nand)  mount_poncal_ubi  || return 1 ;;
+		emmc)  mount_poncal_emmc || return 1 ;;
+	esac
+	return 0
+}
+
 opensync_func () {
 
 	uci set minidump.livedump.path='/usr/opensync/log_archive/crash'
@@ -23,6 +152,7 @@ opensync_func () {
 }
 boot() {
 
+	mount_poncal
 	hostname=$(uci get system.@system[0].hostname)
 	echo "$hostname" > /proc/sys/kernel/hostname
 	# Clean up file cache
