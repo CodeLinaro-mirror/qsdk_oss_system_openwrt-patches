@@ -45,8 +45,17 @@ skb_recycler_enable=1
 memtotal=$(grep MemTotal /proc/meminfo | awk '{print $2}')
 [ $memtotal -lt 131072 ] && max_skbs=512
 
-[ -e /proc/device-tree/MP_512 ] && max_skbs=512 && max_spare_skbs=128 && skb_recycler_enable=1
-[ -e /proc/device-tree/MP_256 ] && max_skbs=32 && max_spare_skbs=32 && skb_recycler_enable=1
+
+if [ -e /proc/device-tree/MP_512 ] || grep -q "mem-profile=balanced" /proc/cmdline; then
+    max_skbs=512
+    max_spare_skbs=128
+fi
+
+
+if [ -e /proc/device-tree/MP_256 ] || grep -q "mem-profile=optimized" /proc/cmdline; then
+    max_skbs=32
+    max_spare_skbs=32
+fi
 
 ucidef_set_skb "max_skbs" $max_skbs
 ucidef_set_skb "max_spare_skbs" $max_spare_skbs
