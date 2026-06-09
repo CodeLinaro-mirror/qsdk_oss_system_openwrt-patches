@@ -11,6 +11,7 @@ define linuxptp_install_append
 	$(INSTALL_DATA) $(LINUXPTP)/files/ptp.uci.config $(1)/etc/config/ptp
 	$(INSTALL_BIN) $(LINUXPTP)/files/ptp.init $(1)/etc/init.d/ptp
 	$(INSTALL_BIN) $(LINUXPTP)/files/ptp-sequencer $(1)/usr/sbin/ptp-sequencer
+	$(INSTALL_BIN) $(LINUXPTP)/files/ptp-phc-map $(1)/usr/sbin/ptp-phc-map
 	$(INSTALL_BIN) $(LINUXPTP)/files/ptp.firewall $(1)/etc/firewall.d/ptp
 	$(INSTALL_DATA) $(LINUXPTP)/files/ptp.defaults $(1)/etc/uci-defaults/99-ptp
 endef

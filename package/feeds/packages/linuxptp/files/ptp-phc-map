@@ -1,0 +1,104 @@
+#!/bin/sh
+#
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: ISC
+#
+# ptp-phc-map — show which PHC device is associated with each network interface
+#
+# Usage: ptp-phc-map [-h]
+#   -h, --help    show this help and exit
+#
+# Discovery methods (both are used; results are de-duplicated):
+#   1. sysfs linkage: /sys/class/ptp/ptpN/device/net/<iface>
+#   2. ethtool -T <iface>  (PTP Hardware Clock field)
+#
+# Output columns:
+#   NETDEV      network interface name
+#   PHC         PTP hardware clock device (e.g. ptp0)
+#   CLOCK_NAME  clock_name from sysfs (/sys/class/ptp/ptpN/clock_name)
+#   SOURCE      how the association was discovered (sysfs, ethtool, or both)
+#   OPERSTATE   interface link state (up / down / unknown)
+#
+
+case "$1" in
+	-h|--help)
+		sed -n '/^# Usage:/,/^#$/{s/^# \{0,1\}//; p}' "$0"
+		exit 0 ;;
+esac
+
+HAVE_ETHTOOL=1
+command -v ethtool >/dev/null 2>&1 || HAVE_ETHTOOL=0
+
+printf "%-10s %-8s %-20s %-14s %-10s\n" NETDEV PHC CLOCK_NAME SOURCE OPERSTATE
+
+rows=0
+seen_phcs=""
+
+for i in $(find /sys/class/net -maxdepth 1 -mindepth 1 | sort); do
+	iface=${i##*/}
+	[ "$iface" = "lo" ] && continue
+
+	phcs=""
+
+	# Method 1: sysfs linkage
+	for p in /sys/class/ptp/ptp*; do
+		[ -d "$p/device/net/$iface" ] || continue
+		phc=${p##*/ptp}
+		case " $phcs " in
+			*" $phc "*) ;;
+			*) phcs="$phcs $phc" ;;
+		esac
+	done
+
+	# Method 2: ethtool -T
+	ephc=""
+	if [ "$HAVE_ETHTOOL" = "1" ]; then
+		ephc=$(ethtool -T "$iface" 2>/dev/null \
+			| awk -F': ' '/PTP Hardware Clock/ {print $2; exit}')
+		if [ -n "$ephc" ] && [ "$ephc" != "none" ]; then
+			case " $phcs " in
+				*" $ephc "*) ;;
+				*) phcs="$phcs $ephc" ;;
+			esac
+		fi
+	fi
+
+	operstate=$(cat "/sys/class/net/$iface/operstate" 2>/dev/null)
+	[ -z "$operstate" ] && operstate="unknown"
+
+	for phc in $phcs; do
+		clock_name=$(cat "/sys/class/ptp/ptp$phc/clock_name" 2>/dev/null)
+		[ -z "$clock_name" ] && clock_name="(unknown)"
+
+		src=""
+		[ -d "/sys/class/ptp/ptp$phc/device/net/$iface" ] && src="sysfs"
+		[ "$phc" = "$ephc" ] && src="${src:+$src,}ethtool"
+		[ -z "$src" ] && src="unknown"
+
+		printf "%-10s %-8s %-20s %-14s %-10s\n" \
+			"$iface" "ptp$phc" "$clock_name" "$src" "$operstate"
+		case " $seen_phcs " in
+			*" $phc "*) ;;
+			*) seen_phcs="$seen_phcs $phc" ;;
+		esac
+		rows=$((rows + 1))
+	done
+done
+
+# Second pass: PHC devices with no netdev association
+for p in /sys/class/ptp/ptp*; do
+	[ -d "$p" ] || continue
+	phc=${p##*/ptp}
+	case " $seen_phcs " in
+		*" $phc "*) continue ;;
+	esac
+	clock_name=$(cat "$p/clock_name" 2>/dev/null)
+	[ -z "$clock_name" ] && clock_name="(unknown)"
+	printf "%-10s %-8s %-20s %-14s %-10s\n" \
+		"-" "ptp$phc" "$clock_name" "none" "-"
+	rows=$((rows + 1))
+done
+
+if [ "$rows" -eq 0 ]; then
+	printf "(no PHC-to-interface associations found)\n" >&2
+fi
