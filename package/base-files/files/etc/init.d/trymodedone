@@ -111,6 +111,12 @@ bank_boot_done() {
 		rootfs-active)
 			if [ "$is_pon_rdp" -eq 1 ]; then
 				set_env_vars 1 0
+				eval $(fw_printenv sw_commit 2>/dev/null)
+				if [ "$sw_commit" = "1" ]; then
+					fw_setenv bootfrom 1 2>/dev/null
+				else
+					fw_setenv bootfrom 0 2>/dev/null
+				fi
 			else
 				fw_setenv bootfrom 0 2>/dev/null
 			fi
@@ -118,6 +124,12 @@ bank_boot_done() {
 		rootfs-inactive)
 			if [ "$is_pon_rdp" -eq 1 ]; then
 				set_env_vars 0 1
+				eval $(fw_printenv sw_commit 2>/dev/null)
+				if [ "$sw_commit" = "1" ]; then
+					fw_setenv bootfrom 1 2>/dev/null
+				else
+					fw_setenv bootfrom 0 2>/dev/null
+				fi
 			else
 				fw_setenv bootfrom 1 2>/dev/null
 			fi
