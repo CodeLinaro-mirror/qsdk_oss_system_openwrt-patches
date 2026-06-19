@@ -1,0 +1,62 @@
+From fe335122ca85bd06a9958cefc0f8c8f5e497b092 Mon Sep 17 00:00:00 2001
+From: Vishnu Vardhan Bantanahal <vishvard@qti.qualcomm.com>
+Date: Wed, 17 Jun 2026 17:07:56 +0530
+Subject: [PATCH] mcproxy:querier:Downgrade filter_timer mismatch log from
+ ERROR to DEBUG
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+In `timer_triggerd_filter_timer()`, after processing any pending source-timer work, the code checks whether the filter timer that just fired (`ftimer`) is still the active filter timer
+stored in the group's database entry (`ginfo.shared_filter_timer`). If they differ, it logs `HC_LOG_ERROR("found filter_timer differs from processing filter_timer")` and returns early.
+
+The timer cancellation mechanism in `timer_triggerd()` relies on `shared_ptr` reference counting: when `mali()` replaces `ginfo.shared_filter_timer` with a new timer,
+the old timer's reference count drops to 1 (held only by the timer queue) in usual scenarios. When the old timer fires, `msg.unique()` returns `true` and it is silently discarded before
+reaching `timer_triggerd_filter_timer()`.
+
+This has a problem under high load scenarios with a large number of MLD groups (e.g., MLD_MAX = 128), when a filter timer can be dual-referenced — once by `ginfo.shared_filter_timer` and
+once by `source.shared_source_timer`. When `mali()` subsequently replaces `ginfo.shared_filter_timer` with a new timer (due to a fresh membership report arriving),
+the old timer's reference count only drops to 2 (timer queue + `source.shared_source_timer`), not to 1. This means `msg.unique()` returns `false`
+and the stale old timer bypasses the cancellation guard in `timer_triggerd()`, reaching `timer_triggerd_filter_timer()`.
+At that point, `ginfo.shared_filter_timer` already points to the new timer while `ftimer` is the old one — causing the mismatch and triggering `HC_LOG_ERROR`.
+
+This condition is hit more frequently under high load because the probability of a new membership report arriving and calling `mali()` while an old dual-referenced filter timer
+is still pending in the queue increases with the number of active groups.
+
+We downgrade the log level from `HC_LOG_ERROR` to `HC_LOG_DEBUG` for this mismatch condition as the `return` that follows the log is already the correct action.
+The stale filter timer must not trigger the EXCLUDE→INCLUDE mode transition or group deletion, since a newer filter timer is now active and will handle those state changes
+when it eventually expires. No data corruption or incorrect multicast state results from this condition. Logging it as ERROR is misleading as it's actually an expected and
+benign race between a high-frequency membership report arrival and a pending stale timer under load.
+
+Signed-off-by: Vishnu Vardhan Bantanahal <vishvard@qti.qualcomm.com>
+---
+ mcproxy/src/proxy/querier.cpp | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/mcproxy/src/proxy/querier.cpp b/mcproxy/src/proxy/querier.cpp
+index b75ef3e..0aeec36 100644
+--- a/mcproxy/src/proxy/querier.cpp
++++ b/mcproxy/src/proxy/querier.cpp
+@@ -149,7 +149,7 @@ void querier::receive_record(const std::shared_ptr<proxy_msg>& msg)
+         if (gr->get_record_type() == CHANGE_TO_EXCLUDE_MODE) {
+             gr->get_slist() = {};
+         } else if (gr->get_record_type() == BLOCK_OLD_SOURCES){
+-            return;     
++            return;
+         }
+     }
+ 
+@@ -464,7 +464,9 @@ void querier::timer_triggerd_filter_timer(gaddr_map::iterator db_info_it, const
+     }
+ 
+     if (ginfo.shared_filter_timer.get() != ftimer.get()) {
+-        HC_LOG_ERROR("found filter_timer differs from processing filter_timer");
++        // ginfo.shared_filter_timer advanced to new_timer while the old timer was still referenced.
++        // We return from here and let the new timer handle the group_info update.
++        HC_LOG_DEBUG("found filter_timer differs from processing filter_timer");
+         return;
+     }
+     //7.2.2.  Definition of Filter Timers
+-- 
+2.34.1
+
