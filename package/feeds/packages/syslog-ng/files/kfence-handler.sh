@@ -3,7 +3,7 @@
 # Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: ISC
 
-HANDLER="/usr/sbin/debug_cli_script.sh"
+HANDLER="/usr/bin/debug_cli_script.sh"
 
 while read line; do
 	echo "$line" > /dev/console
