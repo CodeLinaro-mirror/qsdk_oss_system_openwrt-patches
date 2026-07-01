@@ -1,0 +1,11 @@
+rngd
+rpcd
+crond
+syslog-ng
+uhttpd
+xl2tpd
+lldpd
+ipsec
+sysntpd
+kfence-handler
+dnsmasq
