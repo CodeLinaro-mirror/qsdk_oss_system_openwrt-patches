@@ -27,7 +27,10 @@ then
 	json_get_var name name
 	json_get_var connected switch_connected
 	if [ "$connected" = "yes" ];then
-		uci add_list network.@device[0].no_flood_ports=$name
+		# Skip adding duplicate network device entries
+		if ! uci -q get network.@device[0].no_flood_ports 2>/dev/null | grep -qw "$name"; then
+			uci add_list network.@device[0].no_flood_ports=$name
+		fi
 	fi
 	json_select ..
 	idx=$((idx+1))
