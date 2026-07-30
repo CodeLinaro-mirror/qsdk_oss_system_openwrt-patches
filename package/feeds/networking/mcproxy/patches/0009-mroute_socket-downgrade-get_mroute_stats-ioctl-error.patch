@@ -1,0 +1,40 @@
+Author: Pavithra R <pavir@qti.qualcomm.com>
+Date:   Sun Jun 22 00:00:00 2026 +0530
+
+[mcproxy] mroute_socket: Downgrade get_mroute_stats ioctl error log from ERROR to DEBUG
+
+When SIOCGETSGCNT / SIOCGETSGCNT_IN6 returns errno 99 (EADDRNOTAVAIL),
+it means the requested (S,G) entry is not present in the kernel multicast
+routing table.  This is a transient, expected condition — the route may
+have just been torn down, timed out, or not yet been installed — and is
+not a programming error.
+
+The continuous stream of "failed to get multicast route stats!
+Error: Address not available errno: 99" messages on the console is
+therefore misleading.  Downgrade both ioctl failure paths from HC_LOG_ERROR
+to HC_LOG_DEBUG so the noise disappears in validation while remaining visible
+with debug logging enabled.  The function already returns false on this path,
+which is the correct action for the caller to handle gracefully.
+
+Signed-off-by: Pavithra R <pavir@qti.qualcomm.com>
+diff -Nur a/mcproxy/src/utils/mroute_socket.cpp b/mcproxy/src/utils/mroute_socket.cpp
+--- a/mcproxy/src/utils/mroute_socket.cpp
++++ b/mcproxy/src/utils/mroute_socket.cpp
+@@ -779,7 +779,7 @@ bool mroute_socket::get_mroute_stats(const addr_storage& source_addr, const add
+
+             rc = ioctl(m_sock, SIOCGETSGCNT, sgreq_v4);;
+             if (rc == -1) {
+-                HC_LOG_ERROR("failed to get multicast route stats! Error: " << strerror(errno) << " errno: " << errno);
++                HC_LOG_DEBUG("failed to get multicast route stats! Error: " << strerror(errno) << " errno: " << errno);
+                 return false;
+             } else {
+                 return true;
+@@ -798,7 +798,7 @@ bool mroute_socket::get_mroute_stats(const addr_storage& source_addr, const add
+
+             rc = ioctl(m_sock, SIOCGETSGCNT_IN6, sgreq_v6);
+             if (rc == -1) {
+-                HC_LOG_ERROR("failed to get multicast route stats! Error: " << strerror(errno) << " errno: " << errno);
++                HC_LOG_DEBUG("failed to get multicast route stats! Error: " << strerror(errno) << " errno: " << errno);
+                 return false;
+             } else {
+                 return true;
