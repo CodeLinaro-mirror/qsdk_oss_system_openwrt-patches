@@ -1,3 +1,4 @@
+urngd
 rngd
 rpcd
 crond
@@ -9,3 +10,4 @@ ipsec
 sysntpd
 kfence-handler
 dnsmasq
+odhcpd
