@@ -42,6 +42,7 @@ TS2PHC_WIFI_OPTS=""
 PHC2SYS_SRC=""
 PHC2SYS_STEP="0.128"
 PHC2SYS_OPTS=""
+PTP4L_ENABLED=0          # set via --ptp4l-enabled when ptp4l is part of the chain
 SYNC_TIMEOUT=300         # seconds to wait for ptp4l sync before giving up
 PTP4L_STABLE_THRESH=100  # ns - ptp4l considered stable when |offset| < this
 PTP4L_STABLE_COUNT=3     # number of consecutive stable readings required
@@ -75,6 +76,7 @@ while [ $# -gt 0 ]; do
 		--phc2sys-src)         PHC2SYS_SRC="$2";                         shift 2 ;;
 		--phc2sys-step)        PHC2SYS_STEP="$2";                        shift 2 ;;
 		--phc2sys-opts)        PHC2SYS_OPTS="$2";                        shift 2 ;;
+		--ptp4l-enabled)       PTP4L_ENABLED=1;                          shift ;;
 		--sync-timeout)        SYNC_TIMEOUT="$2";                        shift 2 ;;
 		--ts2phc-sync-timeout) TS2PHC_SYNC_TIMEOUT="$2";                 shift 2 ;;
 		--ts2phc-sync-thresh)  TS2PHC_SYNC_THRESHOLD="$2";               shift 2 ;;
@@ -498,8 +500,10 @@ stop_ts2phc_phc2sys() {
 #   4. Start phc2sys
 # ---------------------------------------------------------------------------
 do_sync_sequence() {
-	wait_ptp4l_sync
-	[ "$RUNNING" -eq 0 ] && return
+	if [ "$PTP4L_ENABLED" = "1" ]; then
+		wait_ptp4l_sync
+		[ "$RUNNING" -eq 0 ] && return
+	fi
 
 	if [ -n "$TS2PHC_SRC" ] && [ -n "$TS2PHC_DST" ]; then
 		start_ts2phc
@@ -532,8 +536,11 @@ logger -t ptp -p info "ptp-sequencer: entering monitor loop"
 while [ "$RUNNING" -eq 1 ]; do
 	sleep 5
 
-	# Check if ptp4l has lost sync (e.g. link down/up)
-	if check_ptp4l_lost; then
+	# Check if ptp4l has lost sync (e.g. link down/up). Only relevant when
+	# ptp4l is actually part of the chain; skipping this avoids false
+	# "lost sync" detections (and the resulting phc2sys/ts2phc restarts)
+	# when ptp4l isn't running at all (standalone ts2phc/phc2sys configs).
+	if [ "$PTP4L_ENABLED" = "1" ] && check_ptp4l_lost; then
 		logger -t ptp -p warn \
 			"ptp-sequencer: ptp4l lost sync, stopping ts2phc/phc2sys and waiting for re-sync"
 		stop_ts2phc_phc2sys
