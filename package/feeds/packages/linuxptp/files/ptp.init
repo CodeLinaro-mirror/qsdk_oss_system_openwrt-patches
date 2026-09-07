@@ -332,13 +332,16 @@ start_service() {
 		logger -t ptp -p warn "No PTP-capable interfaces found via ethtool -T"
 	fi
 
-	# ---- Check WAN interface has an IP address ----
-	if ! iface_has_ip "$interface"; then
+	# ---- Check WAN interface has an IP address (only required for ptp4l,
+	# which needs UDP/IP transport to reach the master; ts2phc/phc2sys work
+	# directly on hardware PHC devices and don't depend on interface IP) ----
+	if [ "$run_ptp4l" = "1" ] && ! iface_has_ip "$interface"; then
 		logger -t ptp -p info \
 			"Interface $interface has no IP yet; PTP daemons will start when WAN is up"
 		return 0
 	fi
-	logger -t ptp -p info "Interface $interface has IP; proceeding with PTP daemon startup"
+	[ "$run_ptp4l" = "1" ] && \
+		logger -t ptp -p info "Interface $interface has IP; proceeding with PTP daemon startup"
 
 	# =========================================================================
 	# Step 1: Register ptp4l as a direct procd instance
@@ -530,6 +533,12 @@ EOF
 
 			procd_open_instance ptp-chain
 			procd_set_param command "$PTP_SEQUENCER_BIN"
+
+			# Tell the sequencer whether ptp4l is part of the chain, so it
+			# knows whether to wait for/monitor ptp4l sync at all (avoids a
+			# pointless 300s stall and false "lost sync" restarts when
+			# ptp4l isn't running, e.g. standalone ts2phc/phc2sys configs).
+			[ "$run_ptp4l" = "1" ] && procd_append_param command --ptp4l-enabled
 
 			# ts2phc args: pass source and destination directly (no config file)
 			if [ "$ts2phc_ready" = "1" ]; then
