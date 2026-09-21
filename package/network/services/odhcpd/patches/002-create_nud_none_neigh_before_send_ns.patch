@@ -1,0 +1,119 @@
+Author: Ken Zhu <guigenz@qti.qualcomm.com>
+Date:   Wed Sep 16 15:30:00 2026 -0700
+
+    odhcpd: pre-create NUD_NONE neighbour entry before relaying NS
+
+    Relayed NSes are sent directly on a raw ICMPv6 socket, bypassing the
+    kernel's own neighbour-discovery lookup path, so there is no
+    neighbour-cache entry for the solicited NA to attach to and the NA
+    gets dropped instead of updating the neighbour cache.
+
+    Use rtnetlink to pre-create a NUD_NONE neighbour-cache entry for the
+    solicited target on each other relay interface the NS is sent to, so
+    the kernel has an entry to update once the NA responds. Skip this for
+    relayed DAD solicitations, since no neighbour cache entry is needed
+    for those and pre-creating one would just be left to go FAILED.
+
+    Also rename ns_send() to send_ns() for consistency with send_na().
+
+    Change-Id: Ice08cf541022f9277d4b3d0f404bf9a783edd19d
+    Signed-off-by: Ken Zhu <guigenz@qti.qualcomm.com>
+
+diff -Nur a/src/ndp.c b/src/ndp.c
+--- a/src/ndp.c	2026-09-16 18:02:03.643904519 -0700
++++ b/src/ndp.c	2026-09-16 18:03:52.290037148 -0700
+@@ -279,8 +279,8 @@
+ 
+ /* Send an NS. This is less for actually pinging but for the
+  * neighbor cache to be kept up-to-date. */
+-static void ns_send(struct in6_addr *addr,
+-		const struct interface *iface)
++static void send_ns(struct in6_addr *addr,
++		struct interface *iface, bool is_dad)
+ {
+ 	struct solicit_packet {
+ 		struct nd_neighbor_solicit nh;
+@@ -317,7 +317,18 @@
+ 
+ 	struct iovec iov = {&ns, sizeof(ns)};
+ 
+-	odhcpd_send(iface->ndp_ns_fd, &dest, &iov, 1, iface);
++	/* Pre-create a NUD_NONE neighbour entry so the kernel has an
++	 * entry to update when the solicited NA comes back. Skip this
++	 * for DAD relays, since we don't rely on the neighbour cache
++	 * for those. A -EEXIST from NLM_F_EXCL just means an entry is
++	 * already there, which is fine - leave it untouched. */
++	if (!is_dad) {
++		int err = netlink_setup_neigh(addr, iface->ifindex);
++		if (err && err != -EEXIST)
++			syslog(LOG_DEBUG, "netlink_setup_neigh(): %d", err);
++	}
++
++	odhcpd_try_send_with_src(iface->ndp_ns_fd, &dest, &iov, 1, iface);
+ 
+ }
+ 
+@@ -389,7 +400,7 @@
+ 	avl_for_each_element(&interfaces, c, avl) {
+ 		if (iface != c && c->ndp == MODE_RELAY &&
+ 				(ns_is_dad || !c->external))
+-			ns_send(&req->nd_ns_target, c);
++			send_ns(&req->nd_ns_target, c, ns_is_dad);
+ 	}
+ 
+ 	/* Catch global-addressed NS and answer them manually.
+diff -Nur a/src/netlink.c b/src/netlink.c
+--- a/src/netlink.c	2025-10-02 05:52:15.000000000 -0700
++++ b/src/netlink.c	2026-09-16 18:02:51.980853467 -0700
+@@ -1025,6 +1025,40 @@
+ }
+ 
+ 
++/* Pre-create a NUD_NONE neighbour cache entry for addr on ifindex, without
++ * touching any entry that may already exist (NLM_F_EXCL). NUD_NONE is
++ * neither in NUD_VALID (so no lladdr is required) nor in NUD_IN_TIMER (so
++ * the kernel won't itself arm a probe timer / send its own NS). This lets
++ * a later solicited NA update the entry via the kernel's normal
++ * ndisc_recv_na() path. */
++int netlink_setup_neigh(const struct in6_addr *addr, const int ifindex)
++{
++	struct nl_msg *msg;
++	struct ndmsg ndm = {
++		.ndm_family = AF_INET6,
++		.ndm_ifindex = ifindex,
++		.ndm_state = NUD_NONE,
++	};
++	int ret, flags = NLM_F_REQUEST | NLM_F_CREATE | NLM_F_EXCL;
++
++	msg = nlmsg_alloc_simple(RTM_NEWNEIGH, flags);
++	if (!msg)
++		return -1;
++
++	nlmsg_append(msg, &ndm, sizeof(ndm), 0);
++
++	nla_put(msg, NDA_DST, sizeof(*addr), addr);
++
++	ret = nl_send_auto_complete(rtnl_socket, msg);
++	nlmsg_free(msg);
++
++	if (ret < 0)
++		return ret;
++
++	return nl_wait_for_ack(rtnl_socket);
++}
++
++
+ int netlink_setup_addr(struct odhcpd_ipaddr *addr,
+ 		const int ifindex, const bool v6, const bool add)
+ {
+diff -Nur a/src/odhcpd.h b/src/odhcpd.h
+--- a/src/odhcpd.h	2026-09-16 18:02:03.643904519 -0700
++++ b/src/odhcpd.h	2026-09-16 18:02:51.980853467 -0700
+@@ -542,6 +542,7 @@
+ 		const uint32_t metric, const bool add);
+ int netlink_setup_proxy_neigh(const struct in6_addr *addr,
+ 		const int ifindex, const bool add);
++int netlink_setup_neigh(const struct in6_addr *addr, const int ifindex);
+ int netlink_setup_addr(struct odhcpd_ipaddr *addr,
+ 		const int ifindex, const bool v6, const bool add);
+ void netlink_dump_neigh_table(const bool proxy);
