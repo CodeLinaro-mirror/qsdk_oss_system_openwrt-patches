@@ -1,0 +1,28 @@
+From: Vijay Balaji <vijbal@qti.qualcomm.com>
+Date: Mon, 28 Sep 2026 16:37:45 +0530
+Subject: [PATCH] rootdisk: Increase F2FS_MINSIZE threshold for 3GB rootfs
+
+HLOS has increased the rootfs GPT partition size from 128MB to 3GB.
+Rootdisk driver fails to format ovelay whenever the rootfs partition exceeds
+F2FS_MINSIZE. Once the partition grew past the old 150MB threshold, it leaves the
+overlay unformatted and forcing a tmpfs fallback at boot.
+
+Raising F2FS_MINSIZE to the new rootfs partition size (3GB) so it never exceeds
+the threshold and mkfs.ext4 is always used for the first-time overlay format.
+
+Change-Id: Idfbf0705d8b6827032782e43767b21df9a66a869
+Signed-off-by: Vijay Balaji <vijbal@qti.qualcomm.com>
+---
+Index: fstools-2024.07.14~408c2cc4/libfstools/common.h
+===================================================================
+--- fstools-2024.07.14~408c2cc4.orig/libfstools/common.h
++++ fstools-2024.07.14~408c2cc4/libfstools/common.h
+@@ -19,7 +19,7 @@
+ #include "libfstools.h"
+ #include "volume.h"
+
+-#define F2FS_MINSIZE		(150ULL * 1024ULL * 1024ULL)
++#define F2FS_MINSIZE		(3000ULL * 1024ULL * 1024ULL)
+
+ int read_uint_from_file(char *dirname, char *filename, unsigned int *i);
+ char *read_string_from_file(const char *dirname, const char *filename, char *buf, size_t bufsz);
