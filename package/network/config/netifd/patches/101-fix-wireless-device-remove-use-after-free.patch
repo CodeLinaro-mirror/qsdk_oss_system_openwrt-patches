@@ -1,0 +1,64 @@
+From 37d13546b8545e0bec47c0704692cd8794a46bd4 Mon Sep 17 00:00:00 2001
+From: Uraj Sasan <usasan@qti.qualcomm.com>
+Date: Tue, 29 Sep 2026 13:25:36 +0530
+Subject: [PATCH] netifd: wireless: avoid use-after-free when removing device
+
+When a wireless device is removed during teardown,
+wdev_handle_config_change() can free the device before the teardown
+callback finishes.
+
+Notify before freeing the device and stop processing after the free to
+avoid accessing the released wireless device.
+
+Signed-off-by: Uraj Sasan <usasan@qti.qualcomm.com>
+---
+ wireless.c | 17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
+
+diff --git a/wireless.c b/wireless.c
+index 4a4baaa..492d70e 100644
+--- a/wireless.c
++++ b/wireless.c
+@@ -626,7 +626,7 @@ wdev_handle_config_change(struct wireless_device *wdev)
+ 	}
+ }
+ 
+-static void
++static bool
+ wireless_device_mark_down(struct wireless_device *wdev)
+ {
+ 	struct wireless_interface *vif;
+@@ -646,8 +646,20 @@ wireless_device_mark_down(struct wireless_device *wdev)
+ 	wdev->cancel = false;
+ 	wdev->state = IFS_DOWN;
+ 	wireless_device_free_state(wdev);
++
++	/*
++	 * Notify before freeing a device being removed. The callback
++	 * accesses wdev after wireless_device_mark_down() returns.
++	 */
++	if (wdev->config_state == IFC_REMOVE) {
++		netifd_ubus_wireless_notify(wdev, false);
++		wireless_device_free(wdev);
++		return true;
++	}
++
+ 	wdev_handle_config_change(wdev);
+ 	netifd_ubus_wireless_notify(wdev, false);
++	return false;
+ }
+ 
+ /* timeout callback to protect the tear down */
+@@ -745,7 +757,8 @@ wireless_device_script_task_cb(struct netifd_process *proc, int ret)
+ 		wireless_device_retry_setup(wdev);
+ 		break;
+ 	case IFS_TEARDOWN:
+-		wireless_device_mark_down(wdev);
++		if (wireless_device_mark_down(wdev))
++			return;
+ 		break;
+ 	default:
+ 		break;
+-- 
+2.34.1
+
