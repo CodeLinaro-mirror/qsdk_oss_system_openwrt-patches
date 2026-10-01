@@ -249,6 +249,7 @@ validate_ptp_section() {
 		'interface:string:eth0' \
 		'wan_uci_name:string:wan' \
 		'log_level:range(0,7):6' \
+		'daemon_log:bool:1' \
 		'run_ptp4l:bool:1' \
 		'run_ts2phc:bool:1' \
 		'run_phc2sys:bool:1' \
@@ -273,7 +274,7 @@ validate_ptp_section() {
 # ===========================================================================
 
 start_service() {
-	local enabled interface wan_uci_name
+	local enabled interface wan_uci_name daemon_log
 	local run_ptp4l run_ts2phc run_phc2sys run_ts2phc_wifi
 	local ptp4l_opts ts2phc_opts phc2sys_opts ts2phc_wifi_src_phc ts2phc_wifi_dst_phc ts2phc_wifi_opts slave_mode
 	local ptp4l_phc_dev ts2phc_src_phc ts2phc_dst_phc phc2sys_src_phc pps_in_source step_threshold
@@ -283,6 +284,7 @@ start_service() {
 	config_get enabled        settings enabled        1
 	config_get interface      settings interface      "eth0"
 	config_get wan_uci_name   settings wan_uci_name   "wan"
+	config_get daemon_log     settings daemon_log     1
 	config_get run_ptp4l           settings run_ptp4l           1
 	config_get run_ts2phc          settings run_ts2phc          1
 	config_get run_phc2sys         settings run_phc2sys         1
@@ -322,6 +324,8 @@ start_service() {
 	fi
 
 	logger -t ptp -p info "=== PTP service starting (WAN interface: $interface) ==="
+	[ "$daemon_log" = "1" ] || logger -t ptp -p info \
+		"Daemon logging disabled: ptp4l/ts2phc/phc2sys output is not sent to syslog"
 
 	# ---- Enumerate PTP-capable interfaces ----
 	local ptp_ifaces
@@ -373,13 +377,20 @@ EOF
 		procd_set_param command "$PTP4L_BIN"
 		procd_append_param command -i "$interface"
 		procd_append_param command -f "$PTP4L_CONF"
-		procd_append_param command -m
+		# With daemon logging disabled, -q keeps ptp4l out of syslog and
+		# dropping -m leaves nothing on stdout; the sequencer monitors
+		# ptp4l via pmc, not its log output.
+		if [ "$daemon_log" = "1" ]; then
+			procd_append_param command -m
+		else
+			procd_append_param command -q
+		fi
 		[ "$slave_mode" = "1" ] && procd_append_param command -s
 		[ -n "$ptp4l_phc_dev" ] && procd_append_param command -p "$ptp4l_phc_dev"
 		[ -n "$ptp4l_opts" ] && procd_append_param command $ptp4l_opts
 		procd_set_param respawn 3600 5 0
-		procd_set_param stdout 1
-		procd_set_param stderr 1
+		procd_set_param stdout "$daemon_log"
+		procd_set_param stderr "$daemon_log"
 		procd_close_instance
 
 		logger -t ptp -p info "ptp4l instance registered"
@@ -388,12 +399,14 @@ EOF
 	# =========================================================================
 	# Step 2: Resolve ts2phc PHC devices
 	#
-	# ts2phc is invoked as: ts2phc -s <src> -c <dst> -m
-	# No config file is needed; source and destination are passed on the
+	# ts2phc is invoked as: ts2phc -s <src> -c <dst1> [-c <dst2> ...] -m
+	# No config file is needed; source and destination(s) are passed on the
 	# command line via --ts2phc-src and --ts2phc-dst to the sequencer.
+	# ts2phc_dst_phc may list several PHCs (space-separated); xgmac_phc then
+	# holds that list, and auto-detection yields a single XGMAC PHC.
 	# =========================================================================
 	local ts2phc_ready=0
-	local src_phc="" xgmac_phc=""
+	local src_phc="" xgmac_phc="" dst dsts=""
 
 	if [ "$run_ts2phc" = "1" ] && [ -x /usr/sbin/ts2phc ]; then
 		# Resolve source PHC
@@ -411,23 +424,35 @@ EOF
 			fi
 		fi
 
-		# Resolve destination PHC
+		# Resolve destination PHC(s)
 		if [ -n "$ts2phc_dst_phc" ]; then
 			xgmac_phc="$ts2phc_dst_phc"
-			logger -t ptp -p info "ts2phc destination PHC: $xgmac_phc"
+			logger -t ptp -p info "ts2phc destination PHC(s): $xgmac_phc"
 		else
 			xgmac_phc=$(get_xgmac_ptp_device)
 		fi
+
+		# Drop any destination that is the source PHC itself
+		for dst in $xgmac_phc; do
+			if [ "$dst" = "$src_phc" ]; then
+				logger -t ptp -p info \
+					"Source and destination PHC are the same ($src_phc); not syncing it with ts2phc"
+			else
+				dsts="$dsts $dst"
+			fi
+		done
+		dsts="${dsts# }"
 
 		if [ -z "$src_phc" ]; then
 			: # already logged
 		elif [ -z "$xgmac_phc" ]; then
 			logger -t ptp -p warn \
 				"Skipping ts2phc: no destination PHC found (set ts2phc_dst_phc to override)"
-		elif [ "$src_phc" = "$xgmac_phc" ]; then
+		elif [ -z "$dsts" ]; then
 			logger -t ptp -p info \
-				"Source and destination PHC are the same ($src_phc); ts2phc not needed"
+				"No destination PHC other than the source ($src_phc); ts2phc not needed"
 		else
+			xgmac_phc="$dsts"
 			logger -t ptp -p info \
 				"ts2phc: $src_phc -> $xgmac_phc"
 			# Configure the XGMAC PPS input mux (ipq5210 only)
@@ -499,8 +524,8 @@ EOF
 			phc2sys_src="$phc2sys_src_phc"
 			logger -t ptp -p info "phc2sys source PHC: $phc2sys_src"
 		elif [ "$ts2phc_ready" = "1" ]; then
-			# ts2phc is running: sync from XGMAC PHC (ts2phc destination)
-			phc2sys_src="$xgmac_phc"
+			# ts2phc is running: sync from the (first) ts2phc destination
+			phc2sys_src="${xgmac_phc%% *}"
 		elif [ -n "$ts2phc_src_phc" ]; then
 			phc2sys_src="$ts2phc_src_phc"
 			logger -t ptp -p info "phc2sys using ts2phc_src_phc: $phc2sys_src"
@@ -540,10 +565,15 @@ EOF
 			# ptp4l isn't running, e.g. standalone ts2phc/phc2sys configs).
 			[ "$run_ptp4l" = "1" ] && procd_append_param command --ptp4l-enabled
 
-			# ts2phc args: pass source and destination directly (no config file)
+			# Keep ts2phc/phc2sys output out of syslog if requested
+			[ "$daemon_log" = "1" ] || procd_append_param command --no-daemon-log
+
+			# ts2phc args: pass source and destination(s) directly (no config file)
 			if [ "$ts2phc_ready" = "1" ]; then
 				procd_append_param command --ts2phc-src "$src_phc"
-				procd_append_param command --ts2phc-dst "$xgmac_phc"
+				for dst in $xgmac_phc; do
+					procd_append_param command --ts2phc-dst "$dst"
+				done
 				[ -n "$ts2phc_opts" ] && \
 					procd_append_param command --ts2phc-opts "$ts2phc_opts"
 			fi
