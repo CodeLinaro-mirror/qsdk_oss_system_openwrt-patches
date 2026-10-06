@@ -12,9 +12,9 @@
 # Sequence:
 #   1. Kill any orphaned ts2phc/phc2sys from a previous run
 #   2. Poll pmc until ptp4l offsetFromMaster is stable (< 100 ns for 3 reads)
-#   3. Start ts2phc (if --ts2phc-src and --ts2phc-dst are given)
+#   3. Start ts2phc (if --ts2phc-src and one or more --ts2phc-dst are given)
 #      ts2phc stdout is piped through logger so output appears in logread
-#   4. Poll logread until ts2phc offset < 1000 ns (XGMAC PHC synced)
+#   4. Poll logread until ts2phc offset < 1000 ns on every destination PHC
 #   5. Query UTC-TAI offset from ptp4l via pmc
 #   6. Start phc2sys (if --phc2sys-src is given)
 #      phc2sys stdout is piped through logger so output appears in logread
@@ -27,6 +27,12 @@
 #   8. Exit cleanly on SIGTERM (procd will respawn the whole chain)
 #
 # ts2phc liveness is tracked via PID files; phc2sys via killall -0 (no pkill).
+#
+# With --no-daemon-log, ts2phc/phc2sys output is kept out of syslog so it
+# cannot fill the log buffer: phc2sys runs with -q and no -m, and ts2phc runs
+# with -m -q, its stdout being reduced to the latest offset per destination
+# PHC in a status file (/var/run/ts2phc*.status) that step 4 polls instead
+# of logread.  The sequencer's own state messages are still logged.
 # Installed to /usr/sbin/ptp-sequencer by the linuxptp package.
 
 TS2PHC_BIN=/usr/sbin/ts2phc
@@ -34,7 +40,7 @@ PHC2SYS_BIN=/usr/sbin/phc2sys
 
 # Defaults (overridden by command-line args)
 TS2PHC_SRC=""
-TS2PHC_DST=""
+TS2PHC_DST=""             # space-separated list of destination PHCs
 TS2PHC_OPTS=""
 TS2PHC_WIFI_SRC=""
 TS2PHC_WIFI_DSTS=""      # space-separated list of WiFi PHC destinations
@@ -43,6 +49,7 @@ PHC2SYS_SRC=""
 PHC2SYS_STEP="0.128"
 PHC2SYS_OPTS=""
 PTP4L_ENABLED=0          # set via --ptp4l-enabled when ptp4l is part of the chain
+DAEMON_LOG=1             # cleared via --no-daemon-log to keep daemon output out of syslog
 SYNC_TIMEOUT=300         # seconds to wait for ptp4l sync before giving up
 PTP4L_STABLE_THRESH=100  # ns - ptp4l considered stable when |offset| < this
 PTP4L_STABLE_COUNT=3     # number of consecutive stable readings required
@@ -54,6 +61,10 @@ TS2PHC_SYNC_THRESHOLD=1000  # ns - ts2phc considered synced when |offset| < this
 # PID files for the two ts2phc instances (avoids killall conflicts)
 TS2PHC_PID_FILE=/var/run/ts2phc.pid
 TS2PHC_WIFI_PID_FILE=/var/run/ts2phc-wifi.pid
+
+# Latest s2 offset per destination PHC, written only with --no-daemon-log
+TS2PHC_STATUS_FILE=/var/run/ts2phc.status
+TS2PHC_WIFI_STATUS_FILE=/var/run/ts2phc-wifi.status
 
 RUNNING=1
 
@@ -68,7 +79,7 @@ TS2PHC_WIFI_SENTINEL="ts2phc-wifi-start-$$"
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--ts2phc-src)          TS2PHC_SRC="$2";                          shift 2 ;;
-		--ts2phc-dst)          TS2PHC_DST="$2";                          shift 2 ;;
+		--ts2phc-dst)          TS2PHC_DST="$TS2PHC_DST $2";             shift 2 ;;
 		--ts2phc-opts)         TS2PHC_OPTS="$2";                         shift 2 ;;
 		--ts2phc-wifi-src)     TS2PHC_WIFI_SRC="$2";                     shift 2 ;;
 		--ts2phc-wifi-dst)     TS2PHC_WIFI_DSTS="$TS2PHC_WIFI_DSTS $2"; shift 2 ;;
@@ -77,13 +88,15 @@ while [ $# -gt 0 ]; do
 		--phc2sys-step)        PHC2SYS_STEP="$2";                        shift 2 ;;
 		--phc2sys-opts)        PHC2SYS_OPTS="$2";                        shift 2 ;;
 		--ptp4l-enabled)       PTP4L_ENABLED=1;                          shift ;;
+		--no-daemon-log)       DAEMON_LOG=0;                             shift ;;
 		--sync-timeout)        SYNC_TIMEOUT="$2";                        shift 2 ;;
 		--ts2phc-sync-timeout) TS2PHC_SYNC_TIMEOUT="$2";                 shift 2 ;;
 		--ts2phc-sync-thresh)  TS2PHC_SYNC_THRESHOLD="$2";               shift 2 ;;
 		*) shift ;;
 	esac
 done
-# Trim leading space from accumulated WiFi destinations list
+# Trim leading space from accumulated destination lists
+TS2PHC_DST="${TS2PHC_DST# }"
 TS2PHC_WIFI_DSTS="${TS2PHC_WIFI_DSTS# }"
 
 # ---------------------------------------------------------------------------
@@ -96,7 +109,8 @@ cleanup() {
 	killall -q phc2sys 2>/dev/null
 	kill "$(cat "$TS2PHC_WIFI_PID_FILE" 2>/dev/null)" 2>/dev/null
 	kill "$(cat "$TS2PHC_PID_FILE"      2>/dev/null)" 2>/dev/null
-	rm -f "$TS2PHC_PID_FILE" "$TS2PHC_WIFI_PID_FILE"
+	rm -f "$TS2PHC_PID_FILE" "$TS2PHC_WIFI_PID_FILE" \
+		"$TS2PHC_STATUS_FILE" "$TS2PHC_WIFI_STATUS_FILE"
 	wait
 	exit 0
 }
@@ -112,7 +126,8 @@ kill "$(cat "$TS2PHC_WIFI_PID_FILE" 2>/dev/null)" 2>/dev/null
 kill "$(cat "$TS2PHC_PID_FILE"      2>/dev/null)" 2>/dev/null
 killall -q ts2phc  2>/dev/null
 killall -q phc2sys 2>/dev/null
-rm -f "$TS2PHC_PID_FILE" "$TS2PHC_WIFI_PID_FILE"
+rm -f "$TS2PHC_PID_FILE" "$TS2PHC_WIFI_PID_FILE" \
+	"$TS2PHC_STATUS_FILE" "$TS2PHC_WIFI_STATUS_FILE"
 sleep 1
 
 # ---------------------------------------------------------------------------
@@ -273,28 +288,81 @@ get_utc_tai_offset() {
 }
 
 # ---------------------------------------------------------------------------
-# Wait for ts2phc to sync the XGMAC PHC (|offset| < TS2PHC_SYNC_THRESHOLD ns)
+# ts2phc output helpers
 #
-# ts2phc stdout is piped through 'logger -t ts2phc' by start_ts2phc(), so
-# every ts2phc output line appears in logread as:
-#   "user.info ts2phc[PID]: [ts] /dev/ptp1 offset   -17 s2 freq ..."
-#
-# To avoid matching stale ts2phc lines from a previous run (e.g. after a
-# link down/up recovery), start_ts2phc() writes a unique sentinel line to
-# syslog before starting ts2phc.  wait_ts2phc_sync() only considers logread
-# lines that appear after the sentinel.  This is robust against log restarts:
-# if logd is restarted and the buffer is cleared, the sentinel is gone too,
-# so there are no stale lines to match — the sequencer simply waits for new
-# ts2phc output.
+# ts2phc prints one line per destination PHC each second, e.g.
+#   "ts2phc[123.456]: /dev/ptp1 offset   -17 s2 freq  -1234"
+# The device is the field before "offset" and the offset the field after it,
+# both in raw stdout and in logread lines.
 # ---------------------------------------------------------------------------
-wait_ts2phc_sync() {
+
+# Reduce ts2phc output on stdin to "<dev> <offset>" pairs, keeping only the
+# latest s2 (servo locked) reading per destination PHC.
+ts2phc_s2_offsets() {
+	awk '/ s2 freq/ {
+		for (i = 2; i <= NF; i++)
+			if ($i == "offset") { last[$(i - 1)] = $(i + 1); break }
+	}
+	END { for (d in last) print d, last[d] }'
+}
+
+# Sink for ts2phc stdout/stderr: forward to syslog, or with --no-daemon-log
+# rewrite <status_file> with the latest s2 offset per destination PHC so the
+# sync state stays observable without filling the log buffer.
+ts2phc_output() {
+	local tag="$1" status_file="$2"
+
+	if [ "$DAEMON_LOG" = "1" ]; then
+		logger -t "$tag" -p user.info
+		return
+	fi
+	awk -v f="$status_file" '/ s2 freq/ {
+		for (i = 2; i <= NF; i++)
+			if ($i == "offset") { last[$(i - 1)] = $(i + 1); break }
+		for (d in last) print d, last[d] > f
+		close(f)
+	}'
+}
+
+# Print the latest s2 offset per destination PHC of the ts2phc instance
+# <tag>, as "<dev> <offset>" pairs.
+#
+# With daemon logging, only logread lines that appear after the instance's
+# sentinel and carry its logger tag ("<tag>[<pid>]") are considered, to
+# avoid matching stale lines from a previous run (e.g. after a link down/up
+# recovery).  If logd is restarted and the buffer is cleared, the sentinel is gone too, so nothing stale can match and the
+# sequencer simply waits for new ts2phc output.  Without daemon logging the
+# status file is read instead; it is removed before every ts2phc start.
+ts2phc_current_offsets() {
+	local tag="$1" sentinel="$2" status_file="$3"
+
+	if [ "$DAEMON_LOG" = "1" ]; then
+		logread 2>/dev/null \
+			| awk -v s="${tag}: === ${sentinel} ===" -v t=" ${tag}[" \
+				'index($0, s) { found = 1; next }
+				 found && index($0, t)' \
+			| ts2phc_s2_offsets
+	else
+		cat "$status_file" 2>/dev/null
+	fi
+}
+
+# ---------------------------------------------------------------------------
+# Wait for a ts2phc instance to sync all of its destination PHCs
+# (|offset| < TS2PHC_SYNC_THRESHOLD ns on every device in <dsts>).
+#
+# Usage: wait_ts2phc_instance_sync <tag> <sentinel> <status_file> <dsts>
+#   <tag> is ts2phc (XGMAC PHC(s)) or ts2phc-wifi (ath12k_ptp PHC(s)).
+# ---------------------------------------------------------------------------
+wait_ts2phc_instance_sync() {
+	local tag="$1" sentinel="$2" status_file="$3" dsts="$4"
 	local elapsed=0
-	local offset int_offset abs_offset line
+	local offsets dev offset int_offset abs_offset pending synced
 
 	logger -t ptp -p info \
-		"ptp-sequencer: waiting for ts2phc to sync (timeout: ${TS2PHC_SYNC_TIMEOUT}s, threshold: ${TS2PHC_SYNC_THRESHOLD}ns)"
+		"ptp-sequencer: waiting for $tag to sync $dsts (timeout: ${TS2PHC_SYNC_TIMEOUT}s, threshold: ${TS2PHC_SYNC_THRESHOLD}ns)"
 
-	# Brief initial wait so ts2phc has time to produce its first log line
+	# Brief initial wait so ts2phc has time to produce its first output
 	sleep 3
 	elapsed=3
 
@@ -302,50 +370,49 @@ wait_ts2phc_sync() {
 		if [ "$RUNNING" -eq 0 ]; then
 			return 1
 		fi
-		# Only consider ts2phc lines that appeared after the sentinel.
-		# awk prints lines after the sentinel that contain "s2 freq".
-		# If the sentinel is absent (logd restarted), awk finds nothing —
-		# the sequencer waits for new ts2phc output, which is correct.
-		line=$(logread 2>/dev/null \
-			| awk "/ts2phc: === ${TS2PHC_SENTINEL} ===/{found=1; next} \
-			       found && / ts2phc\[/ && / s2 freq/{print}" \
-			| tail -1)
-		if [ -n "$line" ]; then
-			offset=$(echo "$line" \
-				| awk '{ for(i=1;i<=NF;i++) if($i=="offset") { print $(i+1); break } }')
-			if [ -n "$offset" ]; then
-				int_offset="${offset%.*}"
-				abs_offset="${int_offset#-}"
-				if [ "$abs_offset" -lt "$TS2PHC_SYNC_THRESHOLD" ] 2>/dev/null; then
-					logger -t ptp -p info \
-						"ptp-sequencer: ts2phc synced (offset=${offset}ns)"
-					return 0
-				else
-					logger -t ptp -p info \
-						"ptp-sequencer: ts2phc not yet synced (offset=${offset}ns, threshold=${TS2PHC_SYNC_THRESHOLD}ns)"
-				fi
+		offsets=$(ts2phc_current_offsets "$tag" "$sentinel" "$status_file")
+		pending=""
+		synced=""
+		for dev in $dsts; do
+			offset=$(echo "$offsets" \
+				| awk -v d="$dev" '$1 == d { print $2; exit }')
+			int_offset="${offset%.*}"
+			abs_offset="${int_offset#-}"
+			if [ -z "$offset" ]; then
+				pending="$pending $dev(no s2 yet)"
+			elif [ "$abs_offset" -lt "$TS2PHC_SYNC_THRESHOLD" ] 2>/dev/null; then
+				synced="$synced $dev(${offset}ns)"
+			else
+				pending="$pending $dev(${offset}ns)"
 			fi
-		else
+		done
+		if [ -z "$pending" ]; then
 			logger -t ptp -p info \
-				"ptp-sequencer: ts2phc poll: no s2 line after sentinel yet (elapsed=${elapsed}s)"
+				"ptp-sequencer: $tag synced:$synced"
+			return 0
 		fi
+		logger -t ptp -p info \
+			"ptp-sequencer: $tag not yet synced:$pending (elapsed=${elapsed}s)"
 		sleep 2
 		elapsed=$((elapsed + 2))
 	done
 
 	logger -t ptp -p warn \
-		"ptp-sequencer: ts2phc sync timeout after ${TS2PHC_SYNC_TIMEOUT}s; starting phc2sys anyway"
+		"ptp-sequencer: $tag sync timeout after ${TS2PHC_SYNC_TIMEOUT}s; proceeding anyway"
 	return 1
 }
 
 # ---------------------------------------------------------------------------
 # Start ts2phc (XGMAC PHC sync)
-# ts2phc -s <src> -c <dst> -m [extra opts]
+# ts2phc -s <src> -c <dst1> [-c <dst2> ...] -m [-q] [extra opts]
 #
 # Uses a PID file (/var/run/ts2phc.pid) so the process can be managed
 # independently of the WiFi ts2phc instance without killall conflicts.
-# Writes a unique sentinel to syslog before starting so that
-# wait_ts2phc_sync() can ignore stale lines from previous runs.
+# With daemon logging, writes a unique sentinel to syslog before starting so
+# that ts2phc_current_offsets() can ignore stale lines from previous runs.
+# -m is kept even without daemon logging (-q only disables syslog): ts2phc
+# has no management interface, so its stdout is the only way to observe
+# its sync state.
 # ---------------------------------------------------------------------------
 start_ts2phc() {
 	if [ -z "$TS2PHC_SRC" ] || [ -z "$TS2PHC_DST" ]; then
@@ -353,74 +420,28 @@ start_ts2phc() {
 			"ptp-sequencer: ts2phc source or destination not set, skipping ts2phc"
 		return 1
 	fi
+	local dst_c_args="" log_opts="-m"
+	for dev in $TS2PHC_DST; do
+		dst_c_args="$dst_c_args -c $dev"
+	done
+	[ "$DAEMON_LOG" = "1" ] || log_opts="-m -q"
 	logger -t ptp -p info \
-		"ptp-sequencer: starting ts2phc -s $TS2PHC_SRC -c $TS2PHC_DST"
-	# Write sentinel to syslog so wait_ts2phc_sync() can ignore stale lines
-	logger -t ts2phc -p user.info "=== ${TS2PHC_SENTINEL} ==="
+		"ptp-sequencer: starting ts2phc -s $TS2PHC_SRC$dst_c_args"
+	rm -f "$TS2PHC_STATUS_FILE"
+	# Write sentinel to syslog so stale lines can be ignored
+	[ "$DAEMON_LOG" = "1" ] && \
+		logger -t ts2phc -p user.info "=== ${TS2PHC_SENTINEL} ==="
 	# sh -c creates a new process where $$ is its own PID; after exec, ts2phc
 	# inherits that PID.  POSIX $$ in a (...) subshell is the parent's PID.
 	# shellcheck disable=SC2086
-	sh -c 'echo $$ > "'"$TS2PHC_PID_FILE"'"; exec "'"$TS2PHC_BIN"'" -s "'"$TS2PHC_SRC"'" -c "'"$TS2PHC_DST"'" -m '"$TS2PHC_OPTS" \
-		2>&1 | logger -t ts2phc -p user.info &
+	sh -c 'echo $$ > "'"$TS2PHC_PID_FILE"'"; exec "'"$TS2PHC_BIN"'" -s "'"$TS2PHC_SRC"'"'"$dst_c_args"' '"$log_opts $TS2PHC_OPTS" \
+		2>&1 | ts2phc_output ts2phc "$TS2PHC_STATUS_FILE" &
 	logger -t ptp -p info "ptp-sequencer: ts2phc started"
 }
 
 # ---------------------------------------------------------------------------
-# Wait for WiFi ts2phc to sync ath12k_ptp PHC(s)
-# (|offset| < TS2PHC_SYNC_THRESHOLD ns)
-#
-# Monitors 'ts2phc-wifi' log tag lines that appear after the WiFi sentinel.
-# ---------------------------------------------------------------------------
-wait_ts2phc_wifi_sync() {
-	local elapsed=0
-	local offset int_offset abs_offset line
-
-	logger -t ptp -p info \
-		"ptp-sequencer: waiting for ts2phc-wifi to sync (timeout: ${TS2PHC_SYNC_TIMEOUT}s, threshold: ${TS2PHC_SYNC_THRESHOLD}ns)"
-
-	# Brief initial wait so ts2phc-wifi has time to produce its first log line
-	sleep 3
-	elapsed=3
-
-	while [ "$elapsed" -lt "$TS2PHC_SYNC_TIMEOUT" ]; do
-		if [ "$RUNNING" -eq 0 ]; then
-			return 1
-		fi
-		line=$(logread 2>/dev/null \
-			| awk "/ts2phc-wifi: === ${TS2PHC_WIFI_SENTINEL} ===/{found=1; next} \
-			       found && / ts2phc-wifi\[/ && / s2 freq/{print}" \
-			| tail -1)
-		if [ -n "$line" ]; then
-			offset=$(echo "$line" \
-				| awk '{ for(i=1;i<=NF;i++) if($i=="offset") { print $(i+1); break } }')
-			if [ -n "$offset" ]; then
-				int_offset="${offset%.*}"
-				abs_offset="${int_offset#-}"
-				if [ "$abs_offset" -lt "$TS2PHC_SYNC_THRESHOLD" ] 2>/dev/null; then
-					logger -t ptp -p info \
-						"ptp-sequencer: ts2phc-wifi synced (offset=${offset}ns)"
-					return 0
-				else
-					logger -t ptp -p info \
-						"ptp-sequencer: ts2phc-wifi not yet synced (offset=${offset}ns, threshold=${TS2PHC_SYNC_THRESHOLD}ns)"
-				fi
-			fi
-		else
-			logger -t ptp -p info \
-				"ptp-sequencer: ts2phc-wifi poll: no s2 line after sentinel yet (elapsed=${elapsed}s)"
-		fi
-		sleep 2
-		elapsed=$((elapsed + 2))
-	done
-
-	logger -t ptp -p warn \
-		"ptp-sequencer: ts2phc-wifi sync timeout after ${TS2PHC_SYNC_TIMEOUT}s; proceeding"
-	return 1
-}
-
-# ---------------------------------------------------------------------------
 # Start ts2phc-wifi (WiFi ath12k_ptp PHC sync)
-# ts2phc -s <wifi_src> -c <dev1> [-c <dev2> ...] -m [extra opts]
+# ts2phc -s <wifi_src> -c <dev1> [-c <dev2> ...] -m [-q] [extra opts]
 #
 # Uses a separate PID file (/var/run/ts2phc-wifi.pid) so it can be managed
 # independently of the main ts2phc instance.
@@ -431,17 +452,20 @@ start_ts2phc_wifi() {
 			"ptp-sequencer: ts2phc-wifi source or destination not set, skipping"
 		return 1
 	fi
-	local wifi_c_args=""
+	local wifi_c_args="" log_opts="-m"
 	for dev in $TS2PHC_WIFI_DSTS; do
 		wifi_c_args="$wifi_c_args -c $dev"
 	done
+	[ "$DAEMON_LOG" = "1" ] || log_opts="-m -q"
 	logger -t ptp -p info \
 		"ptp-sequencer: starting ts2phc-wifi -s $TS2PHC_WIFI_SRC$wifi_c_args"
-	# Write sentinel to syslog so wait_ts2phc_wifi_sync() can ignore stale lines
-	logger -t ts2phc-wifi -p user.info "=== ${TS2PHC_WIFI_SENTINEL} ==="
+	rm -f "$TS2PHC_WIFI_STATUS_FILE"
+	# Write sentinel to syslog so stale lines can be ignored
+	[ "$DAEMON_LOG" = "1" ] && \
+		logger -t ts2phc-wifi -p user.info "=== ${TS2PHC_WIFI_SENTINEL} ==="
 	# shellcheck disable=SC2086
-	sh -c 'echo $$ > "'"$TS2PHC_WIFI_PID_FILE"'"; exec "'"$TS2PHC_BIN"'" -s "'"$TS2PHC_WIFI_SRC"'"'"$wifi_c_args"' -m '"$TS2PHC_WIFI_OPTS" \
-		2>&1 | logger -t ts2phc-wifi -p user.info &
+	sh -c 'echo $$ > "'"$TS2PHC_WIFI_PID_FILE"'"; exec "'"$TS2PHC_BIN"'" -s "'"$TS2PHC_WIFI_SRC"'"'"$wifi_c_args"' '"$log_opts $TS2PHC_WIFI_OPTS" \
+		2>&1 | ts2phc_output ts2phc-wifi "$TS2PHC_WIFI_STATUS_FILE" &
 	logger -t ptp -p info "ptp-sequencer: ts2phc-wifi started"
 }
 
@@ -449,6 +473,8 @@ start_ts2phc_wifi() {
 # Start phc2sys
 #
 # stdout is piped through 'logger -t phc2sys' so output appears in logread.
+# With --no-daemon-log, phc2sys runs with -q and without -m, so it prints
+# nothing to syslog or stdout.
 # ---------------------------------------------------------------------------
 start_phc2sys() {
 	local utc_tai_offset
@@ -460,15 +486,27 @@ start_phc2sys() {
 	utc_tai_offset=$(get_utc_tai_offset)
 	logger -t ptp -p info \
 		"ptp-sequencer: starting phc2sys $PHC2SYS_SRC -> CLOCK_REALTIME (UTC-TAI=${utc_tai_offset}s)"
-	# shellcheck disable=SC2086
-	"$PHC2SYS_BIN" \
-		-s "$PHC2SYS_SRC" \
-		-c CLOCK_REALTIME \
-		-O "$utc_tai_offset" \
-		-m \
-		-S "$PHC2SYS_STEP" \
-		$PHC2SYS_OPTS \
-		2>&1 | logger -t phc2sys -p user.info &
+	if [ "$DAEMON_LOG" = "1" ]; then
+		# shellcheck disable=SC2086
+		"$PHC2SYS_BIN" \
+			-s "$PHC2SYS_SRC" \
+			-c CLOCK_REALTIME \
+			-O "$utc_tai_offset" \
+			-m \
+			-S "$PHC2SYS_STEP" \
+			$PHC2SYS_OPTS \
+			2>&1 | logger -t phc2sys -p user.info &
+	else
+		# shellcheck disable=SC2086
+		"$PHC2SYS_BIN" \
+			-s "$PHC2SYS_SRC" \
+			-c CLOCK_REALTIME \
+			-O "$utc_tai_offset" \
+			-q \
+			-S "$PHC2SYS_STEP" \
+			$PHC2SYS_OPTS \
+			>/dev/null 2>&1 &
+	fi
 	logger -t ptp -p info "ptp-sequencer: phc2sys started"
 }
 
@@ -482,7 +520,8 @@ stop_ts2phc_phc2sys() {
 	killall -q phc2sys 2>/dev/null
 	kill "$(cat "$TS2PHC_WIFI_PID_FILE" 2>/dev/null)" 2>/dev/null
 	kill "$(cat "$TS2PHC_PID_FILE"      2>/dev/null)" 2>/dev/null
-	rm -f "$TS2PHC_PID_FILE" "$TS2PHC_WIFI_PID_FILE"
+	rm -f "$TS2PHC_PID_FILE" "$TS2PHC_WIFI_PID_FILE" \
+		"$TS2PHC_STATUS_FILE" "$TS2PHC_WIFI_STATUS_FILE"
 	sleep 1
 }
 
@@ -493,7 +532,7 @@ stop_ts2phc_phc2sys() {
 #
 # Sequence:
 #   1. Wait for ptp4l to stabilise
-#   2. Start main ts2phc (XGMAC PHC) and wait for it to sync
+#   2. Start main ts2phc (XGMAC PHC(s)) and wait for it to sync
 #   3. Start WiFi ts2phc (ath12k_ptp PHC(s)) after main ts2phc is synced
 #      (safe even when WiFi source differs from XGMAC source, since ptp4l
 #      is already stable at this point)
@@ -507,7 +546,8 @@ do_sync_sequence() {
 
 	if [ -n "$TS2PHC_SRC" ] && [ -n "$TS2PHC_DST" ]; then
 		start_ts2phc
-		wait_ts2phc_sync
+		wait_ts2phc_instance_sync ts2phc "$TS2PHC_SENTINEL" \
+			"$TS2PHC_STATUS_FILE" "$TS2PHC_DST"
 	fi
 	[ "$RUNNING" -eq 0 ] && return
 
@@ -515,7 +555,8 @@ do_sync_sequence() {
 	# (which may be the XGMAC PHC) is already accurate.
 	if [ -n "$TS2PHC_WIFI_SRC" ] && [ -n "$TS2PHC_WIFI_DSTS" ]; then
 		start_ts2phc_wifi
-		wait_ts2phc_wifi_sync
+		wait_ts2phc_instance_sync ts2phc-wifi "$TS2PHC_WIFI_SENTINEL" \
+			"$TS2PHC_WIFI_STATUS_FILE" "$TS2PHC_WIFI_DSTS"
 	fi
 	[ "$RUNNING" -eq 0 ] && return
 
