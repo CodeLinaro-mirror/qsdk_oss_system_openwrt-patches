@@ -5,11 +5,18 @@
 #
 # PTP (Precision Time Protocol) init script for OpenWrt
 #
-# Sync chain:
+# Sync chain (ap mode, default):
 #   External PTP Master
 #     -> ptp4l  (WAN/eth0, slave mode)       -- syncs eth0 PHC from external master
-#     -> ts2phc (eth0 PHC -> XGMAC PHC)      -- copies time to XGMAC hardware clock
+#     -> ts2phc (eth0 PHC -> linked-up XGMAC and external Ethernet PHY PHCs)
 #     -> phc2sys (XGMAC PHC -> system clock) -- keeps system time in sync
+#
+# Repeater mode (option mode 'repeater'):
+#   ath12k_ptp WiFi PHC (synced to the upstream AP by the WiFi driver)
+#     -> ts2phc (ath12k_ptp PHC -> linked-up XGMAC and external Ethernet
+#        PHY PHCs)
+#     -> phc2sys (XGMAC PHC -> system clock)
+#   ptp4l and the WiFi ts2phc instance are not used in this mode.
 #
 # ptp4l is started as a direct procd instance.
 # ts2phc and phc2sys are started by /usr/sbin/ptp-sequencer (a second procd
@@ -21,6 +28,8 @@
 # Firewall rules for PTP traffic are managed separately via
 # /etc/firewall.d/ptp (registered as a fw3/fw4 include in /etc/config/firewall
 # by /etc/uci-defaults/99-ptp at first boot).
+#
+# "ptp_disabled" in the bootargs skips the service at boot.
 
 START=99
 STOP=10
@@ -55,60 +64,6 @@ get_phc_num_for_iface() {
 		| grep "PTP Hardware Clock" \
 		| grep -o '[0-9]\+' \
 		| head -1
-}
-
-# ---------------------------------------------------------------------------
-# Helper: find the XGMAC PTP device that is linked up
-# ---------------------------------------------------------------------------
-get_xgmac_ptp_device() {
-	local fallback_dev=""
-	local ptp_sysfs dev_name ptp_num clock_name iface iface_ptp_num operstate
-
-	for ptp_sysfs in /sys/class/ptp/ptp*; do
-		[ -d "$ptp_sysfs" ] || continue
-		[ -f "$ptp_sysfs/clock_name" ] || continue
-
-		clock_name=$(cat "$ptp_sysfs/clock_name" 2>/dev/null)
-
-		if echo "$clock_name" | grep -qi "xgmac"; then
-			dev_name=$(basename "$ptp_sysfs")
-			ptp_num="${dev_name#ptp}"
-
-			for iface in $(ls /sys/class/net/ 2>/dev/null); do
-				[ "$iface" = "lo" ] && continue
-				iface_ptp_num=$(get_phc_num_for_iface "$iface")
-				if [ "$iface_ptp_num" = "$ptp_num" ]; then
-					operstate=$(cat "/sys/class/net/$iface/operstate" 2>/dev/null)
-					if [ "$operstate" = "up" ]; then
-						logger -t ptp -p info \
-							"XGMAC PHC /dev/$dev_name found, interface $iface is up (clock: $clock_name)"
-						echo "/dev/$dev_name"
-						return 0
-					else
-						logger -t ptp -p info \
-							"XGMAC PHC /dev/$dev_name found, interface $iface is $operstate (clock: $clock_name)"
-						fallback_dev="/dev/$dev_name"
-					fi
-				fi
-			done
-
-			if [ -z "$fallback_dev" ]; then
-				fallback_dev="/dev/$dev_name"
-				logger -t ptp -p info \
-					"XGMAC PHC /dev/$dev_name found (no associated interface, clock: $clock_name)"
-			fi
-		fi
-	done
-
-	if [ -n "$fallback_dev" ]; then
-		logger -t ptp -p warn \
-			"No linked-up XGMAC PHC found; using $fallback_dev as fallback"
-		echo "$fallback_dev"
-		return 0
-	fi
-
-	logger -t ptp -p warn "No XGMAC PHC device found in /sys/class/ptp/"
-	return 1
 }
 
 # ---------------------------------------------------------------------------
@@ -156,6 +111,69 @@ find_non_ath12k_ptp_dev() {
 }
 
 # ---------------------------------------------------------------------------
+# Helper: print the netdev that owns a PHC
+#
+# Usage: get_netdev_for_phc /dev/ptpX
+#
+# XGMAC PHCs are registered on the nss-dp platform device, so the netdev is
+# listed under /sys/class/ptp/ptpX/device/net/.  Ethernet PHY PHCs are
+# registered on the MDIO device, whose attached_dev link points to the
+# netdev.  Prints nothing if no netdev is found.
+# ---------------------------------------------------------------------------
+get_netdev_for_phc() {
+	local ptp_sysfs="/sys/class/ptp/${1#/dev/}"
+	local net_sysfs
+
+	for net_sysfs in "$ptp_sysfs"/device/net/*; do
+		[ -d "$net_sysfs" ] || continue
+		basename "$net_sysfs"
+		return 0
+	done
+
+	if [ -L "$ptp_sysfs/device/attached_dev" ]; then
+		basename "$(readlink "$ptp_sysfs/device/attached_dev")"
+		return 0
+	fi
+
+	return 1
+}
+
+# ---------------------------------------------------------------------------
+# Helper: find all linked-up Ethernet PHC devices (XGMAC and external PHY)
+#
+# Usage: find_eth_ptp_devs [exclude PHC]
+#
+# Prints one /dev/ptpX per line for every device whose clock_name contains
+# "xgmac" (nss-dp XGMAC) or is "qca8xxx_phc" (external QCA8xxx PHY) and
+# whose netdev operstate is up.  The PHC given as argument (the ts2phc
+# source) is skipped.  Used as the ts2phc destinations.  The IPQ52xx
+# internal PHY PHC ("internal_phc") is never a destination; it can only be
+# the ts2phc source.
+# ---------------------------------------------------------------------------
+find_eth_ptp_devs() {
+	local exclude="$1"
+	local ptp_sysfs dev clock_name iface operstate
+
+	for ptp_sysfs in /sys/class/ptp/ptp*; do
+		[ -d "$ptp_sysfs" ] || continue
+		[ -f "$ptp_sysfs/clock_name" ] || continue
+		dev="/dev/$(basename "$ptp_sysfs")"
+		[ "$dev" = "$exclude" ] && continue
+		clock_name=$(cat "$ptp_sysfs/clock_name" 2>/dev/null)
+		case "$clock_name" in
+			*xgmac*|*XGMAC*|qca8xxx_phc) ;;
+			*) continue ;;
+		esac
+
+		iface=$(get_netdev_for_phc "$dev")
+		operstate=$(cat "/sys/class/net/$iface/operstate" 2>/dev/null)
+		logger -t ptp -p info \
+			"Ethernet PHC $dev (clock: $clock_name): interface ${iface:-none} is ${operstate:-unknown}"
+		[ "$operstate" = "up" ] && echo "$dev"
+	done
+}
+
+# ---------------------------------------------------------------------------
 # Helper: check whether a network interface has an IPv4 address
 # ---------------------------------------------------------------------------
 iface_has_ip() {
@@ -164,39 +182,37 @@ iface_has_ip() {
 }
 
 # ---------------------------------------------------------------------------
-# Helper: configure the PPS input source for the XGMAC on ipq5210.
+# Helper: configure the XGMAC PPS input mux where the SoC has one (ipq5210).
 #
-# On ipq5210 the XGMAC PPS input mux must be set before ts2phc starts.
-# The mux is controlled via debugfs:
+# The XGMAC PPS input mux must be set before ts2phc starts.
+# The mux selects which PPS is fed to the XGMAC only; Ethernet PHYs have
+# their own PPS connection, so it is only configured when an XGMAC PHC is
+# one of the ts2phc destinations.
+# The mux is controlled via debugfs, which qca-nss-dp only creates on SoCs
+# that have the mux:
 #   /sys/kernel/debug/qca-nss-dp/ptp/pps_in_source
 #
 # The correct value is derived from the ts2phc source PHC clock_name:
 #   clock_name = "internal_phc"  ->  pps_in_source = "internal_phy"
 #   clock_name = "PON_PTP"       ->  pps_in_source = "pon_mac"
-#   anything else (external PHY) ->  pps_in_source = "external_phy" (default)
+#   anything else                ->  pps_in_source = "external_phy" (default)
+# In ap mode the source is the PHC ptp4l runs on, so ptp4l on the internal
+# PHY selects "internal_phy" and ptp4l on an external PHY "external_phy".
+# In repeater mode the ath12k_ptp WiFi PPS enters via GPIO, the same as an
+# external PHY, so it selects "external_phy" as well.
 #
-# On ipq9650 the mux does not exist and no configuration is needed.
+# SoCs without the mux (e.g. ipq9650) do not create the file and need no
+# configuration.
 # A manual override is available via the UCI option pps_in_source.
 # ---------------------------------------------------------------------------
 configure_pps_source() {
 	local src_phc="$1"
 	local pps_in_source_override="$2"
-	local board ptp_num clock_name pps_source
-
-	# Only needed on ipq5210; ipq9650 does not have this mux
-	board=$(cat /tmp/sysinfo/board_name 2>/dev/null)
-	case "$board" in
-		*ipq5210*) ;;
-		*)
-			return 0 ;;
-	esac
-
+	local ptp_num clock_name pps_source
 	local debugfs="/sys/kernel/debug/qca-nss-dp/ptp/pps_in_source"
-	if [ ! -f "$debugfs" ]; then
-		logger -t ptp -p warn \
-			"PPS source debugfs not found: $debugfs (skipping PPS mux config)"
-		return 0
-	fi
+
+	# No PPS input mux on this SoC
+	[ -f "$debugfs" ] || return 0
 
 	# Manual override via UCI pps_in_source option
 	if [ -n "$pps_in_source_override" ]; then
@@ -225,27 +241,12 @@ configure_pps_source() {
 }
 
 # ---------------------------------------------------------------------------
-# Helper: check whether the current board is supported (ipq5210 or ipq9650)
-# ---------------------------------------------------------------------------
-is_supported_board() {
-	local board
-	board=$(cat /tmp/sysinfo/board_name 2>/dev/null)
-	case "$board" in
-		*ipq5210*|*ipq9650*)
-			return 0 ;;
-		*)
-			logger -t ptp -p warn \
-				"Board '$board' is not supported (requires ipq5210 or ipq9650)"
-			return 1 ;;
-	esac
-}
-
-# ---------------------------------------------------------------------------
 # UCI section validator
 # ---------------------------------------------------------------------------
 validate_ptp_section() {
 	uci_validate_section ptp settings "${1}" \
 		'enabled:bool:1' \
+		'mode:or("ap","repeater"):ap' \
 		'interface:string:eth0' \
 		'wan_uci_name:string:wan' \
 		'log_level:range(0,7):6' \
@@ -273,8 +274,19 @@ validate_ptp_section() {
 # procd service management
 # ===========================================================================
 
+# Bootargs "ptp_disabled" skips the PTP service at boot; a manual
+# "/etc/init.d/ptp start" still starts it
+boot() {
+	if grep -qw ptp_disabled /proc/cmdline 2>/dev/null; then
+		logger -t ptp -p info \
+			"ptp_disabled in bootargs; PTP service not started at boot"
+		return 0
+	fi
+	start "$@"
+}
+
 start_service() {
-	local enabled interface wan_uci_name daemon_log
+	local enabled mode interface wan_uci_name daemon_log
 	local run_ptp4l run_ts2phc run_phc2sys run_ts2phc_wifi
 	local ptp4l_opts ts2phc_opts phc2sys_opts ts2phc_wifi_src_phc ts2phc_wifi_dst_phc ts2phc_wifi_opts slave_mode
 	local ptp4l_phc_dev ts2phc_src_phc ts2phc_dst_phc phc2sys_src_phc pps_in_source step_threshold
@@ -282,6 +294,7 @@ start_service() {
 	# ---- Load UCI configuration ----
 	config_load ptp
 	config_get enabled        settings enabled        1
+	config_get mode           settings mode           "ap"
 	config_get interface      settings interface      "eth0"
 	config_get wan_uci_name   settings wan_uci_name   "wan"
 	config_get daemon_log     settings daemon_log     1
@@ -308,9 +321,32 @@ start_service() {
 		return 0
 	}
 
-	if ! is_supported_board; then
+	# In repeater mode the ath12k_ptp WiFi PHC is the time reference: it is
+	# kept in sync with the upstream AP by the WiFi driver, so ptp4l is not
+	# needed, and the WiFi ts2phc (which syncs the WiFi PHC) must not run.
+	if [ "$mode" = "repeater" ]; then
+		[ "$run_ptp4l" = "1" ] && logger -t ptp -p info \
+			"Repeater mode: ignoring run_ptp4l"
+		[ "$run_ts2phc_wifi" = "1" ] && logger -t ptp -p info \
+			"Repeater mode: ignoring run_ts2phc_wifi"
+		run_ptp4l=0
+		run_ts2phc_wifi=0
+	fi
+
+	if [ "$run_ptp4l" != "1" ] && [ "$run_ts2phc" != "1" ] && \
+	   [ "$run_phc2sys" != "1" ] && [ "$run_ts2phc_wifi" != "1" ]; then
+		logger -t ptp -p info "No PTP daemon enabled (run_* = 0); PTP service idle"
 		return 0
 	fi
+
+	# Per-daemon state for the final summary: disabled (run_* = 0), skipped
+	# (enabled but not started, the reason is logged) or started
+	local ptp4l_state=disabled ts2phc_state=disabled
+	local phc2sys_state=disabled ts2phc_wifi_state=disabled
+	[ "$run_ptp4l" = "1" ] && ptp4l_state=skipped
+	[ "$run_ts2phc" = "1" ] && ts2phc_state=skipped
+	[ "$run_phc2sys" = "1" ] && phc2sys_state=skipped
+	[ "$run_ts2phc_wifi" = "1" ] && ts2phc_wifi_state=skipped
 
 	# Guard against double-start: the service_triggers() interface trigger fires
 	# when the WAN interface comes up (shortly after boot), which can cause a
@@ -323,7 +359,7 @@ start_service() {
 		return 0
 	fi
 
-	logger -t ptp -p info "=== PTP service starting (WAN interface: $interface) ==="
+	logger -t ptp -p info "=== PTP service starting (mode: $mode, WAN interface: $interface) ==="
 	[ "$daemon_log" = "1" ] || logger -t ptp -p info \
 		"Daemon logging disabled: ptp4l/ts2phc/phc2sys output is not sent to syslog"
 
@@ -394,6 +430,7 @@ EOF
 		procd_close_instance
 
 		logger -t ptp -p info "ptp4l instance registered"
+		ptp4l_state=started
 	fi
 
 	# =========================================================================
@@ -403,7 +440,9 @@ EOF
 	# No config file is needed; source and destination(s) are passed on the
 	# command line via --ts2phc-src and --ts2phc-dst to the sequencer.
 	# ts2phc_dst_phc may list several PHCs (space-separated); xgmac_phc then
-	# holds that list, and auto-detection yields a single XGMAC PHC.
+	# holds that list.  Otherwise the destinations are all linked-up XGMAC
+	# and external Ethernet PHY PHCs.  The source is the ptp4l PHC in ap
+	# mode and the ath12k_ptp PHC in repeater mode.
 	# =========================================================================
 	local ts2phc_ready=0
 	local src_phc="" xgmac_phc="" dst dsts=""
@@ -413,6 +452,15 @@ EOF
 		if [ -n "$ts2phc_src_phc" ]; then
 			src_phc="$ts2phc_src_phc"
 			logger -t ptp -p info "ts2phc source PHC: $src_phc"
+		elif [ "$mode" = "repeater" ]; then
+			src_phc=$(find_ath12k_ptp_devs | head -1)
+			if [ -z "$src_phc" ]; then
+				logger -t ptp -p warn \
+					"Skipping ts2phc: no ath12k_ptp PHC found (set ts2phc_src_phc to override)"
+			else
+				logger -t ptp -p info \
+					"ts2phc source PHC: $src_phc (ath12k_ptp, repeater mode)"
+			fi
 		else
 			local ptp4l_phc_num
 			ptp4l_phc_num=$(get_phc_num_for_iface "$interface")
@@ -424,12 +472,15 @@ EOF
 			fi
 		fi
 
-		# Resolve destination PHC(s)
+		# Resolve destination PHC(s): every linked-up XGMAC and
+		# external Ethernet PHY PHC other than the source, in both ap
+		# and repeater mode
 		if [ -n "$ts2phc_dst_phc" ]; then
 			xgmac_phc="$ts2phc_dst_phc"
 			logger -t ptp -p info "ts2phc destination PHC(s): $xgmac_phc"
 		else
-			xgmac_phc=$(get_xgmac_ptp_device)
+			xgmac_phc=$(find_eth_ptp_devs "$src_phc" | tr '\n' ' ')
+			xgmac_phc="${xgmac_phc% }"
 		fi
 
 		# Drop any destination that is the source PHC itself
@@ -455,8 +506,16 @@ EOF
 			xgmac_phc="$dsts"
 			logger -t ptp -p info \
 				"ts2phc: $src_phc -> $xgmac_phc"
-			# Configure the XGMAC PPS input mux (ipq5210 only)
-			configure_pps_source "$src_phc" "$pps_in_source"
+			# Configure the XGMAC PPS input mux (ipq5210 only).  The mux
+			# only feeds the XGMAC; Ethernet PHYs have their own PPS input,
+			# so it is left alone when no XGMAC PHC is a destination.
+			for dst in $xgmac_phc; do
+				case "$(cat "/sys/class/ptp/${dst#/dev/}/clock_name" 2>/dev/null)" in
+					*xgmac*|*XGMAC*)
+						configure_pps_source "$src_phc" "$pps_in_source"
+						break ;;
+				esac
+			done
 			ts2phc_ready=1
 		fi
 	fi
@@ -524,11 +583,31 @@ EOF
 			phc2sys_src="$phc2sys_src_phc"
 			logger -t ptp -p info "phc2sys source PHC: $phc2sys_src"
 		elif [ "$ts2phc_ready" = "1" ]; then
-			# ts2phc is running: sync from the (first) ts2phc destination
-			phc2sys_src="${xgmac_phc%% *}"
+			# ts2phc is running: sync from the XGMAC destination of the
+			# ptp4l interface (ap mode), else the first XGMAC destination,
+			# else the first destination if none is an XGMAC PHC
+			local first_xgmac=""
+			for dst in $xgmac_phc; do
+				case "$(cat "/sys/class/ptp/${dst#/dev/}/clock_name" 2>/dev/null)" in
+					*xgmac*|*XGMAC*) ;;
+					*) continue ;;
+				esac
+				[ -z "$first_xgmac" ] && first_xgmac="$dst"
+				if [ "$mode" != "repeater" ] && \
+				   [ -d "/sys/class/ptp/${dst#/dev/}/device/net/$interface" ]; then
+					phc2sys_src="$dst"
+					break
+				fi
+			done
+			[ -z "$phc2sys_src" ] && phc2sys_src="$first_xgmac"
+			[ -z "$phc2sys_src" ] && phc2sys_src="${xgmac_phc%% *}"
+			logger -t ptp -p info "phc2sys source PHC: $phc2sys_src"
 		elif [ -n "$ts2phc_src_phc" ]; then
 			phc2sys_src="$ts2phc_src_phc"
 			logger -t ptp -p info "phc2sys using ts2phc_src_phc: $phc2sys_src"
+		elif [ "$mode" = "repeater" ]; then
+			# No ts2phc: sync directly from the ath12k_ptp PHC
+			phc2sys_src=$(find_ath12k_ptp_devs | head -1)
 		else
 			# No ts2phc: sync directly from ptp4l's PHC
 			local ptp4l_phc_num
@@ -592,6 +671,10 @@ EOF
 			if [ -n "$phc2sys_src" ]; then
 				procd_append_param command --phc2sys-src "$phc2sys_src"
 				procd_append_param command --phc2sys-step "$step_threshold"
+				# The ath12k_ptp PHC runs on UTC, not TAI, so the
+				# repeater chain needs no UTC-TAI correction
+				[ "$mode" = "repeater" ] && \
+					procd_append_param command --phc2sys-utc-offset 0
 				[ -n "$phc2sys_opts" ] && \
 					procd_append_param command --phc2sys-opts "$phc2sys_opts"
 			fi
@@ -604,10 +687,20 @@ EOF
 			procd_close_instance
 
 			logger -t ptp -p info "ptp-chain sequencer instance registered"
+			[ "$ts2phc_ready" = "1" ] && ts2phc_state=started
+			[ "$ts2phc_wifi_ready" = "1" ] && ts2phc_wifi_state=started
+			[ -n "$phc2sys_src" ] && phc2sys_state=started
 		fi
 	fi
 
-	logger -t ptp -p info "=== PTP service startup complete ==="
+	local summary="ptp4l=$ptp4l_state ts2phc=$ts2phc_state phc2sys=$phc2sys_state"
+	[ "$run_ts2phc_wifi" = "1" ] && summary="$summary ts2phc-wifi=$ts2phc_wifi_state"
+	case "$summary" in
+		*=started*)
+			logger -t ptp -p info "=== PTP service: $summary ===" ;;
+		*)
+			logger -t ptp -p warn "=== PTP service: $summary ===" ;;
+	esac
 }
 
 stop_service() {
@@ -623,18 +716,20 @@ reload_service() {
 }
 
 service_triggers() {
-	is_supported_board || return 0
-
-	local interface wan_uci_name
+	local mode interface wan_uci_name run_ptp4l
 
 	config_load ptp
+	config_get mode         settings mode         "ap"
 	config_get interface    settings interface    "eth0"
 	config_get wan_uci_name settings wan_uci_name "wan"
+	config_get run_ptp4l    settings run_ptp4l    1
 
 	procd_add_reload_trigger "ptp"
 	procd_add_reload_trigger "network"
 
-	procd_add_interface_trigger "interface.*" "$wan_uci_name" /etc/init.d/ptp restart
+	# Only ptp4l waits for the WAN IP; no ptp4l runs in repeater mode
+	[ "$run_ptp4l" = "1" ] && [ "$mode" != "repeater" ] && \
+		procd_add_interface_trigger "interface.*" "$wan_uci_name" /etc/init.d/ptp restart
 
 	procd_open_validate
 	validate_ptp_section

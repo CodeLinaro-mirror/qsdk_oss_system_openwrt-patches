@@ -48,6 +48,7 @@ TS2PHC_WIFI_OPTS=""
 PHC2SYS_SRC=""
 PHC2SYS_STEP="0.128"
 PHC2SYS_OPTS=""
+PHC2SYS_UTC_OFFSET=""     # fixed phc2sys -O value; empty = query ptp4l via pmc
 PTP4L_ENABLED=0          # set via --ptp4l-enabled when ptp4l is part of the chain
 DAEMON_LOG=1             # cleared via --no-daemon-log to keep daemon output out of syslog
 SYNC_TIMEOUT=300         # seconds to wait for ptp4l sync before giving up
@@ -87,6 +88,7 @@ while [ $# -gt 0 ]; do
 		--phc2sys-src)         PHC2SYS_SRC="$2";                         shift 2 ;;
 		--phc2sys-step)        PHC2SYS_STEP="$2";                        shift 2 ;;
 		--phc2sys-opts)        PHC2SYS_OPTS="$2";                        shift 2 ;;
+		--phc2sys-utc-offset)  PHC2SYS_UTC_OFFSET="$2";                  shift 2 ;;
 		--ptp4l-enabled)       PTP4L_ENABLED=1;                          shift ;;
 		--no-daemon-log)       DAEMON_LOG=0;                             shift ;;
 		--sync-timeout)        SYNC_TIMEOUT="$2";                        shift 2 ;;
@@ -256,6 +258,8 @@ check_ptp4l_lost() {
 #
 # Uses GET TIME_PROPERTIES_DATA_SET (full name required on this pmc build).
 # Only trusts currentUtcOffset when currentUtcOffsetValid = 1.
+# --phc2sys-utc-offset bypasses the query, e.g. 0 when the source PHC is
+# already on UTC (the ath12k_ptp PHC in repeater mode).
 # Falls back to -37 (TAI-UTC = 37 s, valid since 2017-01-01) when:
 #   - pmc fails / ptp4l not synced (raw is empty)
 #   - currentUtcOffsetValid = 0 (grandmaster not advertising valid offset)
@@ -263,6 +267,13 @@ check_ptp4l_lost() {
 get_utc_tai_offset() {
 	local raw valid fallback="-37"
 	local pmc_out
+
+	if [ -n "$PHC2SYS_UTC_OFFSET" ]; then
+		logger -t ptp -p info \
+			"ptp-sequencer: UTC-TAI offset fixed to ${PHC2SYS_UTC_OFFSET}s"
+		echo "$PHC2SYS_UTC_OFFSET"
+		return
+	fi
 
 	pmc_out=$(pmc -u -b 0 'GET TIME_PROPERTIES_DATA_SET' 2>/dev/null)
 
