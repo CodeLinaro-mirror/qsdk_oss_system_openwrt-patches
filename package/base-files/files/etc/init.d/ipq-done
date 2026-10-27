@@ -150,11 +150,22 @@ opensync_func () {
 	uci set minidump.livedump.tftp=0
 	uci commit
 }
+
+cleanup_virtual_art() {
+	# ART calibration is complete by now; free the in-memory ART replica.
+	# Only done on the LM256 (optimized) memory profile to save DDR headroom.
+	[ "$(cat /etc/mem-profile 2>/dev/null)" = "optimized" ] || return 0
+	rm -f /tmp/virtual_art.bin /tmp/virtual_art.bin.lzma \
+		/tmp/virtual_art_ethphy.bin /tmp/virtual_art_wlan_caldata.bin \
+		/tmp/virtual_art_wlan_caldata.bin.lzma
+}
+
 boot() {
 
 	mount_poncal
 	hostname=$(uci get system.@system[0].hostname)
 	echo "$hostname" > /proc/sys/kernel/hostname
+	cleanup_virtual_art
 	# Clean up file cache
 	echo 3 > /proc/sys/vm/drop_caches
 	/etc/init.d/sysctl start
