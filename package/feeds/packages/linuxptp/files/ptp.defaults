@@ -6,13 +6,31 @@
 # PTP uci-defaults script
 # Runs once at first boot (via /etc/uci-defaults/99-ptp).
 # Registers /etc/firewall.d/ptp as a fw3/fw4 firewall include so that
-# PTP traffic rules are applied on every firewall start/reload.
+# PTP traffic rules are applied on every firewall start/reload, and enables
+# the PTP daemon chain (ptp4l, ts2phc, phc2sys) by default on ipq5210 and
+# ipq9650.
 
 uci -q get firewall.ptp > /dev/null 2>&1 || {
 	uci set firewall.ptp=include
 	uci set firewall.ptp.type='script'
 	uci set firewall.ptp.path='/etc/firewall.d/ptp'
 	uci commit firewall
+}
+
+# Enable the PTP daemon chain by default on ipq5210 and ipq9650; other SoCs
+# keep run_* at '0' but can still enable the daemons through UCI.  Done only
+# once (guarded by 'board_defaults') so that a user's later choice survives
+# sysupgrade, which re-runs uci-defaults scripts with the kept configuration.
+uci -q get ptp.settings.board_defaults > /dev/null 2>&1 || {
+	case "$(cat /tmp/sysinfo/board_name 2>/dev/null)" in
+		*ipq5210*|*ipq9650*)
+			uci set ptp.settings.run_ptp4l='1'
+			uci set ptp.settings.run_ts2phc='1'
+			uci set ptp.settings.run_phc2sys='1'
+			;;
+	esac
+	uci set ptp.settings.board_defaults='1'
+	uci commit ptp
 }
 
 exit 0
